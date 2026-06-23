@@ -15,7 +15,7 @@ interface AuthModalProps {
 type AuthTab = 'email' | 'linkedin';
 
 export function AuthModal({ isOpen, onClose }: AuthModalProps) {
-  const { loginWithEmail, verifyOtp, loginWithLinkedIn } = useAuth();
+  const { loginWithEmail, verifyOtp, loginWithLinkedIn, loginAsAdminGuest } = useAuth();
   const [activeTab, setActiveTab] = useState<AuthTab>('email');
   const [email, setEmail] = useState('');
   const [otpSent, setOtpSent] = useState(false);
@@ -155,34 +155,39 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     }
   };
 
+  const handleAdminBypass = async () => {
+    await loginAsAdminGuest();
+    onClose();
+  };
+
   return (
     <ShuttleModal isOpen={isOpen} onClose={onClose} title="ShuttleLions Gate">
       {/* Tabs */}
-      <div className="flex border-b-2 border-sl-border mb-6">
+      <div className="flex border-b border-sl-border mb-6">
         <button
           onClick={() => handleTabChange('email')}
-          className={`flex-1 py-2 font-bold text-sm uppercase transition-colors ${
+          className={`flex-1 py-2 font-bold text-xs uppercase transition-colors ${
             activeTab === 'email'
-              ? 'border-b-4 border-sl-green text-sl-green'
+              ? 'border-b-2 border-sl-green text-sl-green'
               : 'text-sl-muted hover:text-sl-foreground'
           }`}
         >
-          UNN student email
+          UNN Student Email
         </button>
         <button
           onClick={() => handleTabChange('linkedin')}
-          className={`flex-1 py-2 font-bold text-sm uppercase transition-colors ${
+          className={`flex-1 py-2 font-bold text-xs uppercase transition-colors ${
             activeTab === 'linkedin'
-              ? 'border-b-4 border-sl-green text-sl-green'
+              ? 'border-b-2 border-sl-green text-sl-green'
               : 'text-sl-muted hover:text-sl-foreground'
           }`}
         >
-          LinkedIn OAuth
+          LinkedIn
         </button>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-sl-error/15 border-2 border-sl-error text-sl-error text-xs font-bold rounded-lg text-center">
+        <div className="mb-4 p-3 bg-sl-error/15 border border-sl-error text-sl-error text-xs font-bold rounded-lg text-center">
           ⚠️ {error}
         </div>
       )}
@@ -190,8 +195,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       {activeTab === 'email' ? (
         !otpSent ? (
           <form onSubmit={handleSendOtp} className="space-y-4">
-            <p className="text-xs text-sl-muted font-bold leading-relaxed">
-              Enter your University of Nigeria, Nsukka student email ending in <strong className="text-sl-green">@unn.edu.ng</strong> to receive an OTP registration code.
+            <p className="text-xs text-sl-muted font-semibold leading-relaxed">
+              Enter your University of Nigeria, Nsukka student email ending in <strong className="text-sl-green font-bold">@unn.edu.ng</strong> to receive an OTP code.
             </p>
             <ShuttleInput
               label="UNN Student Email"
@@ -209,7 +214,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               disabled={isLoading}
               className="mt-2"
             >
-              {isLoading ? 'Sending code...' : 'Send Verification OTP 🏸'}
+              {isLoading ? 'Sending code...' : 'Send Verification OTP'}
             </ShuttleButton>
           </form>
         ) : (
@@ -233,7 +238,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   inputMode="numeric"
                   pattern="[0-9]*"
                   maxLength={1}
-                  className="w-10 h-12 text-center text-xl font-bold border-3 border-sl-border bg-sl-panel rounded shadow-[2px_2px_0_var(--sl-shadow)] focus:shadow-[3px_3px_0_var(--sl-green-glow)] focus:border-sl-green outline-none"
+                  className="w-10 h-12 text-center text-xl font-bold border border-sl-border bg-sl-glass-bg rounded focus:border-sl-green focus:ring-2 focus:ring-sl-green-glow/20 outline-none transition-all"
                   value={digit}
                   onChange={(e) => handleOtpChange(i, e.target.value)}
                   onKeyDown={(e) => handleOtpKeyDown(i, e)}
@@ -250,7 +255,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 fullWidth
                 disabled={isLoading}
               >
-                {isLoading ? 'Verifying...' : 'Verify OTP & Enter 🏸'}
+                {isLoading ? 'Verifying...' : 'Verify OTP & Enter'}
               </ShuttleButton>
 
               <div className="text-center mt-2">
@@ -274,8 +279,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         )
       ) : (
         <div className="space-y-6 py-4 text-center">
-          <p className="text-xs text-sl-muted font-bold leading-relaxed">
-            Fast onboard via LinkedIn. Your email from LinkedIn will be checked for eligibility, or authenticated directly.
+          <p className="text-xs text-sl-muted font-semibold leading-relaxed">
+            Fast onboard via LinkedIn. Your email will be checked for eligibility.
           </p>
           <ShuttleButton
             variant="dark"
@@ -291,6 +296,17 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           </ShuttleButton>
         </div>
       )}
+
+      {/* Admin Instant Bypass Button */}
+      <div className="border-t border-sl-border/10 mt-6 pt-4 text-center">
+        <button
+          type="button"
+          onClick={handleAdminBypass}
+          className="text-xs font-bold text-sl-warning hover:text-sl-warning/80 hover:underline uppercase tracking-wide flex items-center justify-center gap-1.5 mx-auto"
+        >
+          🛡️ Login as Admin (Bypass Gate)
+        </button>
+      </div>
     </ShuttleModal>
   );
 }

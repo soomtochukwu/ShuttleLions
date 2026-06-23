@@ -25,15 +25,12 @@ export const ShuttleButton = forwardRef<HTMLButtonElement, ShuttleButtonProps>(
         ref={ref}
         className={`${variantClasses[variant]} ${fullWidth ? 'w-full' : ''} ${className}`}
         whileTap={{
-          scale: 0.97,
-          x: 4,
-          y: 4,
-          boxShadow: '0 0 0 var(--sl-shadow)',
-          transition: { duration: 0.1 },
+          scale: 0.96,
+          transition: { duration: 0.08 },
         }}
         whileHover={{
-          scale: 1.02,
-          transition: { duration: 0.2 },
+          scale: 1.015,
+          transition: { duration: 0.15 },
         }}
         {...props}
       >

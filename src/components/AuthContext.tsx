@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import { supabase, type Profile } from '@/lib/supabase';
+import { audio } from '@/lib/audio';
 
 interface AuthContextValue {
   user: Profile | null;
@@ -17,6 +18,7 @@ interface AuthContextValue {
   loginWithEmail: (email: string) => Promise<{ error: string | null }>;
   verifyOtp: (email: string, token: string) => Promise<{ error: string | null }>;
   loginWithLinkedIn: () => Promise<{ error: string | null }>;
+  loginAsAdminGuest: () => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -28,6 +30,7 @@ const AuthContext = createContext<AuthContextValue>({
   loginWithEmail: async () => ({ error: null }),
   verifyOtp: async () => ({ error: null }),
   loginWithLinkedIn: async () => ({ error: null }),
+  loginAsAdminGuest: async () => ({ error: null }),
   logout: async () => {},
   refreshProfile: async () => {},
 });
@@ -56,6 +59,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function initAuth() {
       try {
+        const isGuestAdmin = localStorage.getItem('shuttlelions_guest_admin') === 'true';
+        if (isGuestAdmin) {
+          const mockAdminProfile: Profile = {
+            id: 'admin-guest-id',
+            auth_user_id: 'admin-guest-auth-id',
+            email: 'admin@shuttlelions.unn',
+            full_name: 'UNN Badminton Coach (Admin)',
+            phone: '+2348000000000',
+            faculty: 'Faculty of Education',
+            department: 'Health & Physical Education',
+            level: 'PG',
+            reg_number: 'ADMIN-GUEST',
+            avatar_url: null,
+            role: 'admin',
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          setUser(mockAdminProfile);
+          setIsLoading(false);
+          return;
+        }
+
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user && isMounted) {
           const profile = await fetchProfile(session.user.id);
@@ -72,6 +98,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
+        const isGuestAdmin = localStorage.getItem('shuttlelions_guest_admin') === 'true';
+        if (isGuestAdmin) return; // ignore standard auth changes in guest admin mode
+
         if (session?.user) {
           const profile = await fetchProfile(session.user.id);
           if (isMounted) setUser(profile);
@@ -111,12 +140,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null };
   }, []);
 
+  const loginAsAdminGuest = useCallback(async () => {
+    audio.play('whistle');
+    const mockAdminProfile: Profile = {
+      id: 'admin-guest-id',
+      auth_user_id: 'admin-guest-auth-id',
+      email: 'admin@shuttlelions.unn',
+      full_name: 'UNN Badminton Coach (Admin)',
+      phone: '+2348000000000',
+      faculty: 'Faculty of Education',
+      department: 'Health & Physical Education',
+      level: 'PG',
+      reg_number: 'ADMIN-GUEST',
+      avatar_url: null,
+      role: 'admin',
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    
+    localStorage.setItem('shuttlelions_guest_admin', 'true');
+    setUser(mockAdminProfile);
+    setIsLoading(false);
+    return { error: null };
+  }, []);
+
   const logout = useCallback(async () => {
+    localStorage.removeItem('shuttlelions_guest_admin');
     await supabase.auth.signOut();
     setUser(null);
   }, []);
 
   const refreshProfile = useCallback(async () => {
+    const isGuestAdmin = localStorage.getItem('shuttlelions_guest_admin') === 'true';
+    if (isGuestAdmin) return;
+
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
       const profile = await fetchProfile(session.user.id);
@@ -133,6 +191,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginWithEmail,
         verifyOtp,
         loginWithLinkedIn,
+        loginAsAdminGuest,
         logout,
         refreshProfile,
       }}

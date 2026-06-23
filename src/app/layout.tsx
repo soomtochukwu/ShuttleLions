@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
-import { Footer } from "@/components/Footer";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -40,16 +39,15 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&family=Inter:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
       </head>
-      <body className={`${inter.variable} antialiased h-dvh flex flex-col overflow-hidden`}>
+      <body className={`${inter.variable} antialiased min-h-screen flex flex-col bg-sl-bg`}>
         <Providers>
-          <main className="grow flex flex-col w-full relative z-10 overflow-y-auto pb-32">
+          <main className="flex-grow flex flex-col w-full relative z-10">
             {children}
           </main>
-          <Footer />
         </Providers>
       </body>
     </html>
