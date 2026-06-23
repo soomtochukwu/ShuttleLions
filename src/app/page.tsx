@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import { PhotoCarousel } from '@/components/PhotoCarousel';
 import { AuthModal } from '@/components/AuthModal';
-import { InteractiveBackground } from '@/components/InteractiveBackground';
+import { Interactive3DBackground } from '@/components/Interactive3DBackground';
 import { ShuttleButton } from '@/components/ui/ShuttleButton';
 import { Footer } from '@/components/Footer';
 import { formatKobo, REGISTRATION_FEE, MONTHLY_FEE } from '@/lib/constants';
@@ -30,7 +30,7 @@ export default function HomePage() {
 
   return (
     <div className="relative w-full min-h-screen bg-sl-bg overflow-x-hidden">
-      <InteractiveBackground />
+      <Interactive3DBackground />
 
       {/* Floating Header */}
       <div className="fixed top-0 left-0 right-0 z-50">
