@@ -1,83 +1,147 @@
-"use client";
+'use client';
 
 import {
-    createContext,
-    useContext,
-    useState,
-    useEffect,
-    useCallback,
-    type ReactNode,
-} from "react";
-
-export interface AuthUser {
-    id: string;
-    x_user_id: string;
-    x_handle: string;
-    x_name: string | null;
-    x_avatar_url: string | null;
-}
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  type ReactNode,
+} from 'react';
+import { supabase, type Profile } from '@/lib/supabase';
 
 interface AuthContextValue {
-    user: AuthUser | null;
-    isLoading: boolean;
-    isAuthenticated: boolean;
-    login: () => void;
-    logout: () => Promise<void>;
+  user: Profile | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  loginWithEmail: (email: string) => Promise<{ error: string | null }>;
+  verifyOtp: (email: string, token: string) => Promise<{ error: string | null }>;
+  loginWithLinkedIn: () => Promise<{ error: string | null }>;
+  logout: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue>({
-    user: null,
-    isLoading: true,
-    isAuthenticated: false,
-    login: () => { },
-    logout: async () => { },
+  user: null,
+  isLoading: true,
+  isAuthenticated: false,
+  loginWithEmail: async () => ({ error: null }),
+  verifyOtp: async () => ({ error: null }),
+  loginWithLinkedIn: async () => ({ error: null }),
+  logout: async () => {},
+  refreshProfile: async () => {},
 });
 
+async function fetchProfile(authUserId: string): Promise<Profile | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('auth_user_id', authUserId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Failed to fetch profile:', error.message);
+    return null;
+  }
+
+  return data as Profile | null;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<AuthUser | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<Profile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-    // Fetch session on mount
-    useEffect(() => {
-        fetch("/api/auth/session")
-            .then((res) => res.json())
-            .then((data) => {
-                setUser(data.user || null);
-            })
-            .catch(() => {
-                setUser(null);
-            })
-            .finally(() => {
-                setIsLoading(false);
-            });
-    }, []);
+  useEffect(() => {
+    let isMounted = true;
 
-    const login = useCallback(() => {
-        // Redirect to the Twitter OAuth flow
-        window.location.href = "/api/auth/twitter";
-    }, []);
+    async function initAuth() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user && isMounted) {
+          const profile = await fetchProfile(session.user.id);
+          if (isMounted) setUser(profile);
+        }
+      } catch (err) {
+        console.error('Auth init error:', err);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
 
-    const logout = useCallback(async () => {
-        await fetch("/api/auth/session", { method: "DELETE" });
-        setUser(null);
-        window.location.href = "/";
-    }, []);
+    initAuth();
 
-    return (
-        <AuthContext.Provider
-            value={{
-                user,
-                isLoading,
-                isAuthenticated: !!user,
-                login,
-                logout,
-            }}
-        >
-            {children}
-        </AuthContext.Provider>
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        if (session?.user) {
+          const profile = await fetchProfile(session.user.id);
+          if (isMounted) setUser(profile);
+        } else {
+          if (isMounted) setUser(null);
+        }
+      }
     );
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const loginWithEmail = useCallback(async (email: string) => {
+    const { error } = await supabase.auth.signInWithOtp({ email });
+    return { error: error?.message ?? null };
+  }, []);
+
+  const verifyOtp = useCallback(async (email: string, token: string) => {
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'email',
+    });
+    return { error: error?.message ?? null };
+  }, []);
+
+  const loginWithLinkedIn = useCallback(async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'linkedin_oidc',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    return { error: error?.message ?? null };
+  }, []);
+
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+  }, []);
+
+  const refreshProfile = useCallback(async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      const profile = await fetchProfile(session.user.id);
+      setUser(profile);
+    }
+  }, []);
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        isAuthenticated: !!user,
+        loginWithEmail,
+        verifyOtp,
+        loginWithLinkedIn,
+        logout,
+        refreshProfile,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
-    return useContext(AuthContext);
+  return useContext(AuthContext);
 }

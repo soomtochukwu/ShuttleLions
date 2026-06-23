@@ -1,4 +1,52 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+
+// ---- Types ----
+
+export type Profile = {
+  id: string;
+  auth_user_id: string;
+  email: string;
+  full_name: string;
+  phone: string | null;
+  faculty: string;
+  department: string;
+  level: string;
+  reg_number: string | null;
+  avatar_url: string | null;
+  role: 'member' | 'admin' | 'captain';
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Payment = {
+  id: string;
+  profile_id: string;
+  type: 'registration' | 'monthly' | 'racket';
+  amount_kobo: number;
+  status: 'pending' | 'success' | 'failed' | 'refunded';
+  reference: string;
+  provider: string;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RacketOrder = {
+  id: string;
+  profile_id: string;
+  racket_model: string;
+  quantity: number;
+  unit_price_kobo: number;
+  total_price_kobo: number;
+  status: 'pending' | 'confirmed' | 'ordered' | 'shipped' | 'delivered' | 'cancelled';
+  payment_id: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+// ---- Client Singleton (Lazy Init) ----
 
 let _supabase: SupabaseClient | null = null;
 
@@ -9,18 +57,33 @@ export function getSupabase(): SupabaseClient {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    // Return a mock client for demo/build mode
-    console.warn("Supabase not configured. Running in demo mode.");
+    console.warn('Supabase not configured. Running in demo mode.');
     return {
+      auth: {
+        getSession: async () => ({ data: { session: null }, error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+        signInWithOtp: async () => ({ data: null, error: { message: 'Demo mode' } }),
+        verifyOtp: async () => ({ data: null, error: { message: 'Demo mode' } }),
+        signInWithOAuth: async () => ({ data: null, error: { message: 'Demo mode' } }),
+        signOut: async () => ({ error: null }),
+      },
       from: () => ({
-        insert: async () => ({ error: { message: "Demo mode" } }),
+        insert: async () => ({ error: { message: 'Demo mode' } }),
         select: () => ({
           eq: () => ({
-            single: async () => ({ data: null, error: { message: "Demo mode" } }),
+            single: async () => ({ data: null, error: { message: 'Demo mode' } }),
+            maybeSingle: async () => ({ data: null, error: null }),
+          }),
+          order: () => ({
+            limit: async () => ({ data: [], error: null }),
           }),
         }),
         update: () => ({
-          eq: async () => ({ error: { message: "Demo mode" } }),
+          eq: async () => ({ error: { message: 'Demo mode' } }),
+        }),
+        upsert: async () => ({ error: { message: 'Demo mode' } }),
+        delete: () => ({
+          eq: async () => ({ error: { message: 'Demo mode' } }),
         }),
       }),
     } as unknown as SupabaseClient;
@@ -30,38 +93,39 @@ export function getSupabase(): SupabaseClient {
   return _supabase;
 }
 
-// Convenience export
+// Convenience Proxy export
 export const supabase = new Proxy({} as SupabaseClient, {
   get(_, prop) {
     const client = getSupabase();
     const value = (client as unknown as Record<string | symbol, unknown>)[prop];
-    if (typeof value === "function") {
+    if (typeof value === 'function') {
       return value.bind(client);
     }
     return value;
   },
 });
 
-export type User = {
-  id: string;
-  x_user_id: string;
-  x_handle: string;
-  x_name: string | null;
-  x_avatar_url: string | null;
-  x_access_token: string;
-  x_refresh_token: string;
-  token_expires_at: string;
-  created_at: string;
-  updated_at: string;
-};
+// ---- Server-side Admin Client ----
 
-export type CrushRequest = {
-  id: string;
-  sender_whatsapp: string;
-  crush_x_handle: string;
-  ai_message: string;
-  status: "pending" | "accepted" | "rejected_paid";
-  payment_tx_hash: string | null;
-  sender_user_id: string | null;
-  created_at: string;
-};
+let _serverSupabase: SupabaseClient | null = null;
+
+export function createServerSupabase(): SupabaseClient {
+  if (_serverSupabase) return _serverSupabase;
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.warn('Server Supabase not configured. Falling back to anon client.');
+    return getSupabase();
+  }
+
+  _serverSupabase = createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+
+  return _serverSupabase;
+}

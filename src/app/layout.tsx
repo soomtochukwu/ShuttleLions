@@ -10,18 +10,18 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Rizz-14th 💘 | The Valentine's Digital Wingman",
+  title: "ShuttleLions 🏸 | UNN Badminton Registration & Fees",
   description:
-    "The cheekiest way to shoot your shot. Generate a link, send it to your crush, and find out if they feel the same way!",
+    "Official badminton registration and fee payment platform for the University of Nigeria, Nsukka (UNN).",
   openGraph: {
-    title: "Rizz-14th 💘",
-    description: "...the perfect rizz 💕 app for nerds 🧑🏿‍💻",
+    title: "ShuttleLions 🏸",
+    description: "Official UNN Badminton Club Registration & Fees Portal.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Rizz-14th 💘",
-    description: "Someone has a crush on you... Will you say YES?",
+    title: "ShuttleLions 🏸",
+    description: "Join the ShuttleLions Badminton Club at UNN. Register and pay dues online.",
   },
 };
 

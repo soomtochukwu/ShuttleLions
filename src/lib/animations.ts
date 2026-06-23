@@ -1,4 +1,4 @@
-import { type Variants } from "framer-motion";
+import { type Variants } from 'framer-motion';
 
 // Springy entrance for cards/panels
 export const springIn: Variants = {
@@ -8,7 +8,7 @@ export const springIn: Variants = {
     opacity: 1,
     y: 0,
     transition: {
-      type: "spring",
+      type: 'spring',
       stiffness: 260,
       damping: 20,
       duration: 0.6,
@@ -23,7 +23,7 @@ export const popIn: Variants = {
     scale: 1,
     opacity: 1,
     transition: {
-      type: "spring",
+      type: 'spring',
       stiffness: 400,
       damping: 15,
     },
@@ -37,7 +37,7 @@ export const slideUp: Variants = {
     y: 0,
     opacity: 1,
     transition: {
-      type: "spring",
+      type: 'spring',
       stiffness: 300,
       damping: 24,
     },
@@ -56,14 +56,14 @@ export const staggerContainer: Variants = {
   },
 };
 
-// Heartbeat pulse for the YES button
+// Heartbeat pulse
 export const heartbeat = {
   animate: {
     scale: [1, 1.08, 1, 1.05, 1],
     transition: {
       duration: 1.2,
       repeat: Infinity,
-      ease: "easeInOut" as const,
+      ease: 'easeInOut' as const,
     },
   },
 };
@@ -82,11 +82,65 @@ export const comicPress = {
     scale: 0.97,
     x: 4,
     y: 4,
-    boxShadow: "0 0 0 #000",
+    boxShadow: '0 0 0 #000',
     transition: { duration: 0.1 },
   },
   whileHover: {
     scale: 1.02,
     transition: { duration: 0.2 },
+  },
+};
+
+// Slide in from the left
+export const slideInLeft: Variants = {
+  hidden: { x: -80, opacity: 0 },
+  visible: {
+    x: 0,
+    opacity: 1,
+    transition: {
+      type: 'spring',
+      stiffness: 280,
+      damping: 22,
+    },
+  },
+};
+
+// Slide in from the right
+export const slideInRight: Variants = {
+  hidden: { x: 80, opacity: 0 },
+  visible: {
+    x: 0,
+    opacity: 1,
+    transition: {
+      type: 'spring',
+      stiffness: 280,
+      damping: 22,
+    },
+  },
+};
+
+// Simple fade in
+export const fadeIn: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      duration: 0.4,
+      ease: 'easeOut',
+    },
+  },
+};
+
+// Scale in from center
+export const scaleIn: Variants = {
+  hidden: { scale: 0.5, opacity: 0 },
+  visible: {
+    scale: 1,
+    opacity: 1,
+    transition: {
+      type: 'spring',
+      stiffness: 350,
+      damping: 20,
+    },
   },
 };
