@@ -40,7 +40,7 @@ export default function HomePage() {
         {/* SECTION 1: HERO (Fade & Scale Effect) */}
         <motion.section
           id="hero-section"
-          className="scroll-section w-full px-4 pt-24 sm:pt-28 flex flex-col justify-center items-center"
+          className="scroll-section w-full px-4 pt-20 flex flex-col md:flex-row items-center justify-between"
           initial={{ opacity: 0.2, scale: 0.94 }}
           whileInView={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0.2, scale: 0.94 }}
@@ -48,33 +48,40 @@ export default function HomePage() {
           transition={{ type: 'spring', stiffness: 100, damping: 20 }}
         >
           <div className="glow-light top-[20%] left-[15%]" />
-          <div 
-            className="w-full max-w-5xl mx-auto text-center space-y-6 sm:space-y-8 z-10 px-6 sm:px-12 md:px-20 py-10 md:py-14 shuttle-panel"
-            style={{ background: 'var(--sl-glass-bg)' }}
-          >
-            <span className="inline-block bg-sl-green/10 border border-sl-green text-sl-green text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider">
-              University of Nigeria, Nsukka
-            </span>
-            
-            <h1
-              className="text-4xl sm:text-7xl font-extrabold tracking-tight leading-none text-sl-foreground uppercase"
-              style={{
-                fontFamily: 'var(--font-title)',
-              }}
+          
+          {/* Left Column: Hero copy card */}
+          <div className="w-full md:w-1/2 flex flex-col justify-center px-6 sm:px-12 md:px-16 z-10">
+            <div 
+              className="w-full text-left space-y-6 sm:space-y-8 py-10 px-8 sm:px-10 rounded-2xl shuttle-panel"
+              style={{ background: 'var(--sl-glass-bg)' }}
             >
-              UNLEASH THE <span className="text-sl-green">LION</span> WITHIN 🏸
-            </h1>
-            
-            <p className="text-sm sm:text-lg text-sl-muted max-w-2xl mx-auto font-medium leading-relaxed">
-              Step onto the court with ShuttleLions. Register now for professional training drills, national collegiate leagues, and verified equipment logistics at UNN.
-            </p>
+              <span className="inline-block bg-sl-green/10 border border-sl-green text-sl-green text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider">
+                University of Nigeria, Nsukka
+              </span>
+              
+              <h1
+                className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-none text-sl-foreground uppercase"
+                style={{
+                  fontFamily: 'var(--font-title)',
+                }}
+              >
+                UNLEASH THE <span className="text-sl-green">LION</span> WITHIN 🏸
+              </h1>
+              
+              <p className="text-xs sm:text-base text-sl-muted font-medium leading-relaxed">
+                Step onto the court with ShuttleLions. Register now for professional training drills, national collegiate leagues, and verified equipment logistics at UNN.
+              </p>
 
-            <div className="pt-4 flex justify-center">
-              <ShuttleButton variant="green" onClick={handleCtaClick} className="px-8 py-4 text-base font-bold shadow-lg">
-                {isAuthenticated ? 'Go to Student Dashboard 🦁' : 'Register / Login Now ⚡'}
-              </ShuttleButton>
+              <div className="pt-2 flex justify-start">
+                <ShuttleButton variant="green" onClick={handleCtaClick} className="px-6 py-3 text-sm font-bold shadow-lg">
+                  {isAuthenticated ? 'Go to Student Dashboard 🦁' : 'Register / Login Now ⚡'}
+                </ShuttleButton>
+              </div>
             </div>
           </div>
+          
+          {/* Right Column: Empty space for 3D Serve Athlete (WebGL) */}
+          <div className="w-full md:w-1/2 h-[35vh] md:h-full pointer-events-none z-10" />
         </motion.section>
 
         {/* SECTION 2: GALLERY CAROUSEL (Slide in from Left Effect) */}
@@ -241,58 +248,75 @@ export default function HomePage() {
         >
           <div className="glow-light top-[10%] left-[50%]" />
           
-          {/* Main Card Content */}
-          <div className="w-full space-y-6 sm:space-y-8 z-10 px-6 sm:px-12 md:px-20 mt-auto mb-auto">
-            <div className="text-center space-y-2">
-              <h2
-                className="text-3xl sm:text-5xl font-black uppercase text-sl-foreground"
-                style={{ fontFamily: 'var(--font-title)' }}
+          {/* Two column split */}
+          <div className="w-full flex flex-col md:flex-row items-center justify-between z-10 px-6 sm:px-12 md:px-20 mt-auto mb-auto">
+            {/* Left Column: How it Works vertical steps */}
+            <div className="w-full md:w-1/2 flex flex-col justify-center">
+              <div 
+                className="w-full space-y-6 p-8 sm:p-10 rounded-2xl shuttle-panel text-left"
+                style={{ background: 'var(--sl-glass-bg)' }}
               >
-                🚀 How It Works
-              </h2>
-              <p className="text-xs sm:text-sm text-sl-muted font-medium">Join and scale your badminton skills in 3 steps</p>
+                <div className="space-y-2">
+                  <h2
+                    className="text-3xl sm:text-5xl font-black uppercase text-sl-foreground"
+                    style={{ fontFamily: 'var(--font-title)' }}
+                  >
+                    🚀 How It Works
+                  </h2>
+                  <p className="text-xs sm:text-sm text-sl-muted font-medium">Join and scale your badminton skills in 3 steps</p>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Step 1 */}
+                  <div className="flex gap-4 items-start border-b border-sl-border/10 pb-3">
+                    <span className="w-8 h-8 shrink-0 rounded-full border-2 border-sl-border bg-sl-green/10 text-sl-green font-bold flex items-center justify-center">
+                      1
+                    </span>
+                    <div>
+                      <h3 className="text-sm font-extrabold uppercase tracking-wider text-sl-foreground" style={{ fontFamily: 'var(--font-sub)' }}>
+                        Onboard Profile
+                      </h3>
+                      <p className="text-xs text-sl-muted font-semibold mt-1">
+                        Sign in using your UNN email or LinkedIn profile, and select your faculty, level, and department details.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Step 2 */}
+                  <div className="flex gap-4 items-start border-b border-sl-border/10 pb-3">
+                    <span className="w-8 h-8 shrink-0 rounded-full border-2 border-sl-border bg-sl-green/10 text-sl-green font-bold flex items-center justify-center">
+                      2
+                    </span>
+                    <div>
+                      <h3 className="text-sm font-extrabold uppercase tracking-wider text-sl-foreground" style={{ fontFamily: 'var(--font-sub)' }}>
+                        Pay Dues
+                      </h3>
+                      <p className="text-xs text-sl-muted font-semibold mt-1">
+                        Pay your registration and monthly dues directly. Track order statuses if purchasing rackets.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Step 3 */}
+                  <div className="flex gap-4 items-start">
+                    <span className="w-8 h-8 shrink-0 rounded-full border-2 border-sl-border bg-sl-green/10 text-sl-green font-bold flex items-center justify-center">
+                      3
+                    </span>
+                    <div>
+                      <h3 className="text-sm font-extrabold uppercase tracking-wider text-sl-foreground" style={{ fontFamily: 'var(--font-sub)' }}>
+                        Smash Courts
+                      </h3>
+                      <p className="text-xs text-sl-muted font-semibold mt-1">
+                        Book courts, attend coaching drills, meet fellow ShuttleLions, and compete in campus tournaments!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Step 1 */}
-              <div className="shuttle-panel p-5 bg-sl-panel text-center relative border border-sl-border/40">
-                <span className="w-8 h-8 rounded-full border border-sl-border bg-sl-green/10 text-sl-green font-bold flex items-center justify-center mx-auto mb-3">
-                  1
-                </span>
-                <h3 className="text-sm font-bold uppercase tracking-wider mb-2 text-sl-foreground" style={{ fontFamily: 'var(--font-sub)' }}>
-                  Onboard Profile
-                </h3>
-                <p className="text-xs text-sl-muted font-semibold">
-                  Sign in using your UNN email or LinkedIn profile, and select your faculty, level, and department details.
-                </p>
-              </div>
-
-              {/* Step 2 */}
-              <div className="shuttle-panel p-5 bg-sl-panel text-center relative border border-sl-border/40">
-                <span className="w-8 h-8 rounded-full border border-sl-border bg-sl-green/10 text-sl-green font-bold flex items-center justify-center mx-auto mb-3">
-                  2
-                </span>
-                <h3 className="text-sm font-bold uppercase tracking-wider mb-2 text-sl-foreground" style={{ fontFamily: 'var(--font-sub)' }}>
-                  Pay Dues
-                </h3>
-                <p className="text-xs text-sl-muted font-semibold">
-                  Pay your registration and monthly dues directly. Track order statuses if purchasing rackets.
-                </p>
-              </div>
-
-              {/* Step 3 */}
-              <div className="shuttle-panel p-5 bg-sl-panel text-center relative border border-sl-border/40">
-                <span className="w-8 h-8 rounded-full border border-sl-border bg-sl-green/10 text-sl-green font-bold flex items-center justify-center mx-auto mb-3">
-                  3
-                </span>
-                <h3 className="text-sm font-bold uppercase tracking-wider mb-2 text-sl-foreground" style={{ fontFamily: 'var(--font-sub)' }}>
-                  Smash Courts
-                </h3>
-                <p className="text-xs text-sl-muted font-semibold">
-                  Book courts, attend coaching drills, meet fellow ShuttleLions, and compete in campus tournaments!
-                </p>
-              </div>
-            </div>
+            {/* Right Column: Empty space for 3D Receiver Athlete (WebGL) */}
+            <div className="w-full md:w-1/2 h-[35vh] md:h-full pointer-events-none z-10" />
           </div>
 
           {/* Footer inside the final snap viewport (visible only when scrolled to bottom) */}
