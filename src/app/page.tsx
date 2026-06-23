@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import { PhotoCarousel } from '@/components/PhotoCarousel';
 import { AuthModal } from '@/components/AuthModal';
-import { FloatingShuttlecocks } from '@/components/FloatingShuttlecocks';
+import { InteractiveBackground } from '@/components/InteractiveBackground';
 import { ShuttleButton } from '@/components/ui/ShuttleButton';
 import { Footer } from '@/components/Footer';
 import { formatKobo, REGISTRATION_FEE, MONTHLY_FEE } from '@/lib/constants';
@@ -29,16 +29,13 @@ export default function HomePage() {
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-sl-bg">
-      <FloatingShuttlecocks />
+    <div className="relative w-full min-h-screen bg-sl-bg overflow-x-hidden">
+      <InteractiveBackground />
 
       {/* Floating Header */}
       <div className="fixed top-0 left-0 right-0 z-50">
         <Navbar onOpenAuth={() => setIsAuthOpen(true)} />
       </div>
-
-      {/* Scroll Container (Snap Snap) */}
-      <div className="scroll-container w-full h-full">
         
         {/* SECTION 1: HERO (Fade & Scale Effect) */}
         <motion.section
@@ -51,7 +48,7 @@ export default function HomePage() {
           transition={{ type: 'spring', stiffness: 100, damping: 20 }}
         >
           <div className="glow-light top-[20%] left-[15%]" />
-          <div className="max-w-4xl mx-auto text-center space-y-6 sm:space-y-8 z-10 px-4">
+          <div className="w-full text-center space-y-6 sm:space-y-8 z-10 px-6 sm:px-12 md:px-20">
             <span className="inline-block bg-sl-green/10 border border-sl-green text-sl-green text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider">
               University of Nigeria, Nsukka
             </span>
@@ -87,7 +84,7 @@ export default function HomePage() {
           transition={{ type: 'spring', stiffness: 100, damping: 22 }}
         >
           <div className="glow-light bottom-[20%] right-[10%]" />
-          <div className="max-w-4xl mx-auto w-full space-y-6 z-10">
+          <div className="w-full space-y-6 z-10 px-6 sm:px-12 md:px-20">
             <div className="text-center space-y-2">
               <h2
                 className="text-3xl sm:text-5xl font-black uppercase text-sl-foreground"
@@ -111,7 +108,7 @@ export default function HomePage() {
           transition={{ type: 'spring', stiffness: 80, damping: 18 }}
         >
           <div className="glow-light top-[30%] right-[15%]" />
-          <div className="max-w-3xl mx-auto w-full space-y-6 z-10">
+          <div className="w-full space-y-6 z-10 px-6 sm:px-12 md:px-20">
             <div className="text-center space-y-2">
               <h2
                 className="text-3xl sm:text-5xl font-black uppercase text-sl-foreground"
@@ -173,7 +170,7 @@ export default function HomePage() {
           transition={{ type: 'spring', stiffness: 90, damping: 20 }}
         >
           <div className="glow-light bottom-[10%] left-[20%]" />
-          <div className="max-w-5xl mx-auto w-full space-y-8 z-10 px-4">
+          <div className="w-full space-y-8 z-10 px-6 sm:px-12 md:px-20">
             <div className="text-center space-y-2">
               <h2
                 className="text-3xl sm:text-5xl font-black uppercase text-sl-foreground"
@@ -242,7 +239,7 @@ export default function HomePage() {
           <div className="glow-light top-[10%] left-[50%]" />
           
           {/* Main Card Content */}
-          <div className="max-w-4xl mx-auto w-full space-y-6 sm:space-y-8 z-10 px-4 mt-auto mb-auto">
+          <div className="w-full space-y-6 sm:space-y-8 z-10 px-6 sm:px-12 md:px-20 mt-auto mb-auto">
             <div className="text-center space-y-2">
               <h2
                 className="text-3xl sm:text-5xl font-black uppercase text-sl-foreground"
@@ -300,8 +297,6 @@ export default function HomePage() {
             <Footer />
           </div>
         </motion.section>
-
-      </div>
 
       {/* Auth Modal Overlay */}
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />

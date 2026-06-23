@@ -94,7 +94,7 @@ export function PhotoCarousel() {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto flex flex-col items-center">
+    <div className="w-full max-w-5xl mx-auto flex flex-col items-center">
       {/* Outer Polaroid Frame */}
       <div className="w-full aspect-[4/3] sm:aspect-[16/10] relative overflow-hidden shuttle-panel bg-sl-panel p-4 md:p-6 mb-6">
         <div className="w-full h-full relative overflow-hidden bg-sl-bg rounded border-2 border-sl-border flex items-center justify-center">
