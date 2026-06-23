@@ -40,7 +40,7 @@ export default function HomePage() {
         {/* SECTION 1: HERO (Fade & Scale Effect) */}
         <motion.section
           id="hero-section"
-          className="scroll-section w-full px-4 pt-20 flex flex-col md:flex-row items-center justify-between"
+          className="scroll-section w-full px-4 pt-20 flex flex-col items-center justify-center"
           initial={{ opacity: 0.2, scale: 0.94 }}
           whileInView={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0.2, scale: 0.94 }}
@@ -49,10 +49,9 @@ export default function HomePage() {
         >
           <div className="glow-light top-[20%] left-[15%]" />
           
-          {/* Left Column: Hero copy card */}
-          <div className="w-full md:w-1/2 flex flex-col justify-center px-6 sm:px-12 md:px-16 z-10">
+          <div className="w-full max-w-3xl px-6 sm:px-12 md:px-16 z-10">
             <div 
-              className="w-full text-left space-y-6 sm:space-y-8 py-10 px-8 sm:px-10 rounded-2xl shuttle-panel"
+              className="w-full text-center space-y-6 sm:space-y-8 py-10 px-8 sm:px-10 rounded-2xl shuttle-panel"
               style={{ background: 'var(--sl-glass-bg)' }}
             >
               <span className="inline-block bg-sl-green/10 border border-sl-green text-sl-green text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider">
@@ -71,17 +70,14 @@ export default function HomePage() {
               <p className="text-xs sm:text-base text-sl-muted font-medium leading-relaxed">
                 Step onto the court with ShuttleLions. Register now for professional training drills, national collegiate leagues, and verified equipment logistics at UNN.
               </p>
-
-              <div className="pt-2 flex justify-start">
+              
+              <div className="pt-2 flex justify-center">
                 <ShuttleButton variant="green" onClick={handleCtaClick} className="px-6 py-3 text-sm font-bold shadow-lg">
                   {isAuthenticated ? 'Go to Student Dashboard 🦁' : 'Register / Login Now ⚡'}
                 </ShuttleButton>
               </div>
             </div>
           </div>
-          
-          {/* Right Column: Empty space for 3D Serve Athlete (WebGL) */}
-          <div className="w-full md:w-1/2 h-[35vh] md:h-full pointer-events-none z-10" />
         </motion.section>
 
         {/* SECTION 2: GALLERY CAROUSEL (Slide in from Left Effect) */}
@@ -248,12 +244,10 @@ export default function HomePage() {
         >
           <div className="glow-light top-[10%] left-[50%]" />
           
-          {/* Two column split */}
-          <div className="w-full flex flex-col md:flex-row items-center justify-between z-10 px-6 sm:px-12 md:px-20 mt-auto mb-auto">
-            {/* Left Column: How it Works vertical steps */}
-            <div className="w-full md:w-1/2 flex flex-col justify-center">
+          <div className="w-full flex flex-col items-center justify-center z-10 px-6 sm:px-12 md:px-20 mt-auto mb-auto">
+            <div className="w-full max-w-3xl flex flex-col justify-center">
               <div 
-                className="w-full space-y-6 p-8 sm:p-10 rounded-2xl shuttle-panel text-left"
+                className="w-full space-y-6 p-8 sm:p-10 rounded-2xl shuttle-panel text-center"
                 style={{ background: 'var(--sl-glass-bg)' }}
               >
                 <div className="space-y-2">
@@ -266,9 +260,9 @@ export default function HomePage() {
                   <p className="text-xs sm:text-sm text-sl-muted font-medium">Join and scale your badminton skills in 3 steps</p>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-6 text-left max-w-xl mx-auto pt-4">
                   {/* Step 1 */}
-                  <div className="flex gap-4 items-start border-b border-sl-border/10 pb-3">
+                  <div className="flex gap-4 items-start border-b border-sl-border/10 pb-4">
                     <span className="w-8 h-8 shrink-0 rounded-full border-2 border-sl-border bg-sl-green/10 text-sl-green font-bold flex items-center justify-center">
                       1
                     </span>
@@ -283,7 +277,7 @@ export default function HomePage() {
                   </div>
 
                   {/* Step 2 */}
-                  <div className="flex gap-4 items-start border-b border-sl-border/10 pb-3">
+                  <div className="flex gap-4 items-start border-b border-sl-border/10 pb-4">
                     <span className="w-8 h-8 shrink-0 rounded-full border-2 border-sl-border bg-sl-green/10 text-sl-green font-bold flex items-center justify-center">
                       2
                     </span>
@@ -314,9 +308,6 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
-
-            {/* Right Column: Empty space for 3D Receiver Athlete (WebGL) */}
-            <div className="w-full md:w-1/2 h-[35vh] md:h-full pointer-events-none z-10" />
           </div>
 
           {/* Footer inside the final snap viewport (visible only when scrolled to bottom) */}
