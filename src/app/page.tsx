@@ -48,7 +48,10 @@ export default function HomePage() {
           transition={{ type: 'spring', stiffness: 100, damping: 20 }}
         >
           <div className="glow-light top-[20%] left-[15%]" />
-          <div className="w-full text-center space-y-6 sm:space-y-8 z-10 px-6 sm:px-12 md:px-20">
+          <div 
+            className="w-full max-w-5xl mx-auto text-center space-y-6 sm:space-y-8 z-10 px-6 sm:px-12 md:px-20 py-10 md:py-14 shuttle-panel"
+            style={{ background: 'var(--sl-glass-bg)' }}
+          >
             <span className="inline-block bg-sl-green/10 border border-sl-green text-sl-green text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider">
               University of Nigeria, Nsukka
             </span>

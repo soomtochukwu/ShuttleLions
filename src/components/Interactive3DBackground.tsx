@@ -15,10 +15,10 @@ function createRacketMesh(colorGlow: string): THREE.Group {
     envMapIntensity: 1.0,
   });
 
-  // 1. Torus Hoop (Frame)
-  const torusGeom = new THREE.TorusGeometry(1.3, 0.045, 12, 64);
+  // 1. Torus Hoop (Frame) - Enlarged: 1.55 radius
+  const torusGeom = new THREE.TorusGeometry(1.55, 0.052, 12, 64);
   const torusMesh = new THREE.Mesh(torusGeom, frameMaterial);
-  torusMesh.scale.set(1, 1.25, 1); // Oval stretch
+  torusMesh.scale.set(1, 1.25, 1); // Oval stretch: Y height becomes 1.55 * 1.25 = 1.9375
   racketGroup.add(torusMesh);
 
   // 2. String Grid (Thin cylinders)
@@ -29,12 +29,12 @@ function createRacketMesh(colorGlow: string): THREE.Group {
     transparent: true,
     opacity: 0.5,
   });
-  const strThick = 0.004;
+  const strThick = 0.0045;
 
   // Verticals
   for (let i = -5; i <= 5; i++) {
-    const x = i * 0.22;
-    const h = Math.sqrt(1 - (x / 1.3) ** 2) * 1.625; // height boundary of oval torus
+    const x = i * 0.26;
+    const h = Math.sqrt(1 - (x / 1.55) ** 2) * 1.9375; // height boundary of oval torus
     if (h > 0.1) {
       const geom = new THREE.CylinderGeometry(strThick, strThick, h * 2, 4);
       const mesh = new THREE.Mesh(geom, stringMaterial);
@@ -45,8 +45,8 @@ function createRacketMesh(colorGlow: string): THREE.Group {
 
   // Horizontals
   for (let i = -7; i <= 7; i++) {
-    const y = i * 0.20;
-    const w = Math.sqrt(1 - (y / 1.625) ** 2) * 1.3; // width boundary of oval torus
+    const y = i * 0.24;
+    const w = Math.sqrt(1 - (y / 1.9375) ** 2) * 1.55; // width boundary of oval torus
     if (w > 0.1) {
       const geom = new THREE.CylinderGeometry(strThick, strThick, w * 2, 4);
       const mesh = new THREE.Mesh(geom, stringMaterial);
@@ -56,57 +56,57 @@ function createRacketMesh(colorGlow: string): THREE.Group {
     }
   }
 
-  // 3. T-Joint and Shaft (Cylinders)
-  const shaftGeom = new THREE.CylinderGeometry(0.022, 0.022, 2.6, 8);
+  // 3. T-Joint and Shaft (Cylinders) - Extended
+  const shaftGeom = new THREE.CylinderGeometry(0.024, 0.024, 3.0, 8);
   const shaftMesh = new THREE.Mesh(shaftGeom, frameMaterial);
-  shaftMesh.position.set(0, -2.9, 0); // Position below the hoop
+  shaftMesh.position.set(0, -3.4375, 0); // Position below the hoop (-1.9375 - 1.5)
   racketGroup.add(shaftMesh);
 
   // Joint cap accent
-  const jointGeom = new THREE.CylinderGeometry(0.04, 0.03, 0.2, 8);
+  const jointGeom = new THREE.CylinderGeometry(0.045, 0.035, 0.22, 8);
   const jointMesh = new THREE.Mesh(jointGeom, frameMaterial);
-  jointMesh.position.set(0, -1.65, 0);
+  jointMesh.position.set(0, -1.95, 0);
   racketGroup.add(jointMesh);
 
   // 4. Handle (Hexagonal Cylinder Grip)
-  const handleGeom = new THREE.CylinderGeometry(0.065, 0.07, 0.9, 6);
+  const handleGeom = new THREE.CylinderGeometry(0.075, 0.08, 1.0, 6);
   const handleMaterial = new THREE.MeshStandardMaterial({
     color: 0x181818, // dark leather grip tape
     roughness: 0.8,
     metalness: 0.0,
   });
   const handleMesh = new THREE.Mesh(handleGeom, handleMaterial);
-  handleMesh.position.set(0, -4.6, 0);
+  handleMesh.position.set(0, -5.4375, 0); // Position below the shaft
   racketGroup.add(handleMesh);
 
-  // Grip tape diagonal wrap lines
+  // Grip tape wrap lines
   const wrapMaterial = new THREE.MeshStandardMaterial({
     color: 0x111111,
     roughness: 0.9,
   });
   for (let i = 0; i < 4; i++) {
-    const ringGeom = new THREE.TorusGeometry(0.07, 0.005, 4, 16);
+    const ringGeom = new THREE.TorusGeometry(0.08, 0.005, 4, 16);
     const ring = new THREE.Mesh(ringGeom, wrapMaterial);
-    ring.position.set(0, -4.2 - i * 0.22, 0);
+    ring.position.set(0, -5.0 - i * 0.24, 0);
     ring.rotation.x = Math.PI / 2 + 0.1;
     racketGroup.add(ring);
   }
 
   // Cap base
-  const capGeom = new THREE.CylinderGeometry(0.075, 0.075, 0.06, 8);
+  const capGeom = new THREE.CylinderGeometry(0.085, 0.085, 0.07, 8);
   const capMesh = new THREE.Mesh(capGeom, frameMaterial);
-  capMesh.position.set(0, -5.08, 0);
+  capMesh.position.set(0, -5.9675, 0);
   racketGroup.add(capMesh);
 
   return racketGroup;
 }
 
-// Create a realistic 3D shuttlecock procedurally
+// Create a realistic 3D shuttlecock procedurally - Reduced by 25%
 function createShuttleMesh(): THREE.Group {
   const shuttleGroup = new THREE.Group();
 
-  // 1. Cork Base (Hemisphere)
-  const corkGeom = new THREE.SphereGeometry(0.18, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+  // 1. Cork Base (Hemisphere) - Smaller: 0.135 radius
+  const corkGeom = new THREE.SphereGeometry(0.135, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
   const corkMaterial = new THREE.MeshStandardMaterial({
     color: 0xfbfbfb,
     roughness: 0.45,
@@ -117,7 +117,7 @@ function createShuttleMesh(): THREE.Group {
   shuttleGroup.add(corkMesh);
 
   // Green binding band at flat edge of cork
-  const bandGeom = new THREE.TorusGeometry(0.18, 0.015, 8, 32);
+  const bandGeom = new THREE.TorusGeometry(0.135, 0.012, 8, 32);
   const bandMaterial = new THREE.MeshStandardMaterial({
     color: 0x00c853, // UNN Green band
     roughness: 0.5,
@@ -126,7 +126,7 @@ function createShuttleMesh(): THREE.Group {
   bandMesh.rotation.x = Math.PI / 2;
   shuttleGroup.add(bandMesh);
 
-  // 2. Feathers Cone (16 quills + flat vanes)
+  // 2. Feathers Cone (16 quills + flat vanes) - Scaled down
   const feathersGroup = new THREE.Group();
   const featherMaterial = new THREE.MeshStandardMaterial({
     color: 0xffffff,
@@ -137,9 +137,9 @@ function createShuttleMesh(): THREE.Group {
   });
 
   const count = 16;
-  const height = 0.42;
-  const baseR = 0.17;
-  const topR = 0.35;
+  const height = 0.31;
+  const baseR = 0.13;
+  const topR = 0.26;
 
   for (let i = 0; i < count; i++) {
     const angle = (i / count) * Math.PI * 2;
@@ -149,7 +149,7 @@ function createShuttleMesh(): THREE.Group {
     const zEnd = Math.sin(angle) * topR;
 
     // Quill spine
-    const spineGeom = new THREE.CylinderGeometry(0.005, 0.005, height, 4);
+    const spineGeom = new THREE.CylinderGeometry(0.0035, 0.0035, height, 4);
     const spineMesh = new THREE.Mesh(spineGeom, featherMaterial);
     spineMesh.position.set((xStart + xEnd) / 2, height / 2, (zStart + zEnd) / 2);
     spineMesh.lookAt(new THREE.Vector3(xEnd, height, zEnd));
@@ -157,10 +157,10 @@ function createShuttleMesh(): THREE.Group {
     feathersGroup.add(spineMesh);
 
     // Vane (Flat blade plane)
-    const vaneGeom = new THREE.PlaneGeometry(0.065, 0.14);
+    const vaneGeom = new THREE.PlaneGeometry(0.048, 0.10);
     const vaneMesh = new THREE.Mesh(vaneGeom, featherMaterial);
-    vaneMesh.position.set(xEnd, height - 0.05, zEnd);
-    vaneMesh.lookAt(new THREE.Vector3(0, height - 0.05, 0)); // face center
+    vaneMesh.position.set(xEnd, height - 0.035, zEnd);
+    vaneMesh.lookAt(new THREE.Vector3(0, height - 0.035, 0)); // face center
     vaneMesh.rotateY(Math.PI);
     feathersGroup.add(vaneMesh);
   }
@@ -169,7 +169,7 @@ function createShuttleMesh(): THREE.Group {
   for (let j = 1; j <= 2; j++) {
     const r = baseR + (topR - baseR) * (j / 2.5);
     const y = height * (j / 2.5);
-    const ringGeom = new THREE.TorusGeometry(r, 0.004, 4, 32);
+    const ringGeom = new THREE.TorusGeometry(r, 0.003, 4, 32);
     const ring = new THREE.Mesh(ringGeom, featherMaterial);
     ring.position.set(0, y, 0);
     ring.rotation.x = Math.PI / 2;
