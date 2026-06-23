@@ -1,0 +1,340 @@
+@import "tailwindcss";
+
+/* ============================
+   NEO-POP RIZZ-14
+   Design System
+   ============================ */
+
+:root {
+  --cyan: #00E5FF;
+  --hot-pink: #FF007F;
+  --electric-yellow: #FFD700;
+  --black: #000000;
+  --white: #FFFFFF;
+  --gray: #888888;
+  --shadow-offset: 4px;
+  --border-width: 3px;
+  --background: var(--cyan);
+  --foreground: var(--black);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-cyan: #00E5FF;
+  --color-hot-pink: #FF007F;
+  --color-electric-yellow: #FFD700;
+  --color-comic-black: #000000;
+  --color-comic-white: #FFFFFF;
+  --color-comic-gray: #888888;
+  --font-bangers: "Bangers", cursive;
+  --font-comic: "Comic Neue", cursive;
+  --font-body: "Inter", sans-serif;
+}
+
+/* ---- Halftone Background ---- */
+body {
+  background-color: var(--cyan);
+  background-image:
+    radial-gradient(circle, rgba(0, 0, 0, 0.08) 1px, transparent 1px);
+  background-size: 12px 12px;
+  color: var(--black);
+  font-family: "Inter", sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ---- Comic Panel (Container) ---- */
+.comic-panel {
+  background: var(--white);
+  border: var(--border-width) solid var(--black);
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--black);
+  border-radius: 4px;
+  position: relative;
+}
+
+.comic-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+  background-size: 6px 6px;
+  pointer-events: none;
+  border-radius: 4px;
+}
+
+/* ---- Comic Buttons ---- */
+.comic-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 28px;
+  font-family: "Bangers", cursive;
+  font-size: 1.25rem;
+  letter-spacing: 1px;
+  border: var(--border-width) solid var(--black);
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--black);
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  position: relative;
+  text-transform: uppercase;
+}
+
+.comic-btn:active,
+.comic-btn.pressed {
+  transform: translate(var(--shadow-offset), var(--shadow-offset));
+  box-shadow: 0 0 0 var(--black);
+}
+
+.comic-btn-pink {
+  background: var(--hot-pink);
+  color: var(--white);
+}
+
+.comic-btn-pink:hover {
+  background: #e6006f;
+}
+
+.comic-btn-yellow {
+  background: var(--electric-yellow);
+  color: var(--black);
+}
+
+.comic-btn-yellow:hover {
+  background: #e6c200;
+}
+
+.comic-btn-dark {
+  background: var(--black);
+  color: var(--white);
+}
+
+.comic-btn-dark:hover {
+  background: #222;
+}
+
+.comic-btn-gray {
+  background: #555;
+  color: var(--white);
+}
+
+.comic-btn-gray:hover {
+  background: #444;
+}
+
+/* ---- Comic Inputs ---- */
+.comic-input {
+  width: 100%;
+  padding: 14px 18px;
+  font-family: "Inter", sans-serif;
+  font-size: 1rem;
+  border: var(--border-width) solid var(--black);
+  box-shadow: 3px 3px 0 var(--black);
+  background: var(--white);
+  color: var(--black);
+  outline: none;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.comic-input:focus {
+  box-shadow: 5px 5px 0 var(--hot-pink);
+  border-color: var(--hot-pink);
+}
+
+.comic-input::placeholder {
+  color: #999;
+  font-style: italic;
+}
+
+/* ---- Speech Bubble ---- */
+.speech-bubble {
+  position: relative;
+  background: var(--white);
+  border: var(--border-width) solid var(--black);
+  border-radius: 20px;
+  padding: 20px 24px;
+  font-family: "Comic Neue", cursive;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.speech-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -20px;
+  left: 40px;
+  width: 0;
+  height: 0;
+  border-left: 15px solid transparent;
+  border-right: 15px solid transparent;
+  border-top: 20px solid var(--black);
+}
+
+.speech-bubble::before {
+  content: "";
+  position: absolute;
+  bottom: -16px;
+  left: 42px;
+  width: 0;
+  height: 0;
+  border-left: 13px solid transparent;
+  border-right: 13px solid transparent;
+  border-top: 18px solid var(--white);
+  z-index: 1;
+}
+
+/* ---- Progress Bar (Comic Strip) ---- */
+.comic-progress {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.comic-progress-step {
+  flex: 1;
+  height: 12px;
+  border: 2px solid var(--black);
+  background: var(--white);
+  position: relative;
+}
+
+.comic-progress-step.active {
+  background: var(--hot-pink);
+}
+
+.comic-progress-step.completed {
+  background: var(--electric-yellow);
+}
+
+/* ---- Floating Hearts ---- */
+@keyframes float-heart {
+  0% {
+    transform: translateY(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: translateY(-100vh) rotate(360deg) scale(0.5);
+    opacity: 0;
+  }
+}
+
+.floating-heart {
+  position: fixed;
+  animation: float-heart linear forwards;
+  pointer-events: none;
+  z-index: 0;
+  font-size: 1.5rem;
+}
+
+/* ---- Pulse Animation ---- */
+@keyframes heartbeat {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  25% {
+    transform: scale(1.08);
+  }
+
+  50% {
+    transform: scale(1);
+  }
+
+  75% {
+    transform: scale(1.05);
+  }
+}
+
+.heartbeat {
+  animation: heartbeat 1.2s ease-in-out infinite;
+}
+
+/* ---- Modal Overlay ---- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  backdrop-filter: blur(4px);
+}
+
+/* ---- Starburst Effect ---- */
+.starburst {
+  position: relative;
+}
+
+.starburst::before {
+  content: "★";
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  font-size: 1.5rem;
+  color: var(--electric-yellow);
+  animation: spin 3s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---- Text Stroke (Comic) ---- */
+.text-stroke {
+  -webkit-text-stroke: 1px var(--black);
+  paint-order: stroke fill;
+}
+
+/* ---- Responsive Helpers ---- */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 20px);
+}
+
+@media (max-width: 640px) {
+  .comic-btn {
+    padding: 10px 16px;
+    font-size: 1rem;
+    gap: 4px;
+  }
+
+  .comic-input {
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    box-shadow: 2px 2px 0 var(--black);
+  }
+
+  .comic-input:focus {
+    box-shadow: 3px 3px 0 var(--hot-pink);
+  }
+
+  .comic-panel {
+    box-shadow: 3px 3px 0 var(--black);
+  }
+
+  .speech-bubble {
+    padding: 14px 16px;
+    font-size: 0.95rem;
+    border-radius: 16px;
+  }
+
+  .floating-heart {
+    font-size: 1rem;
+  }
+}
