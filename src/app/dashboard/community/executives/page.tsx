@@ -9,33 +9,37 @@ import { ShuttleModal } from '@/components/ui/ShuttleModal';
 import { ShuttleInput } from '@/components/ui/ShuttleInput';
 import { ShuttleSelect } from '@/components/ui/ShuttleSelect';
 import {
- Shield,
- Video,
- DollarSign,
- Crown,
- Sparkles,
- Plus,
- UserCheck,
- RotateCcw,
- CheckCircle2,
- Lock,
+  Shield,
+  Video,
+  DollarSign,
+  Crown,
+  Sparkles,
+  Plus,
+  UserCheck,
+  RotateCcw,
+  CheckCircle2,
+  Lock,
+  Calendar,
+  Check,
 } from 'lucide-react';
 import { audio } from '@/lib/audio';
 import { useFeedback } from '@/components/ui/FeedbackModal';
 
 const ROLE_ICONS: Record<string, any> = {
- admin: <Shield className="w-4 h-4 text-amber-400" />,
- captain: <Crown className="w-4 h-4 text-sl-green" />,
- media_personnel: <Video className="w-4 h-4 text-cyan-400" />,
- treasurer: <DollarSign className="w-4 h-4 text-emerald-400" />,
+  admin: <Shield className="w-4 h-4 text-amber-400" />,
+  captain: <Crown className="w-4 h-4 text-sl-green" />,
+  media_personnel: <Video className="w-4 h-4 text-cyan-400" />,
+  treasurer: <DollarSign className="w-4 h-4 text-emerald-400" />,
+  logistician: <Calendar className="w-4 h-4 text-blue-400" />,
 };
 
 const ROLE_LABELS: Record<string, string> = {
- admin: 'Executive Admin & Coach',
- captain: 'Team Captain',
- media_personnel: 'Official Media Personnel',
- treasurer: 'Club Treasurer',
- member: 'Student Athlete',
+  admin: 'Executive Admin & Coach',
+  captain: 'Team Captain',
+  media_personnel: 'Official Media Personnel',
+  treasurer: 'Club Treasurer',
+  logistician: 'Logistics Manager',
+  member: 'Student Athlete',
 };
 
 export default function ExecutivesBoardPage() {
@@ -264,8 +268,16 @@ export default function ExecutivesBoardPage() {
  return (
  <TiltCard key={exec.id} className="p-6 bg-sl-panel space-y-5 border-2 border-sl-green/30">
  <div className="flex items-center gap-4">
- <div className="w-14 h-14 rounded-2xl bg-sl-green/20 border-2 border-sl-green text-sl-green font-black text-2xl flex items-center justify-center shadow-md shrink-0">
- {exec.full_name?.charAt(0) || 'E'}
+ <div className="w-14 h-14 rounded-2xl bg-sl-green/20 border-2 border-sl-green text-sl-green font-black text-xl flex items-center justify-center shadow-md shrink-0 overflow-hidden">
+ {exec.avatar_url ? (
+ <img
+ src={exec.avatar_url}
+ alt={exec.full_name || 'Executive'}
+ className="w-full h-full object-cover"
+ />
+ ) : (
+ exec.full_name?.charAt(0) || 'E'
+ )}
  </div>
 
  <div className="flex-1 min-w-0 space-y-1">
@@ -281,11 +293,11 @@ export default function ExecutivesBoardPage() {
 
  {/* Description & Responsibilities */}
  <div className="p-3 bg-sl-bg rounded-xl border border-sl-border text-xs space-y-1.5 font-medium">
- <p className="text-sl-muted truncate"> {exec.department || 'Department pending'}</p>
- <p className="text-sl-muted truncate"> {exec.faculty}</p>
+ <p className="text-sl-muted truncate">{exec.department || 'Department pending'}</p>
+ <p className="text-sl-muted truncate">{exec.faculty}</p>
  {customRoleInfo?.description && (
  <p className="text-[11px] text-sl-foreground/80 italic pt-1 border-t border-sl-border/40">
- "{customRoleInfo.description}"
+ &quot;{customRoleInfo.description}&quot;
  </p>
  )}
  </div>
@@ -295,7 +307,7 @@ export default function ExecutivesBoardPage() {
  <div className="pt-2 flex justify-end">
  <button
  onClick={() => handleRevokeRole(exec.id, exec.full_name || 'Member')}
- className="text-[11px] font-bold text-rose-400 hover:text-rose-300 flex items-center gap-1 transition-colors"
+ className="text-[11px] font-bold text-rose-400 hover:text-rose-300 flex items-center gap-1 transition-colors cursor-pointer"
  >
  <RotateCcw className="w-3 h-3" />
  <span>Revoke Appointment</span>
@@ -325,20 +337,23 @@ export default function ExecutivesBoardPage() {
  )}
  </div>
  <p className="text-[11px] text-sl-muted leading-relaxed">{role.description}</p>
- <div className="space-y-1 pt-2 border-t border-sl-border/30 text-[10px] font-bold">
+ <div className="space-y-1.5 pt-2 border-t border-sl-border/30 text-[10px] font-bold">
  <div className="flex items-center gap-1.5">
- <span className={role.can_upload_media ? 'text-sl-green' : 'text-sl-muted opacity-40'}>
- {role.can_upload_media ? '' : ''} Media Uploads
+ <span className={`flex items-center gap-1.5 ${role.can_upload_media ? 'text-sl-green font-bold' : 'text-sl-muted opacity-40'}`}>
+ <Check className="w-3 h-3 shrink-0" />
+ <span>Media Uploads</span>
  </span>
  </div>
  <div className="flex items-center gap-1.5">
- <span className={role.can_audit_finances ? 'text-sl-green' : 'text-sl-muted opacity-40'}>
- {role.can_audit_finances ? '' : ''} Financial Auditing
+ <span className={`flex items-center gap-1.5 ${role.can_audit_finances ? 'text-sl-green font-bold' : 'text-sl-muted opacity-40'}`}>
+ <Check className="w-3 h-3 shrink-0" />
+ <span>Financial Auditing</span>
  </span>
  </div>
  <div className="flex items-center gap-1.5">
- <span className={role.can_manage_schedule ? 'text-sl-green' : 'text-sl-muted opacity-40'}>
- {role.can_manage_schedule ? '' : ''} Schedule Manager
+ <span className={`flex items-center gap-1.5 ${role.can_manage_schedule ? 'text-sl-green font-bold' : 'text-sl-muted opacity-40'}`}>
+ <Check className="w-3 h-3 shrink-0" />
+ <span>Schedule Manager</span>
  </span>
  </div>
  </div>
