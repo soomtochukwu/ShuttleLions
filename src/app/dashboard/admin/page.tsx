@@ -50,7 +50,9 @@ export default function AdminCommandRoom() {
   const [newEvDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
   const [newEvStartTime, setNewStartTime] = useState('16:00');
   const [newEvEndTime, setNewEndTime] = useState('18:00');
-  const [newEvLoc, setNewEvLoc] = useState('UNN Indoor Sports Hall');
+  const [newEvLoc, setNewEvLoc] = useState('UNN Badminton Court');
+  const [newEvLat, setNewEvLat] = useState('6.8688');
+  const [newEvLng, setNewEvLng] = useState('7.4074');
   const [newEvType, setNewEvType] = useState<'training' | 'competition' | 'social' | 'meeting' | 'workshop'>('training');
   const [newEvDesc, setNewEvDesc] = useState('');
 
@@ -93,15 +95,21 @@ export default function AdminCommandRoom() {
     const startDateTime = new Date(`${newEvDate}T${newEvStartTime}:00`).toISOString();
     const endDateTime = new Date(`${newEvDate}T${newEvEndTime}:00`).toISOString();
 
+    const parsedLat = parseFloat(newEvLat) || 6.8688;
+    const parsedLng = parseFloat(newEvLng) || 7.4074;
+
     const newEvRecord = {
       title: newEvTitle.trim(),
       description: newEvDesc.trim() || 'Scheduled via Admin Command Room',
       event_type: newEvType,
-      location: newEvLoc.trim() || 'UNN Indoor Sports Hall',
+      location: newEvLoc.trim() || 'UNN Badminton Court',
       start_at: startDateTime,
       end_at: endDateTime,
       is_recurring: false,
       recurrence_rule: null,
+      latitude: parsedLat,
+      longitude: parsedLng,
+      map_url: `https://www.google.com/maps/search/?api=1&query=${parsedLat},${parsedLng}`,
       created_by: user.id,
       status: 'upcoming',
       created_at: new Date().toISOString(),
@@ -365,12 +373,27 @@ export default function AdminCommandRoom() {
             </div>
 
             <ShuttleInput
-              label="Location"
+              label="Location Name"
               value={newEvLoc}
               onChange={(e) => setNewEvLoc(e.target.value)}
-              placeholder="UNN Indoor Sports Hall"
+              placeholder="UNN Badminton Court"
               required
             />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <ShuttleInput
+                label="Latitude (GPS)"
+                value={newEvLat}
+                onChange={(e) => setNewEvLat(e.target.value)}
+                placeholder="6.868800"
+              />
+              <ShuttleInput
+                label="Longitude (GPS)"
+                value={newEvLng}
+                onChange={(e) => setNewEvLng(e.target.value)}
+                placeholder="7.407400"
+              />
+            </div>
 
             <ShuttleSelect
               label="Event Type"

@@ -68,6 +68,9 @@ export type EventItem = {
   recurrence_rule: string | null;
   created_by: string | null;
   status: 'upcoming' | 'in_progress' | 'completed' | 'cancelled';
+  latitude?: number | null;
+  longitude?: number | null;
+  map_url?: string | null;
   created_at: string;
   updated_at: string;
 };

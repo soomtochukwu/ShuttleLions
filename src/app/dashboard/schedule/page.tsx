@@ -7,7 +7,6 @@ import { TiltCard } from '@/components/ui/TiltCard';
 import { ShuttleButton } from '@/components/ui/ShuttleButton';
 import { ShuttleModal } from '@/components/ui/ShuttleModal';
 import { ShuttleInput } from '@/components/ui/ShuttleInput';
-import { ShuttleSelect } from '@/components/ui/ShuttleSelect';
 import { useFeedback } from '@/components/ui/FeedbackModal';
 import {
   Calendar,
@@ -22,6 +21,11 @@ import {
   Zap,
   Shield,
   Activity,
+  Navigation,
+  Copy,
+  ExternalLink,
+  Map as MapIcon,
+  Check,
 } from 'lucide-react';
 import { audio } from '@/lib/audio';
 
@@ -30,7 +34,9 @@ const CORE_WEEKLY_ROUTINES = [
     day: 'Tuesdays',
     time: '4:00 PM – 6:00 PM',
     title: 'Varsity Training & Footwork Conditioning',
-    location: 'UNN Indoor Sports Hall (Courts 1–3)',
+    location: 'UNN Badminton Court',
+    latitude: 6.8688,
+    longitude: 7.4074,
     category: 'Training Drill',
     description: 'High-intensity tactical footwork, multi-shuttle smash-and-net drills, and singles matchplay conditioning.',
     badge: 'Weekly Drill 🏸',
@@ -40,7 +46,9 @@ const CORE_WEEKLY_ROUTINES = [
     day: 'Saturdays',
     time: '7:00 AM – 10:00 AM',
     title: 'In-House Tournament & Doubles Championship',
-    location: 'UNN Indoor Sports Hall',
+    location: 'UNN Badminton Court',
+    latitude: 6.8688,
+    longitude: 7.4074,
     category: 'In-House Tournament',
     description: 'Weekly club tournament brackets, competitive singles & doubles points league, and varsity match sparring.',
     badge: 'In-House Tournament 🏆',
@@ -50,13 +58,23 @@ const CORE_WEEKLY_ROUTINES = [
     day: 'Sundays',
     time: '4:00 PM – 6:30 PM',
     title: 'Afternoon Open Rallies & Club Matchplay',
-    location: 'UNN Main Gymnasium',
+    location: 'UNN Badminton Court',
+    latitude: 6.8688,
+    longitude: 7.4074,
     category: 'Club Matchplay',
     description: 'Casual and competitive open club matchplay, tactical doubles rotations, and umpire practice.',
     badge: 'Open Matchplay 🏆',
     color: 'amber',
   },
 ];
+
+interface MapModalData {
+  title: string;
+  location: string;
+  latitude: number;
+  longitude: number;
+  mapUrl?: string | null;
+}
 
 export default function SchedulePage() {
   const { user } = useAuth();
@@ -67,13 +85,20 @@ export default function SchedulePage() {
   const [rsvps, setRsvps] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<'all' | 'weekly' | 'impromptu' | 'competition'>('all');
 
+  // Map Location Modal State
+  const [activeMapModal, setActiveMapModal] = useState<MapModalData | null>(null);
+  const [isCopiedGps, setIsCopiedGps] = useState(false);
+
   // Impromptu Schedule Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
   const [newStartTime, setNewStartTime] = useState('16:00');
   const [newEndTime, setNewEndTime] = useState('18:00');
-  const [newLoc, setNewLoc] = useState('UNN Indoor Sports Hall');
+  const [newLoc, setNewLoc] = useState('UNN Badminton Court');
+  const [newLat, setNewLat] = useState('6.8688');
+  const [newLng, setNewLng] = useState('7.4074');
+  const [newMapUrl, setNewMapUrl] = useState('');
   const [newType, setNewType] = useState<'training' | 'competition' | 'social' | 'meeting' | 'workshop'>('training');
   const [newDesc, setNewDesc] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -102,10 +127,34 @@ export default function SchedulePage() {
 
   const handleToggleRsvp = (eventId: string) => {
     audio.play('whistle');
-    setRsvps((prev) => {
-      const next = { ...prev, [eventId]: !prev[eventId] };
-      return next;
+    setRsvps((prev) => ({ ...prev, [eventId]: !prev[eventId] }));
+  };
+
+  const handleOpenMap = (
+    title: string,
+    location: string,
+    latitude?: number | null,
+    longitude?: number | null,
+    mapUrl?: string | null
+  ) => {
+    audio.play('rally');
+    setIsCopiedGps(false);
+    setActiveMapModal({
+      title,
+      location: location || 'UNN Badminton Court',
+      latitude: latitude ?? 6.8688,
+      longitude: longitude ?? 7.4074,
+      mapUrl: mapUrl || null,
     });
+  };
+
+  const handleCopyCoordinates = () => {
+    if (!activeMapModal) return;
+    const coordString = `${activeMapModal.latitude}, ${activeMapModal.longitude}`;
+    navigator.clipboard.writeText(coordString);
+    setIsCopiedGps(true);
+    audio.play('serve');
+    setTimeout(() => setIsCopiedGps(false), 2000);
   };
 
   const handleCreateImpromptuEvent = async (e: React.FormEvent) => {
@@ -127,14 +176,20 @@ export default function SchedulePage() {
       const startDateTime = new Date(`${newDate}T${newStartTime}:00`).toISOString();
       const endDateTime = new Date(`${newDate}T${newEndTime || newStartTime}:00`).toISOString();
 
+      const parsedLat = parseFloat(newLat) || 6.8688;
+      const parsedLng = parseFloat(newLng) || 7.4074;
+
       const newEventRecord = {
         title: newTitle.trim(),
         description: newDesc.trim() || 'Custom badminton session coordinated by the executive committee.',
         event_type: newType,
-        location: newLoc.trim() || 'UNN Indoor Sports Hall',
+        location: newLoc.trim() || 'UNN Badminton Court',
         start_at: startDateTime,
         end_at: endDateTime,
         is_recurring: false,
+        latitude: parsedLat,
+        longitude: parsedLng,
+        map_url: newMapUrl.trim() || `https://www.google.com/maps/search/?api=1&query=${parsedLat},${parsedLng}`,
         created_by: user?.id || null,
         status: 'upcoming',
       };
@@ -164,7 +219,7 @@ export default function SchedulePage() {
       setNewDesc('');
       showAlert({
         title: 'Schedule Published! ⚡📅',
-        message: `"${newTitle}" has been scheduled for ${newDate} at ${newStartTime} and added to the court calendar.`,
+        message: `"${newTitle}" has been scheduled for ${newDate} at ${newStartTime} at ${newLoc} and added to the court calendar.`,
         type: 'success',
       });
     } catch (err: any) {
@@ -247,7 +302,7 @@ export default function SchedulePage() {
           <div className="flex items-center gap-2">
             <Activity className="w-4 h-4 text-sl-green" />
             <h2 className="text-sm font-black uppercase tracking-wider text-sl-foreground">
-              Official Weekly Training Sessions
+              Official Weekly Badminton Schedule
             </h2>
           </div>
           <span className="text-[11px] font-bold text-sl-green bg-sl-green/10 px-2.5 py-0.5 rounded-full border border-sl-green/20">
@@ -278,9 +333,22 @@ export default function SchedulePage() {
               </div>
 
               <div className="pt-2 border-t border-sl-border/50 flex items-center justify-between text-[11px] text-sl-muted font-bold">
-                <span className="flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5 text-sl-green" /> {routine.location}
-                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleOpenMap(
+                      routine.title,
+                      routine.location,
+                      routine.latitude,
+                      routine.longitude
+                    )
+                  }
+                  className="flex items-center gap-1.5 text-sl-foreground hover:text-sl-green transition-colors cursor-pointer group"
+                  title="Click to view court GPS coordinates & directions"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-sl-green group-hover:scale-110 transition-transform" />
+                  <span className="underline decoration-dotted group-hover:text-sl-green">{routine.location}</span>
+                </button>
                 <span className="text-sl-green">{routine.badge}</span>
               </div>
             </TiltCard>
@@ -408,9 +476,27 @@ export default function SchedulePage() {
                           {' – '}
                           {endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
-                        <span className="flex items-center gap-1.5 text-sl-muted">
-                          <MapPin className="w-3.5 h-3.5 text-sl-green" /> {ev.location}
-                        </span>
+
+                        {/* Interactive Clickable Location Tag */}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleOpenMap(
+                              ev.title,
+                              ev.location,
+                              ev.latitude,
+                              ev.longitude,
+                              ev.map_url
+                            )
+                          }
+                          className="flex items-center gap-1.5 text-sl-muted hover:text-sl-green transition-colors cursor-pointer group"
+                          title="Click to view court GPS coordinates & directions"
+                        >
+                          <MapPin className="w-3.5 h-3.5 text-sl-green group-hover:scale-110 transition-transform" />
+                          <span className="underline decoration-dotted group-hover:text-sl-green">
+                            {ev.location || 'UNN Badminton Court'}
+                          </span>
+                        </button>
                       </div>
                     </div>
 
@@ -441,7 +527,91 @@ export default function SchedulePage() {
         </div>
       </div>
 
-      {/* Impromptu Schedule Creation Modal */}
+      {/* 3. Interactive Location & GPS Map Modal */}
+      {activeMapModal && (
+        <ShuttleModal
+          isOpen={Boolean(activeMapModal)}
+          onClose={() => setActiveMapModal(null)}
+          title="Court Venue Location & GPS"
+        >
+          <div className="space-y-5">
+            <div className="space-y-1">
+              <span className="text-[10px] font-black uppercase text-sl-green tracking-wider">
+                Event / Match Session
+              </span>
+              <h3 className="text-base font-black text-sl-foreground">{activeMapModal.title}</h3>
+            </div>
+
+            {/* Venue Location Pill */}
+            <div className="p-4 rounded-xl bg-sl-bg border border-sl-border space-y-3">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-sl-green shrink-0" />
+                <div>
+                  <p className="text-xs font-black text-sl-foreground uppercase">{activeMapModal.location}</p>
+                  <p className="text-[11px] text-sl-muted font-medium">University of Nigeria, Nsukka (UNN)</p>
+                </div>
+              </div>
+
+              {/* GPS Coordinates Badge & Copy Action */}
+              <div className="flex items-center justify-between p-2.5 rounded-lg bg-sl-panel border border-sl-border text-xs">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-mono font-bold text-sl-muted uppercase">GPS Coordinates</span>
+                  <p className="font-mono font-black text-sl-green">
+                    {activeMapModal.latitude.toFixed(6)}° N, {activeMapModal.longitude.toFixed(6)}° E
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleCopyCoordinates}
+                  className="px-3 py-1.5 rounded-lg bg-sl-bg hover:bg-sl-green/10 text-sl-foreground border border-sl-border hover:border-sl-green font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95"
+                >
+                  {isCopiedGps ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-sl-green" />
+                      <span className="text-sl-green">Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 text-sl-muted" />
+                      <span>Copy GPS</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Navigation Actions */}
+            <div className="space-y-2">
+              <a
+                href={
+                  activeMapModal.mapUrl ||
+                  `https://www.google.com/maps/dir/?api=1&destination=${activeMapModal.latitude},${activeMapModal.longitude}`
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 px-4 rounded-xl bg-sl-green text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg hover:bg-sl-accent transition-all active:scale-95"
+              >
+                <Navigation className="w-4 h-4 fill-white" />
+                <span>Get Directions in Google Maps 🗺️</span>
+                <ExternalLink className="w-3.5 h-3.5 ml-1" />
+              </a>
+
+              <a
+                href={`https://www.openstreetmap.org/?mlat=${activeMapModal.latitude}&mlon=${activeMapModal.longitude}#map=17/${activeMapModal.latitude}/${activeMapModal.longitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-2.5 px-4 rounded-xl bg-sl-panel hover:bg-sl-bg text-sl-foreground border border-sl-border font-bold text-xs flex items-center justify-center gap-2 transition-colors"
+              >
+                <MapIcon className="w-4 h-4 text-sl-green" />
+                <span>View on OpenStreetMap 🌍</span>
+              </a>
+            </div>
+          </div>
+        </ShuttleModal>
+      )}
+
+      {/* 4. Impromptu Schedule Creation Modal */}
       {canManageSchedule && (
         <ShuttleModal
           isOpen={isModalOpen}
@@ -500,12 +670,28 @@ export default function SchedulePage() {
             </div>
 
             <ShuttleInput
-              label="Location"
+              label="Venue Location Name"
               value={newLoc}
               onChange={(e) => setNewLoc(e.target.value)}
-              placeholder="UNN Indoor Sports Hall (Courts 1–3)"
+              placeholder="UNN Badminton Court"
               required
             />
+
+            {/* GPS Coordinates Inputs */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <ShuttleInput
+                label="Latitude (GPS)"
+                value={newLat}
+                onChange={(e) => setNewLat(e.target.value)}
+                placeholder="6.868800"
+              />
+              <ShuttleInput
+                label="Longitude (GPS)"
+                value={newLng}
+                onChange={(e) => setNewLng(e.target.value)}
+                placeholder="7.407400"
+              />
+            </div>
 
             <div className="space-y-1">
               <label className="text-xs font-black uppercase tracking-wider text-sl-foreground">
