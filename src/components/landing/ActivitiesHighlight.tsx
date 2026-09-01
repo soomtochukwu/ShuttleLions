@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TiltCard } from '@/components/ui/TiltCard';
+import { KineticSplitReveal } from '@/components/ui/KineticText';
 import { ChevronLeft, ChevronRight, Calendar, MapPin } from 'lucide-react';
 import { audio } from '@/lib/audio';
 
@@ -51,7 +52,7 @@ export function ActivitiesHighlight() {
   return (
     <section id="schedule-preview" className="relative w-full py-20 px-4 sm:px-8 select-none z-10">
       <div className="max-w-6xl mx-auto space-y-12">
-        {/* Header */}
+        {/* Header with Kinetic Text */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="text-center md:text-left space-y-2">
             <span className="text-xs font-black uppercase tracking-widest text-sl-green">
@@ -61,7 +62,7 @@ export function ActivitiesHighlight() {
               className="text-3xl sm:text-5xl font-black uppercase text-sl-foreground"
               style={{ fontFamily: 'var(--font-title)' }}
             >
-              PREVIOUS <span className="text-sl-green">ACTIVITIES</span> HIGHLIGHT
+              <KineticSplitReveal text="PREVIOUS ACTIVITIES HIGHLIGHT" />
             </h2>
             <p className="text-xs sm:text-sm text-sl-muted font-medium">
               Take a look at varsity training sessions, tactical drills, and tournament matches.

@@ -15,6 +15,7 @@ interface AuthContextValue {
   user: Profile | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  loginWithGoogle: () => Promise<{ error: string | null }>;
   loginWithEmail: (email: string) => Promise<{ error: string | null }>;
   verifyOtp: (email: string, token: string) => Promise<{ error: string | null }>;
   loginWithLinkedIn: () => Promise<{ error: string | null }>;
@@ -27,6 +28,7 @@ const AuthContext = createContext<AuthContextValue>({
   user: null,
   isLoading: true,
   isAuthenticated: false,
+  loginWithGoogle: async () => ({ error: null }),
   loginWithEmail: async () => ({ error: null }),
   verifyOtp: async () => ({ error: null }),
   loginWithLinkedIn: async () => ({ error: null }),
@@ -116,6 +118,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const loginWithGoogle = useCallback(async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/api/auth/callback`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'select_account',
+        },
+      },
+    });
+    return { error: error?.message ?? null };
+  }, []);
+
   const loginWithEmail = useCallback(async (email: string) => {
     const { error } = await supabase.auth.signInWithOtp({ email });
     return { error: error?.message ?? null };
@@ -134,7 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'linkedin_oidc',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/api/auth/callback`,
       },
     });
     return { error: error?.message ?? null };
@@ -188,6 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         isLoading,
         isAuthenticated: !!user,
+        loginWithGoogle,
         loginWithEmail,
         verifyOtp,
         loginWithLinkedIn,

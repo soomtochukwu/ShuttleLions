@@ -12,16 +12,14 @@ interface AuthModalProps {
   onClose: () => void;
 }
 
-type AuthTab = 'email' | 'linkedin';
-
 export function AuthModal({ isOpen, onClose }: AuthModalProps) {
-  const { loginWithEmail, verifyOtp, loginWithLinkedIn, loginAsAdminGuest } = useAuth();
-  const [activeTab, setActiveTab] = useState<AuthTab>('email');
+  const { loginWithGoogle, loginWithEmail, verifyOtp, loginAsAdminGuest } = useAuth();
   const [email, setEmail] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otpDigits, setOtpDigits] = useState<string[]>(Array(6).fill(''));
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
 
   const otpInputsRef = useRef<(HTMLInputElement | null)[]>([]);
@@ -36,21 +34,28 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     }
   }, [resendTimer]);
 
-  const handleTabChange = (tab: AuthTab) => {
-    audio.play('rally');
-    setActiveTab(tab);
+  const handleGoogleLogin = async () => {
     setError(null);
+    setIsGoogleLoading(true);
+    audio.play('serve');
+    const { error: googleError } = await loginWithGoogle();
+    setIsGoogleLoading(false);
+
+    if (googleError) {
+      audio.play('courtSqueak');
+      setError(googleError);
+    }
   };
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    // Email regex validation
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@unn\.edu\.ng$/;
+    // Universal email regex validation (accepts any email provider)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim().toLowerCase())) {
       audio.play('courtSqueak');
-      setError('Please enter a valid UNN student email (@unn.edu.ng)');
+      setError('Please enter a valid email address.');
       return;
     }
 
@@ -128,16 +133,6 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     }
   };
 
-  const handleLinkedInLogin = async () => {
-    setError(null);
-    audio.play('serve');
-    const { error: linkedinError } = await loginWithLinkedIn();
-    if (linkedinError) {
-      audio.play('courtSqueak');
-      setError(linkedinError);
-    }
-  };
-
   const handleResendOtp = async () => {
     if (resendTimer > 0) return;
     setError(null);
@@ -161,67 +156,83 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   };
 
   return (
-    <ShuttleModal isOpen={isOpen} onClose={onClose} title="ShuttleLions Gate">
-      {/* Tabs */}
-      <div className="flex border-b border-sl-border mb-6">
-        <button
-          onClick={() => handleTabChange('email')}
-          className={`flex-1 py-2 font-bold text-xs uppercase transition-colors ${
-            activeTab === 'email'
-              ? 'border-b-2 border-sl-green text-sl-green'
-              : 'text-sl-muted hover:text-sl-foreground'
-          }`}
-        >
-          UNN Student Email
-        </button>
-        <button
-          onClick={() => handleTabChange('linkedin')}
-          className={`flex-1 py-2 font-bold text-xs uppercase transition-colors ${
-            activeTab === 'linkedin'
-              ? 'border-b-2 border-sl-green text-sl-green'
-              : 'text-sl-muted hover:text-sl-foreground'
-          }`}
-        >
-          LinkedIn
-        </button>
-      </div>
-
+    <ShuttleModal isOpen={isOpen} onClose={onClose} title="ShuttleLions Gate 🦁">
       {error && (
-        <div className="mb-4 p-3 bg-sl-error/15 border border-sl-error text-sl-error text-xs font-bold rounded-lg text-center">
+        <div className="mb-4 p-3 bg-sl-error/15 border border-sl-error text-sl-error text-xs font-bold rounded-xl text-center">
           ⚠️ {error}
         </div>
       )}
 
-      {activeTab === 'email' ? (
-        !otpSent ? (
+      <div className="space-y-6">
+        {/* Option 1: One-Click Google Sign-In */}
+        {!otpSent && (
+          <div className="space-y-4">
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              disabled={isGoogleLoading || isLoading}
+              className="w-full py-3.5 px-4 rounded-xl bg-white hover:bg-neutral-100 text-neutral-900 border border-neutral-300 font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
+            >
+              {/* Official Google Multi-Color SVG Icon */}
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                />
+              </svg>
+              <span>{isGoogleLoading ? 'Connecting to Google...' : 'Continue with Google'}</span>
+            </button>
+
+            {/* Divider */}
+            <div className="relative flex py-1 items-center">
+              <div className="flex-grow border-t border-sl-border/60"></div>
+              <span className="flex-shrink mx-3 text-[10px] uppercase tracking-wider font-mono font-bold text-sl-muted">
+                or sign in with email OTP
+              </span>
+              <div className="flex-grow border-t border-sl-border/60"></div>
+            </div>
+          </div>
+        )}
+
+        {/* Option 2: Email OTP Form */}
+        {!otpSent ? (
           <form onSubmit={handleSendOtp} className="space-y-4">
-            <p className="text-xs text-sl-muted font-semibold leading-relaxed">
-              Enter your University of Nigeria, Nsukka student email ending in <strong className="text-sl-green font-bold">@unn.edu.ng</strong> to receive an OTP code.
-            </p>
             <ShuttleInput
-              label="UNN Student Email"
+              label="Email Address"
               type="email"
-              placeholder="first.last.12345@unn.edu.ng"
+              placeholder="e.g. athlete@gmail.com, student@unn.edu.ng"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              disabled={isLoading}
+              disabled={isLoading || isGoogleLoading}
             />
             <ShuttleButton
               type="submit"
               variant="green"
               fullWidth
-              disabled={isLoading}
-              className="mt-2"
+              disabled={isLoading || isGoogleLoading}
+              className="py-3 text-xs font-black shadow-md"
             >
-              {isLoading ? 'Sending code...' : 'Send Verification OTP'}
+              {isLoading ? 'Sending Access Code...' : 'Send One-Time Code ⚡'}
             </ShuttleButton>
           </form>
         ) : (
           <form onSubmit={handleVerifyOtp} className="space-y-6">
             <div className="text-center">
-              <p className="text-xs font-bold text-sl-muted mb-2">
-                We sent a 6-digit verification code to
+              <p className="text-xs font-bold text-sl-muted mb-1">
+                We sent a 6-digit access code to
               </p>
               <p className="text-sm font-extrabold text-sl-green truncate">{email}</p>
             </div>
@@ -238,7 +249,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   inputMode="numeric"
                   pattern="[0-9]*"
                   maxLength={1}
-                  className="w-10 h-12 text-center text-xl font-bold border border-sl-border bg-sl-glass-bg rounded focus:border-sl-green focus:ring-2 focus:ring-sl-green-glow/20 outline-none transition-all"
+                  className="w-10 h-12 text-center text-xl font-bold border-2 border-sl-border bg-sl-bg text-sl-foreground rounded-xl focus:border-sl-green focus:ring-2 focus:ring-sl-green-glow/20 outline-none transition-all"
                   value={digit}
                   onChange={(e) => handleOtpChange(i, e.target.value)}
                   onKeyDown={(e) => handleOtpKeyDown(i, e)}
@@ -254,8 +265,9 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 variant="green"
                 fullWidth
                 disabled={isLoading}
+                className="py-3 text-xs font-black"
               >
-                {isLoading ? 'Verifying...' : 'Verify OTP & Enter'}
+                {isLoading ? 'Verifying...' : 'Verify OTP & Enter 🦁'}
               </ShuttleButton>
 
               <div className="text-center mt-2">
@@ -276,36 +288,18 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               </div>
             </div>
           </form>
-        )
-      ) : (
-        <div className="space-y-6 py-4 text-center">
-          <p className="text-xs text-sl-muted font-semibold leading-relaxed">
-            Fast onboard via LinkedIn. Your email will be checked for eligibility.
-          </p>
-          <ShuttleButton
-            variant="dark"
-            onClick={handleLinkedInLogin}
-            fullWidth
-            className="flex items-center justify-center gap-2"
-          >
-            {/* LinkedIn Logo */}
-            <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-              <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
-            </svg>
-            Continue with LinkedIn
-          </ShuttleButton>
-        </div>
-      )}
+        )}
 
-      {/* Admin Instant Bypass Button */}
-      <div className="border-t border-sl-border/10 mt-6 pt-4 text-center">
-        <button
-          type="button"
-          onClick={handleAdminBypass}
-          className="text-xs font-bold text-sl-warning hover:text-sl-warning/80 hover:underline uppercase tracking-wide flex items-center justify-center gap-1.5 mx-auto"
-        >
-          🛡️ Login as Admin (Bypass Gate)
-        </button>
+        {/* Admin Instant Bypass Button */}
+        <div className="border-t border-sl-border/40 pt-4 text-center">
+          <button
+            type="button"
+            onClick={handleAdminBypass}
+            className="text-xs font-bold text-sl-warning hover:text-sl-warning/80 hover:underline uppercase tracking-wide flex items-center justify-center gap-1.5 mx-auto"
+          >
+            🛡️ Login as Coach (Admin Guest Mode)
+          </button>
+        </div>
       </div>
     </ShuttleModal>
   );
