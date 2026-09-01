@@ -2,145 +2,145 @@ import { type Variants } from 'framer-motion';
 
 // Springy entrance for cards/panels
 export const springIn: Variants = {
-  hidden: { scale: 0.8, opacity: 0, y: 30 },
-  visible: {
-    scale: 1,
-    opacity: 1,
-    y: 0,
-    transition: {
-      type: 'spring',
-      stiffness: 260,
-      damping: 20,
-      duration: 0.6,
-    },
-  },
+ hidden: { scale: 0.8, opacity: 0, y: 30 },
+ visible: {
+ scale: 1,
+ opacity: 1,
+ y: 0,
+ transition: {
+ type: 'spring',
+ stiffness: 260,
+ damping: 20,
+ duration: 0.6,
+ },
+ },
 };
 
 // Pop in from zero
 export const popIn: Variants = {
-  hidden: { scale: 0, opacity: 0 },
-  visible: {
-    scale: 1,
-    opacity: 1,
-    transition: {
-      type: 'spring',
-      stiffness: 400,
-      damping: 15,
-    },
-  },
+ hidden: { scale: 0, opacity: 0 },
+ visible: {
+ scale: 1,
+ opacity: 1,
+ transition: {
+ type: 'spring',
+ stiffness: 400,
+ damping: 15,
+ },
+ },
 };
 
 // Slide in from bottom
 export const slideUp: Variants = {
-  hidden: { y: 60, opacity: 0 },
-  visible: {
-    y: 0,
-    opacity: 1,
-    transition: {
-      type: 'spring',
-      stiffness: 300,
-      damping: 24,
-    },
-  },
+ hidden: { y: 60, opacity: 0 },
+ visible: {
+ y: 0,
+ opacity: 1,
+ transition: {
+ type: 'spring',
+ stiffness: 300,
+ damping: 24,
+ },
+ },
 };
 
 // Stagger children animation
 export const staggerContainer: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.12,
-      delayChildren: 0.1,
-    },
-  },
+ hidden: { opacity: 0 },
+ visible: {
+ opacity: 1,
+ transition: {
+ staggerChildren: 0.12,
+ delayChildren: 0.1,
+ },
+ },
 };
 
 // Heartbeat pulse
 export const heartbeat = {
-  animate: {
-    scale: [1, 1.08, 1, 1.05, 1],
-    transition: {
-      duration: 1.2,
-      repeat: Infinity,
-      ease: 'easeInOut' as const,
-    },
-  },
+ animate: {
+ scale: [1, 1.08, 1, 1.05, 1],
+ transition: {
+ duration: 1.2,
+ repeat: Infinity,
+ ease: 'easeInOut' as const,
+ },
+ },
 };
 
 // Shake animation for wrong actions
 export const shake: Variants = {
-  shake: {
-    x: [-10, 10, -8, 8, -5, 5, 0],
-    transition: { duration: 0.5 },
-  },
+ shake: {
+ x: [-10, 10, -8, 8, -5, 5, 0],
+ transition: { duration: 0.5 },
+ },
 };
 
 // Button press mechanic
 export const comicPress = {
-  whileTap: {
-    scale: 0.97,
-    x: 4,
-    y: 4,
-    boxShadow: '0 0 0 #000',
-    transition: { duration: 0.1 },
-  },
-  whileHover: {
-    scale: 1.02,
-    transition: { duration: 0.2 },
-  },
+ whileTap: {
+ scale: 0.97,
+ x: 4,
+ y: 4,
+ boxShadow: '0 0 0 #000',
+ transition: { duration: 0.1 },
+ },
+ whileHover: {
+ scale: 1.02,
+ transition: { duration: 0.2 },
+ },
 };
 
 // Slide in from the left
 export const slideInLeft: Variants = {
-  hidden: { x: -80, opacity: 0 },
-  visible: {
-    x: 0,
-    opacity: 1,
-    transition: {
-      type: 'spring',
-      stiffness: 280,
-      damping: 22,
-    },
-  },
+ hidden: { x: -80, opacity: 0 },
+ visible: {
+ x: 0,
+ opacity: 1,
+ transition: {
+ type: 'spring',
+ stiffness: 280,
+ damping: 22,
+ },
+ },
 };
 
 // Slide in from the right
 export const slideInRight: Variants = {
-  hidden: { x: 80, opacity: 0 },
-  visible: {
-    x: 0,
-    opacity: 1,
-    transition: {
-      type: 'spring',
-      stiffness: 280,
-      damping: 22,
-    },
-  },
+ hidden: { x: 80, opacity: 0 },
+ visible: {
+ x: 0,
+ opacity: 1,
+ transition: {
+ type: 'spring',
+ stiffness: 280,
+ damping: 22,
+ },
+ },
 };
 
 // Simple fade in
 export const fadeIn: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      duration: 0.4,
-      ease: 'easeOut',
-    },
-  },
+ hidden: { opacity: 0 },
+ visible: {
+ opacity: 1,
+ transition: {
+ duration: 0.4,
+ ease: 'easeOut',
+ },
+ },
 };
 
 // Scale in from center
 export const scaleIn: Variants = {
-  hidden: { scale: 0.5, opacity: 0 },
-  visible: {
-    scale: 1,
-    opacity: 1,
-    transition: {
-      type: 'spring',
-      stiffness: 350,
-      damping: 20,
-    },
-  },
+ hidden: { scale: 0.5, opacity: 0 },
+ visible: {
+ scale: 1,
+ opacity: 1,
+ transition: {
+ type: 'spring',
+ stiffness: 350,
+ damping: 20,
+ },
+ },
 };
