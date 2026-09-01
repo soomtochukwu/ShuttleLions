@@ -7,6 +7,7 @@ import { TiltCard } from '@/components/ui/TiltCard';
 import { ShuttleButton } from '@/components/ui/ShuttleButton';
 import { ShuttleModal } from '@/components/ui/ShuttleModal';
 import { ShuttleInput } from '@/components/ui/ShuttleInput';
+import { parseMediaSource } from '@/lib/media-utils';
 import {
   Video,
   Heart,
@@ -21,6 +22,9 @@ import {
   Film,
   X,
   Maximize2,
+  Trash2,
+  AlertCircle,
+  ExternalLink,
 } from 'lucide-react';
 import { audio } from '@/lib/audio';
 
@@ -46,6 +50,7 @@ export default function MediaGalleryPage() {
 
   // Active Lightbox Image
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -114,6 +119,37 @@ export default function MediaGalleryPage() {
     }
   };
 
+  const handleDeleteMedia = async (mediaItem: MediaUpload) => {
+    const confirmed = window.confirm(`Are you sure you want to delete "${mediaItem.title}"? This cannot be undone.`);
+    if (!confirmed) return;
+
+    setDeletingId(mediaItem.id);
+    audio.play('netDrop');
+
+    try {
+      // 1. If stored in Supabase Storage bucket, remove file
+      if (mediaItem.media_url.includes('/media-gallery/')) {
+        const parts = mediaItem.media_url.split('/media-gallery/');
+        if (parts[1]) {
+          const storagePath = decodeURIComponent(parts[1]);
+          await supabase.storage.from('media-gallery').remove([storagePath]);
+        }
+      }
+
+      // 2. Delete database record
+      await supabase.from('media_uploads').delete().eq('id', mediaItem.id);
+
+      // 3. Update local state
+      setMediaList((prev) => prev.filter((m) => m.id !== mediaItem.id));
+      audio.play('whistle');
+    } catch (err: any) {
+      console.error('Delete error:', err);
+      alert('Failed to delete media clip.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const handleUploadMedia = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canUploadMedia) {
@@ -137,6 +173,7 @@ export default function MediaGalleryPage() {
     try {
       let finalMediaUrl = newUrl.trim();
       let mediaType: 'video' | 'image' | 'vlog' = detectedType;
+      let finalThumbnailUrl: string | null = null;
 
       if (uploadMode === 'file' && selectedFile) {
         setUploadProgressText('Uploading file to ShuttleLions media cloud...');
@@ -164,10 +201,17 @@ export default function MediaGalleryPage() {
           .getPublicUrl(filePath);
 
         finalMediaUrl = publicData.publicUrl;
+        finalThumbnailUrl = finalMediaUrl;
       } else {
-        // Infer type from URL
-        const isImageUrl = /\.(jpg|jpeg|png|webp|gif)$/i.test(finalMediaUrl);
-        mediaType = isImageUrl ? 'image' : 'video';
+        // Smart parse media source from URL
+        const parsed = parseMediaSource(finalMediaUrl);
+        if (parsed.kind === 'image') {
+          mediaType = 'image';
+          finalThumbnailUrl = finalMediaUrl;
+        } else {
+          mediaType = 'video';
+          finalThumbnailUrl = parsed.thumbnailUrl || null;
+        }
       }
 
       setUploadProgressText('Publishing to court feed...');
@@ -178,7 +222,7 @@ export default function MediaGalleryPage() {
         description: newDesc.trim(),
         media_type: mediaType,
         media_url: finalMediaUrl,
-        thumbnail_url: finalMediaUrl,
+        thumbnail_url: finalThumbnailUrl,
         category: newCategory,
         file_size_bytes: selectedFile?.size || null,
         mime_type: selectedFile?.type || null,
@@ -327,16 +371,30 @@ export default function MediaGalleryPage() {
       {/* Media Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {filteredMedia.map((m) => {
-          const isVideo =
-            m.media_type === 'video' ||
-            m.media_type === 'vlog' ||
-            /\.(mp4|webm|mov|m4v)$/i.test(m.media_url);
+          const parsed = parseMediaSource(m.media_url, m.thumbnail_url);
+          const isOwnerOrAdmin = canUploadMedia || m.uploader_id === user?.id;
 
           return (
             <TiltCard key={m.id} className="p-5 bg-sl-panel space-y-4 overflow-hidden border border-sl-border">
-              {/* Media Player or Photo */}
-              <div className="relative aspect-video rounded-2xl overflow-hidden bg-black/80 border border-sl-border">
-                {isVideo ? (
+              {/* Media Player Container */}
+              <div className="relative aspect-video rounded-2xl overflow-hidden bg-black/90 border border-sl-border">
+                {parsed.kind === 'youtube' && parsed.embedUrl ? (
+                  <iframe
+                    src={parsed.embedUrl}
+                    title={m.title}
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : parsed.kind === 'vimeo' && parsed.embedUrl ? (
+                  <iframe
+                    src={parsed.embedUrl}
+                    title={m.title}
+                    className="w-full h-full"
+                    allow="autoplay; fullscreen; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : parsed.kind === 'direct_video' ? (
                   <video
                     src={m.media_url}
                     controls
@@ -344,7 +402,7 @@ export default function MediaGalleryPage() {
                     poster={m.thumbnail_url && m.thumbnail_url !== m.media_url ? m.thumbnail_url : undefined}
                     className="w-full h-full object-contain"
                   />
-                ) : (
+                ) : parsed.kind === 'image' ? (
                   <div
                     onClick={() => setLightboxImage(m.media_url)}
                     className="relative w-full h-full cursor-pointer group"
@@ -360,10 +418,28 @@ export default function MediaGalleryPage() {
                       </div>
                     </div>
                   </div>
+                ) : (
+                  <div className="relative w-full h-full flex items-center justify-center bg-black/70">
+                    <img
+                      src={m.thumbnail_url || m.media_url}
+                      alt={m.title}
+                      className="w-full h-full object-cover filter brightness-75"
+                    />
+                    <a
+                      href={m.media_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/20 transition-colors"
+                    >
+                      <div className="p-3 rounded-2xl bg-sl-green text-white font-black text-xs flex items-center gap-2 shadow-xl">
+                        <Play className="w-4 h-4 fill-white" /> Watch Stream <ExternalLink className="w-3.5 h-3.5" />
+                      </div>
+                    </a>
+                  </div>
                 )}
 
                 {/* Category Tag */}
-                <span className="absolute top-3 left-3 bg-black/70 backdrop-blur text-sl-green-glow border border-white/20 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full pointer-events-none">
+                <span className="absolute top-3 left-3 bg-black/75 backdrop-blur text-sl-green-glow border border-white/20 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full pointer-events-none z-10">
                   {m.category || 'Match Media'}
                 </span>
               </div>
@@ -382,13 +458,31 @@ export default function MediaGalleryPage() {
                     <Eye className="w-3.5 h-3.5 text-sl-green" /> {m.views_count || 1} views
                   </span>
 
-                  <button
-                    onClick={() => handleLike(m.id)}
-                    className="flex items-center gap-1.5 text-rose-500 hover:scale-110 active:scale-95 transition-all bg-rose-500/10 px-2.5 py-1 rounded-lg border border-rose-500/20"
-                  >
-                    <Heart className="w-3.5 h-3.5 fill-rose-500" />
-                    <span>{m.likes_count || 0}</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {/* Delete Clip Button (Media Personnel / Admin / Uploader) */}
+                    {isOwnerOrAdmin && (
+                      <button
+                        onClick={() => handleDeleteMedia(m)}
+                        disabled={deletingId === m.id}
+                        className="flex items-center gap-1 text-slate-400 hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-500/10 transition-colors"
+                        title="Delete media clip"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        <span className="text-[11px] font-bold">
+                          {deletingId === m.id ? 'Deleting...' : 'Delete'}
+                        </span>
+                      </button>
+                    )}
+
+                    {/* Like Counter */}
+                    <button
+                      onClick={() => handleLike(m.id)}
+                      className="flex items-center gap-1.5 text-rose-500 hover:scale-110 active:scale-95 transition-all bg-rose-500/10 px-2.5 py-1 rounded-lg border border-rose-500/20"
+                    >
+                      <Heart className="w-3.5 h-3.5 fill-rose-500" />
+                      <span>{m.likes_count || 0}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </TiltCard>
@@ -450,7 +544,7 @@ export default function MediaGalleryPage() {
                   uploadMode === 'url' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
                 }`}
               >
-                <LinkIcon className="w-3.5 h-3.5" /> Web Link / Embed
+                <LinkIcon className="w-3.5 h-3.5" /> Web Link / YouTube
               </button>
             </div>
 
@@ -507,20 +601,78 @@ export default function MediaGalleryPage() {
                 )}
               </div>
             ) : (
-              <ShuttleInput
-                label="Direct Video or Image URL"
-                value={newUrl}
-                onChange={(e) => setNewUrl(e.target.value)}
-                placeholder="https://..."
-                required
-              />
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <ShuttleInput
+                    label="Direct Video, YouTube, Vimeo or Image URL"
+                    value={newUrl}
+                    onChange={(e) => setNewUrl(e.target.value)}
+                    placeholder="https://www.youtube.com/watch?v=... or https://..."
+                    required
+                  />
+                  <p className="text-[10px] text-sl-muted">
+                    Supports YouTube, Vimeo, direct MP4/WebM cloud links, and high-resolution photo URLs.
+                  </p>
+                </div>
+
+                {/* Live Media URL Preview Box */}
+                {newUrl.trim() && (() => {
+                  const parsedPreview = parseMediaSource(newUrl.trim());
+                  return (
+                    <div className="space-y-1.5 p-3 rounded-xl bg-sl-bg border border-sl-border">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black uppercase text-sl-green tracking-wider flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5" /> Live Preview ({parsedPreview.kind.replace('_', ' ').toUpperCase()})
+                        </span>
+                        <span className="text-[10px] text-sl-muted font-mono">Format Detected</span>
+                      </div>
+
+                      <div className="relative aspect-video rounded-xl overflow-hidden bg-black/90 border border-sl-border flex items-center justify-center">
+                        {parsedPreview.kind === 'youtube' && parsedPreview.embedUrl ? (
+                          <iframe
+                            src={parsedPreview.embedUrl}
+                            title="YouTube Preview"
+                            className="w-full h-full"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          />
+                        ) : parsedPreview.kind === 'vimeo' && parsedPreview.embedUrl ? (
+                          <iframe
+                            src={parsedPreview.embedUrl}
+                            title="Vimeo Preview"
+                            className="w-full h-full"
+                            allow="autoplay; fullscreen; picture-in-picture"
+                          />
+                        ) : parsedPreview.kind === 'direct_video' ? (
+                          <video
+                            src={newUrl.trim()}
+                            controls
+                            className="w-full h-full object-contain"
+                          />
+                        ) : parsedPreview.kind === 'image' ? (
+                          <img
+                            src={newUrl.trim()}
+                            alt="Preview"
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <div className="text-center p-4 space-y-1 text-xs text-sl-muted">
+                            <Film className="w-8 h-8 mx-auto text-sl-green opacity-80 animate-pulse" />
+                            <p className="font-bold text-sl-foreground">Direct Web Stream Link</p>
+                            <p className="text-[10px] text-sl-muted truncate max-w-xs">{newUrl.trim()}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
             )}
 
             <ShuttleInput
               label="Media Title"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              placeholder="e.g. UNN vs Nsukka Varsity Finals Rally"
+              placeholder="e.g. UNN Semi-Final Rally Highlights"
               required
             />
 
