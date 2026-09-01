@@ -9,6 +9,7 @@ import { ShuttleButton } from '@/components/ui/ShuttleButton';
 import { ShuttleInput } from '@/components/ui/ShuttleInput';
 import { ShuttleSelect } from '@/components/ui/ShuttleSelect';
 import { formatKobo } from '@/lib/constants';
+import { createIsoWAT } from '@/lib/date-utils';
 import {
   Shield,
   Users,
@@ -20,6 +21,9 @@ import {
   AlertCircle,
   Sparkles,
   Sliders,
+  Navigation,
+  Loader2,
+  MapPin,
 } from 'lucide-react';
 import { audio } from '@/lib/audio';
 import { useFeedback } from '@/components/ui/FeedbackModal';
@@ -38,12 +42,12 @@ export default function AdminCommandRoom() {
   const [events, setEvents] = useState<EventItem[]>([]);
 
   // Parallax Asset Studio live states
-  const [courtUrl, setCourtUrl] = useState(PARALLAX_ASSETS_CONFIG.courtEntrance.src);
-  const [courtDepth, setCourtDepth] = useState<number>(PARALLAX_ASSETS_CONFIG.courtEntrance.depthMultiplier);
-  const [serverUrl, setServerUrl] = useState(PARALLAX_ASSETS_CONFIG.playerServer.src);
-  const [serverDepth, setServerDepth] = useState<number>(PARALLAX_ASSETS_CONFIG.playerServer.depthMultiplier);
-  const [receiverUrl, setReceiverUrl] = useState(PARALLAX_ASSETS_CONFIG.playerReceiver.src);
-  const [receiverDepth, setReceiverDepth] = useState<number>(PARALLAX_ASSETS_CONFIG.playerReceiver.depthMultiplier);
+  const [courtUrl, setCourtUrl] = useState(PARALLAX_ASSETS_CONFIG.courtEntrance?.src || '');
+  const [courtDepth, setCourtDepth] = useState<number>(PARALLAX_ASSETS_CONFIG.courtEntrance?.depthMultiplier || -0.25);
+  const [serverUrl, setServerUrl] = useState(PARALLAX_ASSETS_CONFIG.playerServer?.src || '');
+  const [serverDepth, setServerDepth] = useState<number>(PARALLAX_ASSETS_CONFIG.playerServer?.depthMultiplier || 0.15);
+  const [receiverUrl, setReceiverUrl] = useState(PARALLAX_ASSETS_CONFIG.playerReceiver?.src || '');
+  const [receiverDepth, setReceiverDepth] = useState<number>(PARALLAX_ASSETS_CONFIG.playerReceiver?.depthMultiplier || 0.18);
 
   // New Event Form State
   const [newEvTitle, setNewEvTitle] = useState('');
@@ -55,6 +59,8 @@ export default function AdminCommandRoom() {
   const [newEvLng, setNewEvLng] = useState('');
   const [newEvType, setNewEvType] = useState<'training' | 'competition' | 'social' | 'meeting' | 'workshop'>('training');
   const [newEvDesc, setNewEvDesc] = useState('');
+  const [isDetectingAdminGps, setIsDetectingAdminGps] = useState(false);
+  const [adminGpsSource, setAdminGpsSource] = useState<'device' | 'database' | null>(null);
 
   useEffect(() => {
     async function loadAdminData() {
@@ -93,13 +99,60 @@ export default function AdminCommandRoom() {
     });
   };
 
+  const handleUseCurrentLocationAdmin = () => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      showAlert({
+        title: 'Geolocation Unsupported',
+        message: 'Your browser or device does not support GPS geolocation.',
+        type: 'warning',
+      });
+      return;
+    }
+
+    setIsDetectingAdminGps(true);
+    audio.play('rally');
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setNewEvLat(latitude.toFixed(6));
+        setNewEvLng(longitude.toFixed(6));
+        setAdminGpsSource('device');
+        setIsDetectingAdminGps(false);
+        audio.play('smash');
+        showAlert({
+          title: 'Current GPS Acquired! 📍',
+          message: `Live coordinates captured: ${latitude.toFixed(6)}° N, ${longitude.toFixed(6)}° E`,
+          type: 'success',
+        });
+      },
+      (err) => {
+        setIsDetectingAdminGps(false);
+        let errorMsg = 'Could not retrieve your physical location.';
+        if (err.code === 1) {
+          errorMsg = 'Location permission was denied. Please allow location access in your browser.';
+        } else if (err.code === 2) {
+          errorMsg = 'Position unavailable. Please check your device GPS sensor.';
+        } else if (err.code === 3) {
+          errorMsg = 'GPS detection request timed out. Please try again.';
+        }
+        showAlert({
+          title: 'GPS Detection Failed',
+          message: errorMsg,
+          type: 'error',
+        });
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
+
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newEvTitle.trim() || !user?.id) return;
     audio.play('whistle');
 
-    const startDateTime = new Date(`${newEvDate}T${newEvStartTime}:00`).toISOString();
-    const endDateTime = new Date(`${newEvDate}T${newEvEndTime}:00`).toISOString();
+    const startDateTime = createIsoWAT(newEvDate, newEvStartTime);
+    const endDateTime = createIsoWAT(newEvDate, newEvEndTime);
 
     const parsedLat = newEvLat.trim() ? parseFloat(newEvLat.trim()) : null;
     const parsedLng = newEvLng.trim() ? parseFloat(newEvLng.trim()) : null;
@@ -392,19 +445,112 @@ export default function AdminCommandRoom() {
               required
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <ShuttleInput
-                label="Latitude (GPS)"
-                value={newEvLat}
-                onChange={(e) => setNewEvLat(e.target.value)}
-                placeholder="6.868800"
-              />
-              <ShuttleInput
-                label="Longitude (GPS)"
-                value={newEvLng}
-                onChange={(e) => setNewEvLng(e.target.value)}
-                placeholder="7.407400"
-              />
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-black uppercase tracking-wider text-sl-foreground flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-sl-green" />
+                  <span>Venue GPS Coordinates</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={handleUseCurrentLocationAdmin}
+                  disabled={isDetectingAdminGps}
+                  className="px-2.5 py-1 rounded-lg bg-sl-green/15 hover:bg-sl-green text-sl-green hover:text-white border border-sl-green/30 text-[11px] font-bold flex items-center gap-1.5 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                >
+                  {isDetectingAdminGps ? (
+                    <>
+                      <Loader2 className="w-3 h-3 animate-spin text-sl-green" />
+                      <span>Detecting GPS...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Navigation className="w-3 h-3" />
+                      <span>Use My Current GPS Position 📍</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <ShuttleInput
+                  label="Latitude (GPS)"
+                  value={newEvLat}
+                  onChange={(e) => {
+                    setNewEvLat(e.target.value);
+                    setAdminGpsSource(null);
+                  }}
+                  placeholder="6.868800"
+                />
+                <ShuttleInput
+                  label="Longitude (GPS)"
+                  value={newEvLng}
+                  onChange={(e) => {
+                    setNewEvLng(e.target.value);
+                    setAdminGpsSource(null);
+                  }}
+                  placeholder="7.407400"
+                />
+              </div>
+
+              {adminGpsSource === 'device' ? (
+                <div className="flex items-center justify-between text-[11px] p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+                  <span className="font-medium flex items-center gap-1.5">
+                    <Navigation className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                    Detected from device live GPS ({newEvLat}, {newEvLng})
+                  </span>
+                  {(() => {
+                    const defaultCourt = events.find((e) => e.latitude != null && e.longitude != null);
+                    if (defaultCourt?.latitude != null) {
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewEvLat(String(defaultCourt.latitude));
+                            setNewEvLng(String(defaultCourt.longitude));
+                            setAdminGpsSource('database');
+                            audio.play('serve');
+                          }}
+                          className="text-[10px] font-bold text-sl-foreground hover:text-sl-green underline underline-offset-2 shrink-0 ml-2 cursor-pointer"
+                        >
+                          Reset to DB Default
+                        </button>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+              ) : (() => {
+                const defaultCourt = events.find((e) => e.latitude != null && e.longitude != null);
+                if (defaultCourt?.latitude != null && defaultCourt?.longitude != null) {
+                  return (
+                    <div className="flex items-center justify-between text-[11px] p-2 rounded-lg bg-sl-green/10 border border-sl-green/20">
+                      <span className="text-sl-green font-medium flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-sl-green shrink-0" />
+                        Auto-prefilled from database ({defaultCourt.latitude.toFixed(4)}, {defaultCourt.longitude.toFixed(4)})
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewEvLoc(defaultCourt.location || 'UNN Badminton Court');
+                          setNewEvLat(String(defaultCourt.latitude));
+                          setNewEvLng(String(defaultCourt.longitude));
+                          setAdminGpsSource('database');
+                          audio.play('serve');
+                        }}
+                        className="text-[10px] font-bold text-sl-foreground hover:text-sl-green underline underline-offset-2 shrink-0 ml-2 cursor-pointer"
+                      >
+                        Reset to DB GPS
+                      </button>
+                    </div>
+                  );
+                }
+                return (
+                  <p className="text-[11px] text-sl-muted flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    Default GPS not configured in DB. Click &quot;Use My Current GPS Position&quot; to capture live coordinates.
+                  </p>
+                );
+              })()}
             </div>
 
             <ShuttleSelect
