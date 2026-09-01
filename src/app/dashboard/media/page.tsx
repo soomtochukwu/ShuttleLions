@@ -26,8 +26,21 @@ import {
   Trash2,
   AlertCircle,
   ExternalLink,
+  Layers,
+  CheckCircle2,
+  Loader2,
 } from 'lucide-react';
 import { audio } from '@/lib/audio';
+
+interface StagedMediaItem {
+  id: string;
+  file: File;
+  previewUrl: string;
+  title: string;
+  description: string;
+  type: 'video' | 'image';
+  size: number;
+}
 
 export default function MediaGalleryPage() {
   const { user } = useAuth();
@@ -41,15 +54,19 @@ export default function MediaGalleryPage() {
 
   // Upload Form State
   const [uploadMode, setUploadMode] = useState<'file' | 'url'>('file');
-  const [newTitle, setNewTitle] = useState('');
-  const [newDesc, setNewDesc] = useState('');
+  const [stagedFiles, setStagedFiles] = useState<StagedMediaItem[]>([]);
   const [newCategory, setNewCategory] = useState<'training' | 'competition' | 'highlights' | 'social'>('training');
+
+  // Single URL Upload State
   const [newUrl, setNewUrl] = useState('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
-  const [detectedType, setDetectedType] = useState<'video' | 'image'>('video');
+  const [urlTitle, setUrlTitle] = useState('');
+  const [urlDesc, setUrlDesc] = useState('');
+
+  // Progress Tracking State
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgressText, setUploadProgressText] = useState<string | null>(null);
+  const [uploadPercent, setUploadPercent] = useState<number>(0);
+  const [currentUploadIndex, setCurrentUploadIndex] = useState<number>(0);
+  const [currentUploadingName, setCurrentUploadingName] = useState<string>('');
 
   // Active Lightbox Image
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
@@ -91,35 +108,68 @@ export default function MediaGalleryPage() {
     Boolean(userCustomRole?.can_upload_media);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    const isVideo = file.type.startsWith('video/');
-    const isImage = file.type.startsWith('image/');
+    const newStaged: StagedMediaItem[] = [];
 
-    if (!isVideo && !isImage) {
-      showAlert({
-        title: 'Unsupported File',
-        message: 'Please select a valid video (.mp4, .webm, .mov) or image (.png, .jpg, .webp) file.',
-        type: 'warning',
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const isVideo = file.type.startsWith('video/');
+      const isImage = file.type.startsWith('image/');
+
+      if (!isVideo && !isImage) {
+        showAlert({
+          title: 'Unsupported File',
+          message: `"${file.name}" is not a supported video (.mp4, .webm, .mov) or image (.png, .jpg, .webp).`,
+          type: 'warning',
+        });
+        continue;
+      }
+
+      if (file.size > 100 * 1024 * 1024) {
+        showAlert({
+          title: 'File Too Large',
+          message: `"${file.name}" exceeds the 100MB upload limit and was skipped.`,
+          type: 'warning',
+        });
+        continue;
+      }
+
+      // Auto-generate clean title from filename
+      const cleanTitle = file.name
+        .replace(/\.[^/.]+$/, '')
+        .replace(/[-_]+/g, ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+
+      const previewUrl = URL.createObjectURL(file);
+
+      newStaged.push({
+        id: `staged-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 6)}`,
+        file,
+        previewUrl,
+        title: cleanTitle,
+        description: '',
+        type: isVideo ? 'video' : 'image',
+        size: file.size,
       });
-      return;
     }
 
-    if (file.size > 100 * 1024 * 1024) {
-      showAlert({
-        title: 'File Too Large',
-        message: 'The selected media file exceeds the 100MB cloud upload limit.',
-        type: 'warning',
-      });
-      return;
+    if (newStaged.length > 0) {
+      setStagedFiles((prev) => [...prev, ...newStaged]);
+      audio.play('rally');
     }
 
-    setSelectedFile(file);
-    setDetectedType(isVideo ? 'video' : 'image');
-    const localUrl = URL.createObjectURL(file);
-    setFilePreviewUrl(localUrl);
-    audio.play('rally');
+    if (e.target) e.target.value = '';
+  };
+
+  const removeStagedFile = (id: string) => {
+    setStagedFiles((prev) => prev.filter((f) => f.id !== id));
+    audio.play('netDrop');
+  };
+
+  const updateStagedFileTitle = (id: string, title: string) => {
+    setStagedFiles((prev) => prev.map((f) => (f.id === id ? { ...f, title } : f)));
   };
 
   const handleLike = async (id: string) => {
@@ -207,7 +257,6 @@ export default function MediaGalleryPage() {
         audio.play('netDrop');
 
         try {
-          // 1. If stored in Supabase Storage bucket, remove file
           if (mediaItem.media_url.includes('/media-gallery/')) {
             const parts = mediaItem.media_url.split('/media-gallery/');
             if (parts[1]) {
@@ -216,10 +265,8 @@ export default function MediaGalleryPage() {
             }
           }
 
-          // 2. Delete database record
           await supabase.from('media_uploads').delete().eq('id', mediaItem.id);
 
-          // 3. Update local state
           setMediaList((prev) => prev.filter((m) => m.id !== mediaItem.id));
           showAlert({
             title: 'Media Deleted',
@@ -240,7 +287,7 @@ export default function MediaGalleryPage() {
     });
   };
 
-  const handleUploadMedia = async (e: React.FormEvent) => {
+  const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canUploadMedia) {
       showAlert({
@@ -250,132 +297,179 @@ export default function MediaGalleryPage() {
       });
       return;
     }
-    if (!newTitle.trim() || !user?.id) return;
-    if (uploadMode === 'file' && !selectedFile) {
-      showAlert({
-        title: 'Missing File',
-        message: 'Please select a media file to upload.',
-        type: 'warning',
-      });
-      return;
-    }
-    if (uploadMode === 'url' && !newUrl.trim()) {
-      showAlert({
-        title: 'Missing URL',
-        message: 'Please enter a valid video, YouTube, or image URL.',
-        type: 'warning',
-      });
-      return;
-    }
+    if (!user?.id) return;
 
-    setIsUploading(true);
-    setUploadProgressText('Preparing media upload...');
-    audio.play('serve');
-
-    try {
-      let finalMediaUrl = newUrl.trim();
-      let mediaType: 'video' | 'image' | 'vlog' = detectedType;
-      let finalThumbnailUrl: string | null = null;
-
-      if (uploadMode === 'file' && selectedFile) {
-        setUploadProgressText('Uploading file to ShuttleLions media cloud...');
-        const fileExt = selectedFile.name.split('.').pop() || (detectedType === 'video' ? 'mp4' : 'jpg');
-        const folder = detectedType === 'video' ? 'videos' : 'photos';
-        const filePath = `media/${folder}/${user.id}-${Date.now()}.${fileExt}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('media-gallery')
-          .upload(filePath, selectedFile, {
-            cacheControl: '3600',
-            upsert: false,
-          });
-
-        if (uploadError) {
-          console.error('Storage upload error:', uploadError);
-          showAlert({
-            title: 'Upload Notice',
-            message: `Storage notice: ${uploadError.message}`,
-            type: 'error',
-          });
-          setIsUploading(false);
-          setUploadProgressText(null);
-          return;
-        }
-
-        const { data: publicData } = supabase.storage
-          .from('media-gallery')
-          .getPublicUrl(filePath);
-
-        finalMediaUrl = publicData.publicUrl;
-        finalThumbnailUrl = finalMediaUrl;
-      } else {
-        // Smart parse media source from URL
-        const parsed = parseMediaSource(finalMediaUrl);
-        if (parsed.kind === 'image') {
-          mediaType = 'image';
-          finalThumbnailUrl = finalMediaUrl;
-        } else {
-          mediaType = 'video';
-          finalThumbnailUrl = parsed.thumbnailUrl || null;
-        }
+    if (uploadMode === 'url') {
+      if (!newUrl.trim() || !urlTitle.trim()) {
+        showAlert({
+          title: 'Missing URL or Title',
+          message: 'Please provide both a media title and a valid URL.',
+          type: 'warning',
+        });
+        return;
       }
 
-      setUploadProgressText('Publishing to court feed...');
+      setIsUploading(true);
+      setUploadPercent(40);
+      audio.play('serve');
 
-      const newMediaRecord = {
-        uploader_id: user.id,
-        title: newTitle.trim(),
-        description: newDesc.trim(),
-        media_type: mediaType,
-        media_url: finalMediaUrl,
-        thumbnail_url: finalThumbnailUrl,
-        category: newCategory,
-        file_size_bytes: selectedFile?.size || null,
-        mime_type: selectedFile?.type || null,
-        likes_count: 0,
-        views_count: 1,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+      try {
+        const parsed = parseMediaSource(newUrl.trim());
+        const mediaType: 'video' | 'image' | 'vlog' = parsed.kind === 'image' ? 'image' : 'video';
+        const finalThumbnailUrl = parsed.thumbnailUrl || (parsed.kind === 'image' ? newUrl.trim() : null);
 
-      const { data: insertedData, error: dbError } = await supabase
-        .from('media_uploads')
-        .insert(newMediaRecord)
-        .select()
-        .single();
+        setUploadPercent(85);
 
-      if (!dbError && insertedData) {
-        setMediaList((prev) => [insertedData as MediaUpload, ...prev]);
-      } else {
-        // Fallback local append
-        const fallbackMedia: MediaUpload = {
-          id: `media-${Date.now()}`,
-          ...newMediaRecord,
+        const newMediaRecord = {
+          uploader_id: user.id,
+          title: urlTitle.trim(),
+          description: urlDesc.trim(),
+          media_type: mediaType,
+          media_url: newUrl.trim(),
+          thumbnail_url: finalThumbnailUrl,
+          category: newCategory,
+          likes_count: 0,
+          views_count: 1,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         };
-        setMediaList((prev) => [fallbackMedia, ...prev]);
+
+        const { data: insertedData, error: dbError } = await supabase
+          .from('media_uploads')
+          .insert(newMediaRecord)
+          .select()
+          .single();
+
+        if (!dbError && insertedData) {
+          setMediaList((prev) => [insertedData as MediaUpload, ...prev]);
+        } else {
+          const fallbackMedia: MediaUpload = {
+            id: `media-${Date.now()}`,
+            ...newMediaRecord,
+          };
+          setMediaList((prev) => [fallbackMedia, ...prev]);
+        }
+
+        setUploadPercent(100);
+        setIsUploadOpen(false);
+        setNewUrl('');
+        setUrlTitle('');
+        setUrlDesc('');
+        showAlert({
+          title: 'Published to Club Feed! 🏸',
+          message: `"${urlTitle}" has been published to the ShuttleLions media feed.`,
+          type: 'success',
+        });
+      } catch (err) {
+        console.error('URL upload error:', err);
+        showAlert({
+          title: 'Upload Failed',
+          message: 'Failed to publish media link.',
+          type: 'error',
+        });
+      } finally {
+        setIsUploading(false);
+        setUploadPercent(0);
+      }
+    } else {
+      // Multi-file batch upload
+      if (stagedFiles.length === 0) {
+        showAlert({
+          title: 'No Files Selected',
+          message: 'Please select one or more video/photo files to upload.',
+          type: 'warning',
+        });
+        return;
       }
 
+      setIsUploading(true);
+      setUploadPercent(5);
+      audio.play('serve');
+
+      const totalItems = stagedFiles.length;
+      const uploadedMediaList: MediaUpload[] = [];
+
+      for (let i = 0; i < totalItems; i++) {
+        const item = stagedFiles[i];
+        setCurrentUploadIndex(i + 1);
+        setCurrentUploadingName(item.file.name);
+
+        const startPercent = Math.round((i / totalItems) * 100);
+        setUploadPercent(Math.min(95, startPercent + 10));
+
+        try {
+          const fileExt = item.file.name.split('.').pop() || (item.type === 'video' ? 'mp4' : 'jpg');
+          const folder = item.type === 'video' ? 'videos' : 'photos';
+          const filePath = `media/${folder}/${user.id}-${Date.now()}-${i}.${fileExt}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('media-gallery')
+            .upload(filePath, item.file, {
+              cacheControl: '3600',
+              upsert: false,
+            });
+
+          if (uploadError) {
+            console.error(`Error uploading ${item.file.name}:`, uploadError);
+            continue;
+          }
+
+          setUploadPercent(Math.min(95, startPercent + Math.round((0.85 / totalItems) * 100)));
+
+          const { data: publicData } = supabase.storage
+            .from('media-gallery')
+            .getPublicUrl(filePath);
+
+          const finalMediaUrl = publicData.publicUrl;
+
+          const newMediaRecord = {
+            uploader_id: user.id,
+            title: item.title.trim() || 'Court Match Footage',
+            description: item.description.trim(),
+            media_type: item.type as 'video' | 'image' | 'vlog',
+            media_url: finalMediaUrl,
+            thumbnail_url: finalMediaUrl,
+            category: newCategory,
+            file_size_bytes: item.size,
+            mime_type: item.file.type,
+            likes_count: 0,
+            views_count: 1,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+
+          const { data: insertedData, error: dbError } = await supabase
+            .from('media_uploads')
+            .insert(newMediaRecord)
+            .select()
+            .single();
+
+          if (!dbError && insertedData) {
+            uploadedMediaList.push(insertedData as MediaUpload);
+          } else {
+            const fallbackMedia: MediaUpload = {
+              id: `media-${Date.now()}-${i}`,
+              ...newMediaRecord,
+            };
+            uploadedMediaList.push(fallbackMedia);
+          }
+        } catch (err) {
+          console.error('Batch upload item error:', err);
+        }
+      }
+
+      setUploadPercent(100);
+      setMediaList((prev) => [...uploadedMediaList, ...prev]);
+      setIsUploading(false);
       setIsUploadOpen(false);
-      setNewTitle('');
-      setNewDesc('');
-      setNewUrl('');
-      setSelectedFile(null);
-      setFilePreviewUrl(null);
+      setStagedFiles([]);
+      setUploadPercent(0);
+
       showAlert({
-        title: 'Published to Club Feed! 🏸',
-        message: `"${newMediaRecord.title}" has been published to the ShuttleLions media feed.`,
+        title: 'Batch Upload Complete! ⚡🏸',
+        message: `Successfully uploaded and published ${uploadedMediaList.length} media file(s) to the court gallery.`,
         type: 'success',
       });
-    } catch (err: any) {
-      console.error('Upload failed:', err);
-      showAlert({
-        title: 'Upload Failed',
-        message: 'Failed to upload media clip. Please try again.',
-        type: 'error',
-      });
-    } finally {
-      setIsUploading(false);
-      setUploadProgressText(null);
     }
   };
 
@@ -411,7 +505,7 @@ export default function MediaGalleryPage() {
             className="py-2.5 px-5 text-xs font-black flex items-center gap-1.5 shadow-md"
           >
             <Plus className="w-4 h-4" />
-            <span>Upload Media / Vlog ⚡</span>
+            <span>Upload Media / Batch ⚡</span>
           </ShuttleButton>
         ) : (
           <div className="flex items-center gap-2 bg-sl-panel px-3 py-2 rounded-xl border border-sl-border text-xs text-sl-muted font-semibold">
@@ -639,20 +733,20 @@ export default function MediaGalleryPage() {
         </div>
       )}
 
-      {/* Upload Modal (Only accessible by Media Personnel & Admins) */}
+      {/* Batch Upload Modal (Only accessible by Media Personnel & Admins) */}
       {canUploadMedia && (
         <ShuttleModal
           isOpen={isUploadOpen}
           onClose={() => {
             if (!isUploading) {
               setIsUploadOpen(false);
-              setSelectedFile(null);
-              setFilePreviewUrl(null);
+              setStagedFiles([]);
+              setUploadPercent(0);
             }
           }}
-          title="Upload Video Vlog / Match Photos"
+          title="Upload Video Vlogs & Match Photos (Batch Supported)"
         >
-          <form onSubmit={handleUploadMedia} className="space-y-4">
+          <form onSubmit={handleUploadSubmit} className="space-y-4">
             {/* Mode Switcher: File Upload vs Link */}
             <div className="flex items-center justify-between p-1 bg-sl-bg rounded-xl border border-sl-border">
               <button
@@ -662,7 +756,7 @@ export default function MediaGalleryPage() {
                   uploadMode === 'file' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
                 }`}
               >
-                <Upload className="w-3.5 h-3.5" /> Upload File
+                <Upload className="w-3.5 h-3.5" /> Batch File Upload ({stagedFiles.length})
               </button>
               <button
                 type="button"
@@ -681,32 +775,70 @@ export default function MediaGalleryPage() {
                   type="file"
                   ref={fileInputRef}
                   onChange={handleFileSelect}
+                  multiple
                   accept="video/mp4,video/webm,video/quicktime,video/x-m4v,image/png,image/jpeg,image/jpg,image/webp"
                   className="hidden"
                 />
 
-                {filePreviewUrl ? (
-                  <div className="space-y-2">
-                    <div className="relative aspect-video rounded-xl overflow-hidden bg-black/80 border border-sl-border flex items-center justify-center">
-                      {detectedType === 'video' ? (
-                        <video src={filePreviewUrl} controls className="w-full h-full object-contain" />
-                      ) : (
-                        <img src={filePreviewUrl} alt="Preview" className="w-full h-full object-contain" />
-                      )}
+                {/* Staged File List */}
+                {stagedFiles.length > 0 ? (
+                  <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-black uppercase text-sl-green tracking-wider flex items-center gap-1.5">
+                        <Layers className="w-3.5 h-3.5" /> Staged Queue ({stagedFiles.length} files)
+                      </span>
                       <button
                         type="button"
-                        onClick={() => {
-                          setSelectedFile(null);
-                          setFilePreviewUrl(null);
-                        }}
-                        className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 text-white hover:bg-rose-500 transition-colors"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="text-xs font-bold text-sl-green hover:underline flex items-center gap-1"
                       >
-                        <X className="w-4 h-4" />
+                        <Plus className="w-3 h-3" /> Add More
                       </button>
                     </div>
-                    <p className="text-[11px] font-mono text-sl-green truncate text-center">
-                      📁 {selectedFile?.name} ({(selectedFile ? selectedFile.size / (1024 * 1024) : 0).toFixed(2)} MB)
-                    </p>
+
+                    <div className="space-y-2">
+                      {stagedFiles.map((item, idx) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center gap-3 p-2.5 rounded-xl bg-sl-bg border border-sl-border"
+                        >
+                          {/* Thumbnail Preview */}
+                          <div className="w-12 h-12 rounded-lg bg-black/80 shrink-0 overflow-hidden flex items-center justify-center border border-sl-border">
+                            {item.type === 'video' ? (
+                              <Film className="w-5 h-5 text-sl-green" />
+                            ) : (
+                              <img src={item.previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                            )}
+                          </div>
+
+                          {/* Title Input */}
+                          <div className="flex-1 min-w-0 space-y-1">
+                            <input
+                              type="text"
+                              value={item.title}
+                              onChange={(e) => updateStagedFileTitle(item.id, e.target.value)}
+                              placeholder="Clip title..."
+                              className="w-full text-xs font-bold text-sl-foreground bg-sl-panel px-2.5 py-1 rounded-lg border border-sl-border outline-none focus:border-sl-green"
+                            />
+                            <div className="flex items-center gap-2 text-[10px] text-sl-muted font-mono">
+                              <span className="uppercase font-bold text-sl-green">{item.type}</span>
+                              <span>•</span>
+                              <span>{(item.size / (1024 * 1024)).toFixed(1)} MB</span>
+                            </div>
+                          </div>
+
+                          {/* Remove button */}
+                          <button
+                            type="button"
+                            onClick={() => removeStagedFile(item.id)}
+                            disabled={isUploading}
+                            className="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ) : (
                   <div
@@ -718,10 +850,10 @@ export default function MediaGalleryPage() {
                     </div>
                     <div>
                       <p className="text-sm font-black text-sl-foreground">
-                        Click or drag video / photo here
+                        Click or drag multiple videos / photos here
                       </p>
                       <p className="text-[11px] text-sl-muted mt-0.5">
-                        Supports MP4, WEBM, MOV, PNG, JPG up to 100MB
+                        Supports batch uploads (MP4, WEBM, MOV, PNG, JPG up to 100MB each)
                       </p>
                     </div>
                   </div>
@@ -737,9 +869,19 @@ export default function MediaGalleryPage() {
                     placeholder="https://www.youtube.com/watch?v=... or https://..."
                     required
                   />
-                  <p className="text-[10px] text-sl-muted">
-                    Supports YouTube, Vimeo, direct MP4/WebM cloud links, and high-resolution photo URLs.
-                  </p>
+                  <ShuttleInput
+                    label="Media Title"
+                    value={urlTitle}
+                    onChange={(e) => setUrlTitle(e.target.value)}
+                    placeholder="e.g. UNN Semi-Final Highlights"
+                    required
+                  />
+                  <ShuttleInput
+                    label="Description (Optional)"
+                    value={urlDesc}
+                    onChange={(e) => setUrlDesc(e.target.value)}
+                    placeholder="Key rally details..."
+                  />
                 </div>
 
                 {/* Live Media URL Preview Box */}
@@ -795,14 +937,7 @@ export default function MediaGalleryPage() {
               </div>
             )}
 
-            <ShuttleInput
-              label="Media Title"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              placeholder="e.g. UNN Semi-Final Rally Highlights"
-              required
-            />
-
+            {/* Global Category Selector */}
             <div className="space-y-1">
               <label className="text-xs font-black uppercase tracking-wider text-sl-foreground">
                 Category
@@ -819,16 +954,26 @@ export default function MediaGalleryPage() {
               </select>
             </div>
 
-            <ShuttleInput
-              label="Description (Optional)"
-              value={newDesc}
-              onChange={(e) => setNewDesc(e.target.value)}
-              placeholder="Key moments, player names, smash speed..."
-            />
+            {/* Upload Status & Percentage Bar */}
+            {isUploading && (
+              <div className="space-y-2 p-3.5 rounded-xl bg-sl-bg border border-sl-green/30">
+                <div className="flex items-center justify-between text-xs font-bold">
+                  <span className="text-sl-green flex items-center gap-1.5 animate-pulse">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    {uploadMode === 'file'
+                      ? `Uploading item ${currentUploadIndex} of ${stagedFiles.length}: ${currentUploadingName}`
+                      : 'Publishing stream link...'}
+                  </span>
+                  <span className="font-mono text-sl-green text-xs font-black">{uploadPercent}%</span>
+                </div>
 
-            {uploadProgressText && (
-              <div className="p-2.5 rounded-lg bg-sl-green/10 border border-sl-green/20 text-xs font-bold text-sl-green animate-pulse text-center">
-                ⚡ {uploadProgressText}
+                {/* Animated Progress Bar */}
+                <div className="w-full h-3 bg-sl-panel rounded-full overflow-hidden border border-sl-border p-0.5">
+                  <div
+                    className="h-full bg-gradient-to-r from-sl-green to-sl-green-glow rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(0,230,118,0.5)]"
+                    style={{ width: `${uploadPercent}%` }}
+                  />
+                </div>
               </div>
             )}
 
@@ -838,8 +983,8 @@ export default function MediaGalleryPage() {
                 variant="white"
                 onClick={() => {
                   setIsUploadOpen(false);
-                  setSelectedFile(null);
-                  setFilePreviewUrl(null);
+                  setStagedFiles([]);
+                  setUploadPercent(0);
                 }}
                 disabled={isUploading}
                 className="flex-1"
@@ -849,10 +994,14 @@ export default function MediaGalleryPage() {
               <ShuttleButton
                 type="submit"
                 variant="green"
-                disabled={isUploading}
+                disabled={isUploading || (uploadMode === 'file' && stagedFiles.length === 0)}
                 className="flex-1 font-black"
               >
-                {isUploading ? 'Uploading...' : 'Publish Media 📹'}
+                {isUploading
+                  ? `Uploading (${uploadPercent}%)...`
+                  : uploadMode === 'file'
+                  ? `Publish ${stagedFiles.length > 0 ? `(${stagedFiles.length} Files)` : ''} ⚡`
+                  : 'Publish Media 📹'}
               </ShuttleButton>
             </div>
           </form>
