@@ -29,6 +29,9 @@ import {
   Layers,
   CheckCircle2,
   Loader2,
+  CheckSquare,
+  Square,
+  ListChecks,
 } from 'lucide-react';
 import { audio } from '@/lib/audio';
 
@@ -51,6 +54,11 @@ export default function MediaGalleryPage() {
   const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
   const [filter, setFilter] = useState<'all' | 'training' | 'highlights' | 'photos'>('all');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+
+  // Selection & Batch Delete State
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedMediaIds, setSelectedMediaIds] = useState<Set<string>>(new Set());
+  const [isBatchDeleting, setIsBatchDeleting] = useState(false);
 
   // Upload Form State
   const [uploadMode, setUploadMode] = useState<'file' | 'url'>('file');
@@ -106,6 +114,95 @@ export default function MediaGalleryPage() {
     user?.role === 'admin' ||
     user?.role === 'captain' ||
     Boolean(userCustomRole?.can_upload_media);
+
+  const filteredMedia = mediaList.filter((m) => {
+    if (filter === 'all') return true;
+    if (filter === 'photos') return m.media_type === 'image';
+    return m.category === filter;
+  });
+
+  // Selection Mode Helpers
+  const toggleSelectMedia = (id: string) => {
+    audio.play('rally');
+    setSelectedMediaIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const selectAllFiltered = () => {
+    audio.play('rally');
+    setSelectedMediaIds(new Set(filteredMedia.map((m) => m.id)));
+  };
+
+  const deselectAll = () => {
+    audio.play('courtSqueak');
+    setSelectedMediaIds(new Set());
+  };
+
+  const handleBatchDelete = () => {
+    const toDelete = mediaList.filter((m) => selectedMediaIds.has(m.id));
+    if (toDelete.length === 0) return;
+
+    showConfirm({
+      title: 'Batch Delete Media Clips',
+      message: `Are you sure you want to permanently delete ${toDelete.length} selected media clip${
+        toDelete.length === 1 ? '' : 's'
+      }? This will remove them from both the court feed and cloud storage.`,
+      type: 'danger',
+      confirmText: `Delete ${toDelete.length} Clip${toDelete.length === 1 ? '' : 's'} 🗑️`,
+      onConfirm: async () => {
+        setIsBatchDeleting(true);
+        audio.play('netDrop');
+
+        try {
+          // 1. Delete storage files
+          const storagePaths: string[] = [];
+          for (const item of toDelete) {
+            if (item.media_url.includes('/media-gallery/')) {
+              const parts = item.media_url.split('/media-gallery/');
+              if (parts[1]) {
+                storagePaths.push(decodeURIComponent(parts[1]));
+              }
+            }
+          }
+
+          if (storagePaths.length > 0) {
+            await supabase.storage.from('media-gallery').remove(storagePaths);
+          }
+
+          // 2. Delete database records in bulk
+          const idsToDelete = Array.from(selectedMediaIds);
+          await supabase.from('media_uploads').delete().in('id', idsToDelete);
+
+          // 3. Update local state
+          setMediaList((prev) => prev.filter((m) => !selectedMediaIds.has(m.id)));
+          setSelectedMediaIds(new Set());
+          setIsSelectionMode(false);
+
+          showAlert({
+            title: 'Batch Delete Complete 🗑️',
+            message: `Successfully removed ${toDelete.length} media item${toDelete.length === 1 ? '' : 's'} from the club gallery.`,
+            type: 'info',
+          });
+        } catch (err: any) {
+          console.error('Batch delete error:', err);
+          showAlert({
+            title: 'Batch Delete Failed',
+            message: 'An error occurred while deleting selected clips. Please try again.',
+            type: 'error',
+          });
+        } finally {
+          setIsBatchDeleting(false);
+        }
+      },
+    });
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -473,14 +570,8 @@ export default function MediaGalleryPage() {
     }
   };
 
-  const filteredMedia = mediaList.filter((m) => {
-    if (filter === 'all') return true;
-    if (filter === 'photos') return m.media_type === 'image';
-    return m.category === filter;
-  });
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-16">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
@@ -496,17 +587,39 @@ export default function MediaGalleryPage() {
         </div>
 
         {canUploadMedia ? (
-          <ShuttleButton
-            variant="green"
-            onClick={() => {
-              audio.play('rally');
-              setIsUploadOpen(true);
-            }}
-            className="py-2.5 px-5 text-xs font-black flex items-center gap-1.5 shadow-md"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Upload Media / Batch ⚡</span>
-          </ShuttleButton>
+          <div className="flex items-center gap-2.5">
+            {/* Batch Selection Toggle Button */}
+            <button
+              onClick={() => {
+                audio.play('rally');
+                setIsSelectionMode((prev) => !prev);
+                if (isSelectionMode) {
+                  setSelectedMediaIds(new Set());
+                }
+              }}
+              className={`py-2.5 px-4 rounded-xl text-xs font-black flex items-center gap-1.5 border transition-all ${
+                isSelectionMode
+                  ? 'bg-amber-400/20 text-amber-300 border-amber-400 shadow-sm'
+                  : 'bg-sl-panel text-sl-foreground border-sl-border hover:border-sl-green'
+              }`}
+            >
+              <ListChecks className="w-4 h-4" />
+              <span>{isSelectionMode ? 'Exit Selection ✕' : 'Select Multiple 📋'}</span>
+            </button>
+
+            {/* Upload Button */}
+            <ShuttleButton
+              variant="green"
+              onClick={() => {
+                audio.play('rally');
+                setIsUploadOpen(true);
+              }}
+              className="py-2.5 px-5 text-xs font-black flex items-center gap-1.5 shadow-md"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Upload Media / Batch ⚡</span>
+            </ShuttleButton>
+          </div>
         ) : (
           <div className="flex items-center gap-2 bg-sl-panel px-3 py-2 rounded-xl border border-sl-border text-xs text-sl-muted font-semibold">
             <Video className="w-4 h-4 text-cyan-400" />
@@ -527,52 +640,66 @@ export default function MediaGalleryPage() {
         </div>
       )}
 
-      {/* Filter Tabs */}
-      <div className="flex flex-wrap items-center gap-2 bg-sl-panel p-1 rounded-xl border border-sl-border w-fit">
-        <button
-          onClick={() => {
-            audio.play('rally');
-            setFilter('all');
-          }}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-            filter === 'all' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
-          }`}
-        >
-          All Media ({mediaList.length})
-        </button>
-        <button
-          onClick={() => {
-            audio.play('rally');
-            setFilter('training');
-          }}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-            filter === 'training' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
-          }`}
-        >
-          Training Drills
-        </button>
-        <button
-          onClick={() => {
-            audio.play('rally');
-            setFilter('highlights');
-          }}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-            filter === 'highlights' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
-          }`}
-        >
-          Match Highlights
-        </button>
-        <button
-          onClick={() => {
-            audio.play('rally');
-            setFilter('photos');
-          }}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-            filter === 'photos' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
-          }`}
-        >
-          Photos & Stills
-        </button>
+      {/* Filter Tabs & Selection Mode Banner */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-2 bg-sl-panel p-1 rounded-xl border border-sl-border w-fit">
+          <button
+            onClick={() => {
+              audio.play('rally');
+              setFilter('all');
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              filter === 'all' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
+            }`}
+          >
+            All Media ({mediaList.length})
+          </button>
+          <button
+            onClick={() => {
+              audio.play('rally');
+              setFilter('training');
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              filter === 'training' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
+            }`}
+          >
+            Training Drills
+          </button>
+          <button
+            onClick={() => {
+              audio.play('rally');
+              setFilter('highlights');
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              filter === 'highlights' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
+            }`}
+          >
+            Match Highlights
+          </button>
+          <button
+            onClick={() => {
+              audio.play('rally');
+              setFilter('photos');
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              filter === 'photos' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
+            }`}
+          >
+            Photos & Stills
+          </button>
+        </div>
+
+        {isSelectionMode && (
+          <div className="flex items-center gap-2 text-xs font-bold text-sl-muted">
+            <span>{selectedMediaIds.size} of {filteredMedia.length} selected</span>
+            <button
+              onClick={selectedMediaIds.size === filteredMedia.length ? deselectAll : selectAllFiltered}
+              className="text-sl-green hover:underline ml-1"
+            >
+              {selectedMediaIds.size === filteredMedia.length ? 'Deselect All' : 'Select All'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Media Grid */}
@@ -581,16 +708,48 @@ export default function MediaGalleryPage() {
           const parsed = parseMediaSource(m.media_url, m.thumbnail_url);
           const isOwnerOrAdmin = canUploadMedia || m.uploader_id === user?.id;
           const isLiked = likedMediaIds.has(m.id);
+          const isSelected = selectedMediaIds.has(m.id);
 
           return (
-            <TiltCard key={m.id} className="p-5 bg-sl-panel space-y-4 overflow-hidden border border-sl-border">
+            <TiltCard
+              key={m.id}
+              onClick={() => {
+                if (isSelectionMode) {
+                  toggleSelectMedia(m.id);
+                }
+              }}
+              className={`p-5 bg-sl-panel space-y-4 overflow-hidden border transition-all cursor-default ${
+                isSelectionMode
+                  ? isSelected
+                    ? 'border-sl-green ring-2 ring-sl-green/40 shadow-[0_0_15px_rgba(0,230,118,0.25)] cursor-pointer'
+                    : 'border-sl-border opacity-70 hover:opacity-100 cursor-pointer'
+                  : 'border-sl-border'
+              }`}
+            >
               {/* Media Player Container */}
               <div className="relative aspect-video rounded-2xl overflow-hidden bg-black/90 border border-sl-border">
+                {/* Selection Checkbox Badge */}
+                {isSelectionMode && (
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleSelectMedia(m.id);
+                    }}
+                    className="absolute top-3 right-3 z-30 cursor-pointer p-1 rounded-lg bg-black/80 backdrop-blur border border-white/20 hover:scale-110 transition-transform"
+                  >
+                    {isSelected ? (
+                      <CheckSquare className="w-5 h-5 text-sl-green fill-sl-green/20" />
+                    ) : (
+                      <Square className="w-5 h-5 text-slate-400" />
+                    )}
+                  </div>
+                )}
+
                 {parsed.kind === 'youtube' && parsed.embedUrl ? (
                   <iframe
                     src={parsed.embedUrl}
                     title={m.title}
-                    className="w-full h-full"
+                    className="w-full h-full pointer-events-auto"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
                     onLoad={() => recordView(m.id)}
@@ -599,7 +758,7 @@ export default function MediaGalleryPage() {
                   <iframe
                     src={parsed.embedUrl}
                     title={m.title}
-                    className="w-full h-full"
+                    className="w-full h-full pointer-events-auto"
                     allow="autoplay; fullscreen; picture-in-picture"
                     allowFullScreen
                     onLoad={() => recordView(m.id)}
@@ -607,7 +766,7 @@ export default function MediaGalleryPage() {
                 ) : parsed.kind === 'direct_video' ? (
                   <video
                     src={m.media_url}
-                    controls
+                    controls={!isSelectionMode}
                     preload="metadata"
                     poster={m.thumbnail_url && m.thumbnail_url !== m.media_url ? m.thumbnail_url : undefined}
                     onPlay={() => recordView(m.id)}
@@ -615,9 +774,11 @@ export default function MediaGalleryPage() {
                   />
                 ) : parsed.kind === 'image' ? (
                   <div
-                    onClick={() => {
-                      setLightboxImage(m.media_url);
-                      recordView(m.id);
+                    onClick={(e) => {
+                      if (!isSelectionMode) {
+                        setLightboxImage(m.media_url);
+                        recordView(m.id);
+                      }
                     }}
                     className="relative w-full h-full cursor-pointer group"
                   >
@@ -626,11 +787,13 @@ export default function MediaGalleryPage() {
                       alt={m.title}
                       className="w-full h-full object-cover filter brightness-[0.9] group-hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <div className="p-2 rounded-full bg-sl-green text-white shadow-lg">
-                        <Maximize2 className="w-5 h-5" />
+                    {!isSelectionMode && (
+                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <div className="p-2 rounded-full bg-sl-green text-white shadow-lg">
+                          <Maximize2 className="w-5 h-5" />
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 ) : (
                   <div className="relative w-full h-full flex items-center justify-center bg-black/70">
@@ -639,17 +802,19 @@ export default function MediaGalleryPage() {
                       alt={m.title}
                       className="w-full h-full object-cover filter brightness-75"
                     />
-                    <a
-                      href={m.media_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => recordView(m.id)}
-                      className="absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/20 transition-colors"
-                    >
-                      <div className="p-3 rounded-2xl bg-sl-green text-white font-black text-xs flex items-center gap-2 shadow-xl">
-                        <Play className="w-4 h-4 fill-white" /> Watch Stream <ExternalLink className="w-3.5 h-3.5" />
-                      </div>
-                    </a>
+                    {!isSelectionMode && (
+                      <a
+                        href={m.media_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => recordView(m.id)}
+                        className="absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/20 transition-colors"
+                      >
+                        <div className="p-3 rounded-2xl bg-sl-green text-white font-black text-xs flex items-center gap-2 shadow-xl">
+                          <Play className="w-4 h-4 fill-white" /> Watch Stream <ExternalLink className="w-3.5 h-3.5" />
+                        </div>
+                      </a>
+                    )}
                   </div>
                 )}
 
@@ -675,10 +840,13 @@ export default function MediaGalleryPage() {
                   </span>
 
                   <div className="flex items-center gap-2">
-                    {/* Delete Clip Button (Media Personnel / Admin / Uploader) */}
-                    {isOwnerOrAdmin && (
+                    {/* Delete Clip Button (Single Item) */}
+                    {isOwnerOrAdmin && !isSelectionMode && (
                       <button
-                        onClick={() => handleDeleteMedia(m)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteMedia(m);
+                        }}
                         disabled={deletingId === m.id}
                         className="flex items-center gap-1 text-slate-400 hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-500/10 transition-colors"
                         title="Delete media clip"
@@ -691,18 +859,23 @@ export default function MediaGalleryPage() {
                     )}
 
                     {/* Interactive Like / Unlike Button */}
-                    <button
-                      onClick={() => handleLike(m.id)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-bold text-xs transition-all ${
-                        isLiked
-                          ? 'bg-rose-500 text-white border-rose-600 shadow-[0_0_12px_rgba(244,63,94,0.45)] scale-105'
-                          : 'text-rose-500 hover:scale-110 active:scale-95 bg-rose-500/10 border-rose-500/25 hover:bg-rose-500/20'
-                      }`}
-                      title={isLiked ? 'Unlike' : 'Like'}
-                    >
-                      <Heart className={`w-4 h-4 transition-transform ${isLiked ? 'fill-white text-white scale-110' : 'fill-rose-500 text-rose-500'}`} />
-                      <span>{m.likes_count || 0}</span>
-                    </button>
+                    {!isSelectionMode && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleLike(m.id);
+                        }}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-bold text-xs transition-all ${
+                          isLiked
+                            ? 'bg-rose-500 text-white border-rose-600 shadow-[0_0_12px_rgba(244,63,94,0.45)] scale-105'
+                            : 'text-rose-500 hover:scale-110 active:scale-95 bg-rose-500/10 border-rose-500/25 hover:bg-rose-500/20'
+                        }`}
+                        title={isLiked ? 'Unlike' : 'Like'}
+                      >
+                        <Heart className={`w-4 h-4 transition-transform ${isLiked ? 'fill-white text-white scale-110' : 'fill-rose-500 text-rose-500'}`} />
+                        <span>{m.likes_count || 0}</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -710,6 +883,55 @@ export default function MediaGalleryPage() {
           );
         })}
       </div>
+
+      {/* Floating Batch Action Toolbar */}
+      {isSelectionMode && (
+        <div className="fixed bottom-6 inset-x-0 z-40 max-w-xl mx-auto px-4 pointer-events-auto">
+          <div className="p-3.5 bg-black/90 backdrop-blur-xl border-2 border-sl-green rounded-2xl shadow-2xl flex items-center justify-between gap-3 text-xs text-white">
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 rounded-lg bg-sl-green text-black font-black text-xs">
+                {selectedMediaIds.size}
+              </span>
+              <span className="font-bold">
+                {selectedMediaIds.size === 1 ? 'item selected' : 'items selected'}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={selectedMediaIds.size === filteredMedia.length ? deselectAll : selectAllFiltered}
+                className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-colors"
+              >
+                {selectedMediaIds.size === filteredMedia.length ? 'Deselect All' : 'Select All'}
+              </button>
+
+              <button
+                onClick={handleBatchDelete}
+                disabled={selectedMediaIds.size === 0 || isBatchDeleting}
+                className={`px-4 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all ${
+                  selectedMediaIds.size > 0
+                    ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-lg scale-105 active:scale-95'
+                    : 'bg-white/10 text-white/40 cursor-not-allowed'
+                }`}
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>{isBatchDeleting ? 'Deleting...' : `Delete (${selectedMediaIds.size})`}</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setIsSelectionMode(false);
+                  setSelectedMediaIds(new Set());
+                }}
+                className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors"
+                title="Exit selection mode"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Lightbox Modal for Full Image View */}
       {lightboxImage && (
