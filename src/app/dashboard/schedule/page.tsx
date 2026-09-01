@@ -80,6 +80,12 @@ export default function SchedulePage() {
   const [activeMapModal, setActiveMapModal] = useState<MapModalData | null>(null);
   const [isCopiedGps, setIsCopiedGps] = useState(false);
 
+  // Derive default court event from database records
+  const defaultCourtEvent =
+    events.find((e) => e.is_recurring && e.latitude != null && e.longitude != null) ||
+    events.find((e) => e.latitude != null && e.longitude != null) ||
+    events.find((e) => e.is_recurring);
+
   // Impromptu Schedule Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -93,6 +99,27 @@ export default function SchedulePage() {
   const [newType, setNewType] = useState<'training' | 'competition' | 'social' | 'meeting' | 'workshop'>('training');
   const [newDesc, setNewDesc] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Auto-sync initial default coordinates from database once events are fetched
+  useEffect(() => {
+    if (defaultCourtEvent) {
+      if (defaultCourtEvent.location) setNewLoc(defaultCourtEvent.location);
+      if (defaultCourtEvent.latitude != null) setNewLat(String(defaultCourtEvent.latitude));
+      if (defaultCourtEvent.longitude != null) setNewLng(String(defaultCourtEvent.longitude));
+      if (defaultCourtEvent.map_url) setNewMapUrl(defaultCourtEvent.map_url);
+    }
+  }, [defaultCourtEvent]);
+
+  const handleOpenCreateModal = () => {
+    audio.play('rally');
+    if (defaultCourtEvent) {
+      if (defaultCourtEvent.location) setNewLoc(defaultCourtEvent.location);
+      if (defaultCourtEvent.latitude != null) setNewLat(String(defaultCourtEvent.latitude));
+      if (defaultCourtEvent.longitude != null) setNewLng(String(defaultCourtEvent.longitude));
+      if (defaultCourtEvent.map_url) setNewMapUrl(defaultCourtEvent.map_url);
+    }
+    setIsModalOpen(true);
+  };
 
   // Permission Gate: Strictly Admin or any appointed Logistician
   const isLogistician =
@@ -295,10 +322,7 @@ export default function SchedulePage() {
         {canManageSchedule && (
           <ShuttleButton
             variant="green"
-            onClick={() => {
-              audio.play('rally');
-              setIsModalOpen(true);
-            }}
+            onClick={handleOpenCreateModal}
             className="py-2.5 px-5 text-xs font-black flex items-center gap-1.5 shadow-md"
           >
             <Plus className="w-4 h-4" />

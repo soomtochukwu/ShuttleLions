@@ -72,6 +72,12 @@ export default function AdminCommandRoom() {
 
       const { data: evData } = await supabase.from('events').select('*');
       setEvents(evData || []);
+
+      const defaultCourt = (evData || []).find((e: EventItem) => e.latitude != null && e.longitude != null);
+      if (defaultCourt) {
+        if (defaultCourt.latitude != null) setNewEvLat(String(defaultCourt.latitude));
+        if (defaultCourt.longitude != null) setNewEvLng(String(defaultCourt.longitude));
+      }
     }
     loadAdminData();
   }, []);
