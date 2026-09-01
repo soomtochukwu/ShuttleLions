@@ -43,7 +43,11 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
     if (googleError) {
       audio.play('courtSqueak');
-      setError(googleError);
+      if (googleError.toLowerCase().includes('unsupported provider') || googleError.toLowerCase().includes('not enabled')) {
+        setError('Google Auth is not enabled in your Supabase project yet. Please enable Google in Supabase Dashboard > Authentication > Providers, or use Email OTP below!');
+      } else {
+        setError(googleError);
+      }
     }
   };
 
