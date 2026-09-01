@@ -38,15 +38,30 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setError(null);
     setIsGoogleLoading(true);
     audio.play('serve');
-    const { error: googleError } = await loginWithGoogle();
-    setIsGoogleLoading(false);
-
-    if (googleError) {
-      audio.play('courtSqueak');
-      if (googleError.toLowerCase().includes('unsupported provider') || googleError.toLowerCase().includes('not enabled')) {
-        setError('Google Auth is not enabled in your Supabase project yet. Please enable Google in Supabase Dashboard > Authentication > Providers, or use Email OTP below!');
-      } else {
-        setError(googleError);
+    try {
+      const { error: googleError } = await loginWithGoogle();
+      if (googleError) {
+        setIsGoogleLoading(false);
+        audio.play('courtSqueak');
+        if (
+          googleError.toLowerCase().includes('unsupported provider') ||
+          googleError.toLowerCase().includes('not enabled')
+        ) {
+          setError(
+            'Google Auth is not enabled in your Supabase project yet. Please enable Google in Supabase Dashboard > Authentication > Providers, or use Email OTP below!'
+          );
+        } else {
+          setError(googleError);
+        }
+      }
+    } catch (err: any) {
+      const isAbort =
+        err?.message?.includes('AbortError') ||
+        err?.name === 'AbortError' ||
+        err?.message?.includes('signal is aborted');
+      if (!isAbort) {
+        setIsGoogleLoading(false);
+        setError(err?.message || 'Failed to initialize Google login');
       }
     }
   };

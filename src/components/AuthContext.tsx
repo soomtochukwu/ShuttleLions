@@ -207,17 +207,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const loginWithGoogle = useCallback(async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'select_account',
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'select_account',
+          },
         },
-      },
-    });
-    return { error: error?.message ?? null };
+      });
+
+      if (error) {
+        const isAbort =
+          error.message?.includes('AbortError') ||
+          error.name === 'AbortError' ||
+          error.message?.includes('signal is aborted');
+        if (!isAbort) {
+          console.error('Google OAuth error:', error.message);
+          return { error: error.message };
+        }
+      }
+      return { error: null };
+    } catch (err: any) {
+      const isAbort =
+        err?.message?.includes('AbortError') ||
+        err?.name === 'AbortError' ||
+        err?.message?.includes('signal is aborted');
+      if (!isAbort) {
+        console.error('Unexpected Google OAuth error:', err);
+        return { error: err?.message || 'Google login failed' };
+      }
+      return { error: null };
+    }
   }, []);
 
   const loginWithEmail = useCallback(async (email: string) => {
