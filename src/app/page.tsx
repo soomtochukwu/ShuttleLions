@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/components/AuthContext';
 import { MainNav } from '@/components/navigation/MainNav';
 import { Interactive3DBackground } from '@/components/Interactive3DBackground';
@@ -16,6 +16,19 @@ import { AuthModal } from '@/components/AuthModal';
 import { PaymentWidgetPlaceholder } from '@/components/PaymentWidgetPlaceholder';
 import { supabase } from '@/lib/supabase';
 import { audio } from '@/lib/audio';
+
+function AuthParamListener({ onOpenAuth }: { onOpenAuth: () => void }) {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const authRequired = searchParams.get('auth');
+    if (authRequired === 'required' || authRequired === 'true') {
+      onOpenAuth();
+    }
+  }, [searchParams, onOpenAuth]);
+
+  return null;
+}
 
 export default function HomePage() {
   const { user, isAuthenticated } = useAuth();
@@ -81,6 +94,11 @@ export default function HomePage() {
 
   return (
     <div className="relative w-full min-h-screen bg-sl-bg overflow-x-hidden text-sl-foreground flex flex-col justify-between">
+      {/* Auth Query Param Listener */}
+      <Suspense fallback={null}>
+        <AuthParamListener onOpenAuth={() => setIsAuthOpen(true)} />
+      </Suspense>
+
       {/* 3D WebGL Background Scene */}
       <Interactive3DBackground />
 

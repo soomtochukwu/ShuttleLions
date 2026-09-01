@@ -12,6 +12,7 @@ import {
   Video,
   BookOpen,
   Shield,
+  Crown,
   User,
   LogOut,
 } from 'lucide-react';
@@ -28,7 +29,14 @@ interface MobileDrawerProps {
 export function MobileDrawer({ isOpen, onClose, onOpenAuth }: MobileDrawerProps) {
   const { user, isAuthenticated, logout } = useAuth();
 
-  const handleLinkClick = () => {
+  const handleLinkClick = (href?: string) => (e: React.MouseEvent) => {
+    if (!isAuthenticated && href && href.startsWith('/dashboard')) {
+      e.preventDefault();
+      audio.play('smash');
+      onClose();
+      onOpenAuth();
+      return;
+    }
     audio.play('rally');
     onClose();
   };
@@ -105,7 +113,7 @@ export function MobileDrawer({ isOpen, onClose, onOpenAuth }: MobileDrawerProps)
                 </p>
                 <Link
                   href="/"
-                  onClick={handleLinkClick}
+                  onClick={handleLinkClick('/')}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-lg font-bold text-sm text-sl-foreground hover:bg-sl-green/10 hover:text-sl-green transition-colors"
                 >
                   🏸 Home & Arena
@@ -113,15 +121,23 @@ export function MobileDrawer({ isOpen, onClose, onOpenAuth }: MobileDrawerProps)
 
                 <Link
                   href="/dashboard/schedule"
-                  onClick={handleLinkClick}
+                  onClick={handleLinkClick('/dashboard/schedule')}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-lg font-bold text-sm text-sl-foreground hover:bg-sl-green/10 hover:text-sl-green transition-colors"
                 >
                   <Calendar className="w-4 h-4 text-sl-green" /> Games & Schedules
                 </Link>
 
                 <Link
+                  href="/dashboard/community/executives"
+                  onClick={handleLinkClick('/dashboard/community/executives')}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg font-bold text-sm text-sl-foreground hover:bg-sl-green/10 hover:text-sl-green transition-colors"
+                >
+                  <Crown className="w-4 h-4 text-sl-green" /> Executive Board
+                </Link>
+
+                <Link
                   href="/dashboard/community"
-                  onClick={handleLinkClick}
+                  onClick={handleLinkClick('/dashboard/community')}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-lg font-bold text-sm text-sl-foreground hover:bg-sl-green/10 hover:text-sl-green transition-colors"
                 >
                   <Users className="w-4 h-4 text-sl-green" /> Member Directory
@@ -129,7 +145,7 @@ export function MobileDrawer({ isOpen, onClose, onOpenAuth }: MobileDrawerProps)
 
                 <Link
                   href="/dashboard/community/chat"
-                  onClick={handleLinkClick}
+                  onClick={handleLinkClick('/dashboard/community/chat')}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-lg font-bold text-sm text-sl-foreground hover:bg-sl-green/10 hover:text-sl-green transition-colors"
                 >
                   <MessageSquare className="w-4 h-4 text-sl-green" /> Community Chat
@@ -137,7 +153,7 @@ export function MobileDrawer({ isOpen, onClose, onOpenAuth }: MobileDrawerProps)
 
                 <Link
                   href="/dashboard/community/votes"
-                  onClick={handleLinkClick}
+                  onClick={handleLinkClick('/dashboard/community/votes')}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-lg font-bold text-sm text-sl-foreground hover:bg-sl-green/10 hover:text-sl-green transition-colors"
                 >
                   <Vote className="w-4 h-4 text-sl-green" /> Community Votes
@@ -145,7 +161,7 @@ export function MobileDrawer({ isOpen, onClose, onOpenAuth }: MobileDrawerProps)
 
                 <Link
                   href="/dashboard/shop"
-                  onClick={handleLinkClick}
+                  onClick={handleLinkClick('/dashboard/shop')}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-lg font-bold text-sm text-sl-foreground hover:bg-sl-green/10 hover:text-sl-green transition-colors"
                 >
                   <ShoppingBag className="w-4 h-4 text-sl-green" /> Equipment Shop
@@ -153,7 +169,7 @@ export function MobileDrawer({ isOpen, onClose, onOpenAuth }: MobileDrawerProps)
 
                 <Link
                   href="/dashboard/media"
-                  onClick={handleLinkClick}
+                  onClick={handleLinkClick('/dashboard/media')}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-lg font-bold text-sm text-sl-foreground hover:bg-sl-green/10 hover:text-sl-green transition-colors"
                 >
                   <Video className="w-4 h-4 text-sl-green" /> Vlogs & Media
@@ -161,7 +177,7 @@ export function MobileDrawer({ isOpen, onClose, onOpenAuth }: MobileDrawerProps)
 
                 <Link
                   href="/dashboard/tutorials"
-                  onClick={handleLinkClick}
+                  onClick={handleLinkClick('/dashboard/tutorials')}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-lg font-bold text-sm text-sl-foreground hover:bg-sl-green/10 hover:text-sl-green transition-colors"
                 >
                   <BookOpen className="w-4 h-4 text-sl-green" /> Drill Tutorials
@@ -170,7 +186,7 @@ export function MobileDrawer({ isOpen, onClose, onOpenAuth }: MobileDrawerProps)
                 {isAuthenticated && (user?.role === 'admin' || user?.role === 'captain') && (
                   <Link
                     href="/dashboard/admin"
-                    onClick={handleLinkClick}
+                    onClick={handleLinkClick('/dashboard/admin')}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-lg font-bold text-sm text-sl-warning hover:bg-sl-warning/10 transition-colors"
                   >
                     <Shield className="w-4 h-4 text-sl-warning" /> Admin Command Room
@@ -185,7 +201,7 @@ export function MobileDrawer({ isOpen, onClose, onOpenAuth }: MobileDrawerProps)
                 <>
                   <Link
                     href="/dashboard/profile"
-                    onClick={handleLinkClick}
+                    onClick={handleLinkClick('/dashboard/profile')}
                     className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg bg-sl-panel border border-sl-border font-bold text-xs text-sl-foreground hover:border-sl-green"
                   >
                     <User className="w-4 h-4" /> Personal Profile & ID Badge

@@ -64,6 +64,6 @@ export async function GET(request: Request) {
     console.error('OAuth session exchange error:', error?.message);
   }
 
-  // Return the user to an error page or home page
-  return NextResponse.redirect(`${origin}/?error=auth-callback-failed`);
+  // If no server code is present, redirect to client-side callback to extract hash fragment (#access_token=...)
+  return NextResponse.redirect(`${origin}/auth/callback`);
 }

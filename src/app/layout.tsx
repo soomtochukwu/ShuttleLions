@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
-import { ShuttleCursor } from "@/components/ShuttleCursor";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -46,7 +45,6 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} antialiased min-h-screen flex flex-col bg-sl-bg text-sl-foreground`}>
         <Providers>
-          <ShuttleCursor />
           <main className="flex-grow flex flex-col w-full relative z-10">
             {children}
           </main>

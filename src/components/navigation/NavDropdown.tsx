@@ -17,9 +17,16 @@ export interface DropdownItem {
 interface NavDropdownProps {
   label: string;
   items: DropdownItem[];
+  isAuthenticated?: boolean;
+  onAuthRequired?: () => void;
 }
 
-export function NavDropdown({ label, items }: NavDropdownProps) {
+export function NavDropdown({
+  label,
+  items,
+  isAuthenticated = false,
+  onAuthRequired,
+}: NavDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -32,6 +39,18 @@ export function NavDropdown({ label, items }: NavDropdownProps) {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleItemClick = (e: React.MouseEvent, href: string) => {
+    if (!isAuthenticated && href.startsWith('/dashboard') && onAuthRequired) {
+      e.preventDefault();
+      audio.play('smash');
+      setIsOpen(false);
+      onAuthRequired();
+      return;
+    }
+    audio.play('rally');
+    setIsOpen(false);
+  };
 
   return (
     <div
@@ -69,10 +88,7 @@ export function NavDropdown({ label, items }: NavDropdownProps) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={() => {
-                    audio.play('rally');
-                    setIsOpen(false);
-                  }}
+                  onClick={(e) => handleItemClick(e, item.href)}
                   className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-sl-green/10 transition-colors group"
                 >
                   <div className="p-2 rounded-md bg-sl-bg border border-sl-border group-hover:border-sl-green/40 group-hover:text-sl-green text-sl-muted transition-colors">

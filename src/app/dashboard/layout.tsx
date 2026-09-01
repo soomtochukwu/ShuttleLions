@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthContext';
 import { MainNav } from '@/components/navigation/MainNav';
 import {
@@ -37,8 +37,34 @@ const DASHBOARD_NAV = [
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user, isAuthenticated, logout } = useAuth();
+  const router = useRouter();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.replace('/?auth=required');
+    }
+  }, [isLoading, isAuthenticated, router]);
+
+  // Loading state while verifying athlete session
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-sl-bg flex flex-col items-center justify-center text-sl-foreground space-y-4">
+        <div className="w-12 h-12 rounded-2xl bg-sl-green flex items-center justify-center text-2xl shadow-[0_0_20px_rgba(0,200,83,0.5)] animate-bounce">
+          🏸
+        </div>
+        <p className="text-xs font-black uppercase text-sl-green tracking-widest font-mono">
+          Verifying ShuttleLions Athlete Credentials...
+        </p>
+      </div>
+    );
+  }
+
+  // Access denied fallback (redirecting)
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-sl-bg flex flex-col justify-between text-sl-foreground">

@@ -127,15 +127,33 @@ export function MainNav({ onOpenAuth }: MainNavProps) {
 
           <Link
             href="/dashboard/schedule"
-            onClick={() => audio.play('rally')}
+            onClick={(e) => {
+              if (!isAuthenticated) {
+                e.preventDefault();
+                audio.play('smash');
+                onOpenAuth();
+                return;
+              }
+              audio.play('rally');
+            }}
             className="px-3 py-2 text-xs sm:text-sm font-bold uppercase tracking-wider text-sl-foreground hover:text-sl-green rounded-lg hover:bg-sl-green/10 transition-colors flex items-center gap-1.5"
           >
             <Calendar className="w-3.5 h-3.5 text-sl-green" />
             <span>Schedules</span>
           </Link>
 
-          <NavDropdown label="Community" items={communityDropdownItems} />
-          <NavDropdown label="Explore & Gear" items={exploreDropdownItems} />
+          <NavDropdown
+            label="Community"
+            items={communityDropdownItems}
+            isAuthenticated={isAuthenticated}
+            onAuthRequired={onOpenAuth}
+          />
+          <NavDropdown
+            label="Explore & Gear"
+            items={exploreDropdownItems}
+            isAuthenticated={isAuthenticated}
+            onAuthRequired={onOpenAuth}
+          />
 
           {isAuthenticated && (
             <Link
