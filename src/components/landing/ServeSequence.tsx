@@ -18,7 +18,7 @@ export function ServeSequence() {
 
   // Parallax transitions
   const playerX = useTransform(scrollYProgress, [0, 0.45, 0.9], [-120, 0, -40]);
-  const playerScale = useTransform(scrollYProgress, [0, 0.5, 1], config.scaleRange);
+  const playerScale = useTransform(scrollYProgress, [0, 1], config.scaleRange);
   const playerOpacity = useTransform(scrollYProgress, [0, 0.25, 0.8, 1], [0, 1, 1, 0.3]);
   const textX = useTransform(scrollYProgress, [0, 0.45, 1], [100, 0, 0]);
 

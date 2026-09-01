@@ -27,7 +27,7 @@ export function ReceiveSequence({ onOpenAuth }: ReceiveSequenceProps) {
 
   // Parallax transitions
   const playerX = useTransform(scrollYProgress, [0, 0.5, 1], [100, 0, 40]);
-  const playerScale = useTransform(scrollYProgress, [0, 0.5, 1], config.scaleRange);
+  const playerScale = useTransform(scrollYProgress, [0, 1], config.scaleRange);
   const playerOpacity = useTransform(scrollYProgress, [0, 0.25, 0.85, 1], [0, 1, 1, 0.3]);
   const textX = useTransform(scrollYProgress, [0, 0.5, 1], [-100, 0, 0]);
 
