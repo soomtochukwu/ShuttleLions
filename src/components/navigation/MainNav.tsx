@@ -186,11 +186,19 @@ export function MainNav({ onOpenAuth }: MainNavProps) {
                   onClick={() => audio.play('rally')}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sl-panel border border-sl-border hover:border-sl-green transition-all"
                 >
-                  <div className="w-6 h-6 rounded-full bg-sl-green text-white text-xs font-bold flex items-center justify-center">
-                    {user?.full_name?.charAt(0) || 'L'}
-                  </div>
-                  <span className="text-xs font-bold text-sl-foreground max-w-[100px] truncate">
-                    {user?.full_name?.split(' ')[0] || 'Profile'}
+                  {user?.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt={user.full_name}
+                      className="w-6 h-6 rounded-full object-cover border border-sl-green shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-sl-green text-white text-xs font-bold flex items-center justify-center">
+                      {user?.full_name?.charAt(0) || 'L'}
+                    </div>
+                  )}
+                  <span className="text-xs font-bold text-sl-foreground max-w-[120px] truncate">
+                    {user?.full_name || 'Athlete'}
                   </span>
                 </Link>
 

@@ -80,9 +80,17 @@ export function MobileDrawer({ isOpen, onClose, onOpenAuth }: MobileDrawerProps)
               {/* User Profile Card if logged in */}
               {isAuthenticated && user && (
                 <div className="shuttle-panel p-4 bg-sl-panel flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-full bg-sl-green text-white font-bold flex items-center justify-center text-lg border-2 border-sl-border">
-                    {user.full_name?.charAt(0) || 'L'}
-                  </div>
+                  {user.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt={user.full_name}
+                      className="w-11 h-11 rounded-full object-cover border-2 border-sl-green shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-11 h-11 rounded-full bg-sl-green text-white font-bold flex items-center justify-center text-lg border-2 border-sl-border">
+                      {user.full_name?.charAt(0) || 'L'}
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-black text-sl-foreground truncate">{user.full_name}</p>
                     <p className="text-[11px] text-sl-muted truncate">{user.department || user.email}</p>

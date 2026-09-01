@@ -101,9 +101,17 @@ export default function ProfilePage() {
 
               {/* Lion Avatar & Info */}
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-sl-green/30 border-2 border-sl-green-glow text-white font-black text-3xl flex items-center justify-center shadow-lg">
-                  {user?.full_name?.charAt(0) || 'L'}
-                </div>
+                {user?.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt={user.full_name}
+                    className="w-16 h-16 rounded-2xl object-cover border-2 border-sl-green-glow shadow-lg"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-2xl bg-sl-green/30 border-2 border-sl-green-glow text-white font-black text-3xl flex items-center justify-center shadow-lg">
+                    {user?.full_name?.charAt(0) || 'L'}
+                  </div>
+                )}
                 <div className="space-y-0.5 flex-1 min-w-0">
                   <h4 className="text-base font-black text-white truncate">
                     {user?.full_name || 'UNN Student'}

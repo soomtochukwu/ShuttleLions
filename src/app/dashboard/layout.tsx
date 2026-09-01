@@ -52,9 +52,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* User Profile Card */}
           <div className="shuttle-panel p-5 bg-sl-panel space-y-4">
             <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-full bg-sl-green text-white font-black text-xl flex items-center justify-center border-2 border-sl-border shadow-[0_0_10px_rgba(0,200,83,0.3)]">
-                {user?.full_name?.charAt(0) || 'L'}
-              </div>
+              {user?.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt={user.full_name}
+                  className="w-12 h-12 rounded-full object-cover border-2 border-sl-green shadow-[0_0_12px_rgba(0,200,83,0.35)]"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-sl-green text-white font-black text-xl flex items-center justify-center border-2 border-sl-border shadow-[0_0_10px_rgba(0,200,83,0.3)]">
+                  {user?.full_name?.charAt(0) || 'L'}
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-black text-sl-foreground truncate">
                   {user?.full_name || 'Guest Lion'}

@@ -37,7 +37,7 @@ const AuthContext = createContext<AuthContextValue>({
   refreshProfile: async () => {},
 });
 
-async function fetchProfile(authUserId: string): Promise<Profile | null> {
+async function fetchProfile(authUserId: string, authUser?: any): Promise<Profile | null> {
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
@@ -46,10 +46,55 @@ async function fetchProfile(authUserId: string): Promise<Profile | null> {
 
   if (error) {
     console.error('Failed to fetch profile:', error.message);
-    return null;
   }
 
-  return data as Profile | null;
+  let profile = data as Profile | null;
+
+  // If user signed in with Google and profile is missing or missing avatar/name
+  if (authUser && (!profile || !profile.avatar_url || !profile.full_name)) {
+    const meta = authUser.user_metadata || {};
+    const googleName = meta.full_name || meta.name || authUser.email?.split('@')[0] || 'Lion Athlete';
+    const googleAvatar = meta.avatar_url || meta.picture || null;
+
+    if (!profile) {
+      try {
+        const newProf = {
+          auth_user_id: authUserId,
+          email: authUser.email || '',
+          full_name: googleName,
+          avatar_url: googleAvatar,
+          faculty: '',
+          department: '',
+          level: '100',
+          role: 'member',
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        const { data: created } = await supabase.from('profiles').insert(newProf).select().maybeSingle();
+        profile = created as Profile;
+      } catch (insertErr) {
+        console.error('Failed to auto-create profile:', insertErr);
+      }
+    } else if (!profile.avatar_url && googleAvatar) {
+      try {
+        await supabase
+          .from('profiles')
+          .update({
+            avatar_url: googleAvatar,
+            full_name: profile.full_name || googleName,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', profile.id);
+        profile.avatar_url = googleAvatar;
+        if (!profile.full_name) profile.full_name = googleName;
+      } catch (updateErr) {
+        console.error('Failed to sync google avatar:', updateErr);
+      }
+    }
+  }
+
+  return profile;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -86,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user && isMounted) {
-          const profile = await fetchProfile(session.user.id);
+          const profile = await fetchProfile(session.user.id, session.user);
           if (isMounted) setUser(profile);
         }
       } catch (err) {
@@ -104,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (isGuestAdmin) return; // ignore standard auth changes in guest admin mode
 
         if (session?.user) {
-          const profile = await fetchProfile(session.user.id);
+          const profile = await fetchProfile(session.user.id, session.user);
           if (isMounted) setUser(profile);
         } else {
           if (isMounted) setUser(null);
