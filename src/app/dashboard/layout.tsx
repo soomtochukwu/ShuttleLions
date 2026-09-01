@@ -16,6 +16,7 @@ import {
   Video,
   BookOpen,
   Shield,
+  Crown,
   LogOut,
   ChevronRight,
 } from 'lucide-react';
@@ -24,6 +25,7 @@ import { audio } from '@/lib/audio';
 const DASHBOARD_NAV = [
   { label: 'Overview', href: '/dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
   { label: 'My Profile & ID', href: '/dashboard/profile', icon: <User className="w-4 h-4" /> },
+  { label: 'Executive Board', href: '/dashboard/community/executives', icon: <Crown className="w-4 h-4 text-sl-green" />, badge: 'Roles' },
   { label: 'Games & Schedules', href: '/dashboard/schedule', icon: <Calendar className="w-4 h-4" /> },
   { label: 'Member Directory', href: '/dashboard/community', icon: <Users className="w-4 h-4" />, badge: 'Paid' },
   { label: 'Community Chat', href: '/dashboard/community/chat', icon: <MessageSquare className="w-4 h-4" />, badge: 'Live' },

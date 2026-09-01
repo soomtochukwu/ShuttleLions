@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthContext';
 import { MainNav } from '@/components/navigation/MainNav';
 import { Interactive3DBackground } from '@/components/Interactive3DBackground';
-import { ScrollytellingCourtStage } from '@/components/landing/ScrollytellingCourtStage';
-import { KineticMarquee } from '@/components/ui/KineticText';
+import { CourtEntrance } from '@/components/landing/CourtEntrance';
+import { ServeSequence } from '@/components/landing/ServeSequence';
 import { StatsRally } from '@/components/landing/StatsRally';
 import { ActivitiesHighlight } from '@/components/landing/ActivitiesHighlight';
 import { MembershipCards } from '@/components/landing/MembershipCards';
+import { ReceiveSequence } from '@/components/landing/ReceiveSequence';
 import { Footer } from '@/components/Footer';
 import { AuthModal } from '@/components/AuthModal';
 import { PaymentWidgetPlaceholder } from '@/components/PaymentWidgetPlaceholder';
@@ -24,6 +25,16 @@ export default function HomePage() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [checkoutAmountKobo, setCheckoutAmountKobo] = useState(0);
   const [checkoutType, setCheckoutType] = useState<'registration' | 'monthly' | 'racket'>('registration');
+
+  const handleHeroCta = () => {
+    if (isAuthenticated) {
+      audio.play('serve');
+      router.push('/dashboard');
+    } else {
+      audio.play('smash');
+      setIsAuthOpen(true);
+    }
+  };
 
   const handleSelectTier = (type: 'registration' | 'monthly' | 'racket') => {
     if (!isAuthenticated) {
@@ -70,51 +81,35 @@ export default function HomePage() {
 
   return (
     <div className="relative w-full min-h-screen bg-sl-bg overflow-x-hidden text-sl-foreground flex flex-col justify-between">
-      {/* 3D WebGL Background Ambient Mesh */}
+      {/* 3D WebGL Background Scene */}
       <Interactive3DBackground />
 
       {/* Professional Sticky Navigation */}
       <MainNav onOpenAuth={() => setIsAuthOpen(true)} />
 
-      {/* Main Experience Flow */}
-      <main className="relative z-10 flex flex-col">
-        {/* Continuous Sticky 3D Court Scrollytelling Stage (Entrance -> Serve -> Flight Arc -> Receive) */}
-        <ScrollytellingCourtStage onOpenAuth={() => setIsAuthOpen(true)} />
+      {/* Scrollytelling Sections Flow */}
+      <main className="relative z-10 flex flex-col space-y-24 sm:space-y-32">
+        {/* Section 1: Court Entrance & Zoom */}
+        <CourtEntrance onCtaClick={handleHeroCta} />
 
-        {/* Kinetic Marquee Velocity Divider */}
-        <div className="py-12 bg-black/40 border-y border-sl-border/40 backdrop-blur">
-          <KineticMarquee
-            items={['SPEED', 'POWER', 'SMASH', 'AGILITY', 'UNN LIONS', 'PRECISION', 'CHAMPIONSHIP']}
-            direction="left"
-          />
-        </div>
+        {/* Section 2: The Serve (Athlete Cutout & Drill Biomechanics) */}
+        <ServeSequence />
 
-        {/* Section 2: The Rally & Key Highlights */}
-        <div className="py-16">
-          <StatsRally />
-        </div>
+        {/* Section 3: The Rally & Key Highlights */}
+        <StatsRally />
 
-        {/* Kinetic Marquee Reverse Track */}
-        <div className="py-12 bg-black/40 border-y border-sl-border/40 backdrop-blur">
-          <KineticMarquee
-            items={['COLLEGIATE EXCELLENCE', 'BADMINTON DRILLS', 'VARSITY ATHLETES', 'TACTICAL DOUBLES']}
-            direction="right"
-          />
-        </div>
+        {/* Section 4: Activities & Weekly Training Schedules */}
+        <ActivitiesHighlight />
 
-        {/* Section 3: Activities & Weekly Training Schedules */}
-        <div className="py-16">
-          <ActivitiesHighlight />
-        </div>
+        {/* Section 5: Transparent Membership Dues & Racket Pricing */}
+        <MembershipCards onSelectTier={handleSelectTier} />
 
-        {/* Section 4: Transparent Membership Dues & Racket Pricing */}
-        <div className="py-16">
-          <MembershipCards onSelectTier={handleSelectTier} />
-        </div>
+        {/* Section 6: The Receive (Athlete Cutout & Registration Dock) */}
+        <ReceiveSequence onOpenAuth={() => setIsAuthOpen(true)} />
       </main>
 
       {/* Footer */}
-      <div className="relative z-10 mt-20">
+      <div className="relative z-10 mt-32">
         <Footer />
       </div>
 

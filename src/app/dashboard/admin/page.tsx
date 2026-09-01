@@ -30,6 +30,7 @@ export default function AdminCommandRoom() {
   const [activeTab, setActiveTab] = useState<Tab>('members');
 
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [customRoles, setCustomRoles] = useState<any[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [orders, setOrders] = useState<ShopOrder[]>([]);
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -52,6 +53,9 @@ export default function AdminCommandRoom() {
       const { data: pData } = await supabase.from('profiles').select('*');
       setProfiles(pData || []);
 
+      const { data: rData } = await supabase.from('custom_roles').select('*');
+      setCustomRoles(rData || []);
+
       const { data: payData } = await supabase.from('payments').select('*');
       setPayments(payData || []);
 
@@ -64,7 +68,7 @@ export default function AdminCommandRoom() {
     loadAdminData();
   }, []);
 
-  const handleRoleChange = async (profId: string, role: 'member' | 'admin' | 'captain') => {
+  const handleRoleChange = async (profId: string, role: string) => {
     audio.play('serve');
     await supabase.from('profiles').update({ role }).eq('id', profId);
     setProfiles((prev) => prev.map((p) => (p.id === profId ? { ...p, role } : p)));
@@ -190,12 +194,24 @@ export default function AdminCommandRoom() {
                     <td className="py-3">
                       <select
                         value={p.role}
-                        onChange={(e) => handleRoleChange(p.id, e.target.value as any)}
+                        onChange={(e) => handleRoleChange(p.id, e.target.value)}
                         className="bg-sl-bg border border-sl-border text-xs rounded p-1"
                       >
-                        <option value="member">Member</option>
-                        <option value="captain">Team Captain</option>
-                        <option value="admin">Executive Admin</option>
+                        <option value="member">Member (Student Athlete)</option>
+                        <option value="captain">👑 Team Captain</option>
+                        <option value="media_personnel">📸 Media Personnel</option>
+                        <option value="treasurer">💰 Club Treasurer</option>
+                        <option value="admin">🛡️ Executive Admin</option>
+                        {customRoles
+                          .filter(
+                            (r) =>
+                              !['member', 'captain', 'media_personnel', 'treasurer', 'admin'].includes(r.id)
+                          )
+                          .map((r) => (
+                            <option key={r.id} value={r.id}>
+                              ✨ {r.title}
+                            </option>
+                          ))}
                       </select>
                     </td>
                   </tr>

@@ -1,19 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase, type MediaUpload } from '@/lib/supabase';
+import { supabase, type MediaUpload, type CustomRole } from '@/lib/supabase';
 import { useAuth } from '@/components/AuthContext';
 import { TiltCard } from '@/components/ui/TiltCard';
 import { ShuttleButton } from '@/components/ui/ShuttleButton';
 import { ShuttleModal } from '@/components/ui/ShuttleModal';
 import { ShuttleInput } from '@/components/ui/ShuttleInput';
-import { Video, Heart, Eye, Plus, Play, Sparkles, Filter } from 'lucide-react';
+import { Video, Heart, Eye, Plus, Play, Sparkles, Shield, Lock } from 'lucide-react';
 import { audio } from '@/lib/audio';
 
 export default function MediaGalleryPage() {
   const { user } = useAuth();
 
   const [mediaList, setMediaList] = useState<MediaUpload[]>([]);
+  const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
   const [filter, setFilter] = useState<'all' | 'training' | 'highlights'>('all');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -22,15 +23,26 @@ export default function MediaGalleryPage() {
   const [newCategory, setNewCategory] = useState<'training' | 'competition' | 'highlights'>('training');
 
   useEffect(() => {
-    async function loadMedia() {
-      const { data } = await supabase
+    async function loadData() {
+      const { data: mData } = await supabase
         .from('media_uploads')
         .select('*')
         .order('created_at', { ascending: false });
-      setMediaList(data || []);
+      setMediaList(mData || []);
+
+      const { data: rData } = await supabase.from('custom_roles').select('*');
+      setCustomRoles(rData || []);
     }
-    loadMedia();
+    loadData();
   }, []);
+
+  // Permission Gate: Media Personnel, Admin, Captain, or Custom Role with can_upload_media
+  const userCustomRole = customRoles.find((r) => r.id === user?.role);
+  const canUploadMedia =
+    user?.role === 'media_personnel' ||
+    user?.role === 'admin' ||
+    user?.role === 'captain' ||
+    Boolean(userCustomRole?.can_upload_media);
 
   const handleLike = (id: string) => {
     audio.play('rally');
@@ -41,6 +53,10 @@ export default function MediaGalleryPage() {
 
   const handleUploadMedia = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canUploadMedia) {
+      alert('Only appointed Media Personnel or Admins can upload media.');
+      return;
+    }
     if (!newTitle.trim() || !newUrl.trim() || !user?.id) return;
 
     audio.play('serve');
@@ -84,22 +100,41 @@ export default function MediaGalleryPage() {
             📹 Vlogs & Match Media Gallery
           </h1>
           <p className="text-xs text-sl-muted font-medium mt-1">
-            Community rally clips, match highlights, and vlog videos from UNN athletes.
+            Official match highlights, tournament vlogs, and court footage curated by the Media Personnel.
           </p>
         </div>
 
-        <ShuttleButton
-          variant="green"
-          onClick={() => {
-            audio.play('rally');
-            setIsUploadOpen(true);
-          }}
-          className="py-2.5 px-5 text-xs font-black flex items-center gap-1.5"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Upload Vlog / Clip ⚡</span>
-        </ShuttleButton>
+        {canUploadMedia ? (
+          <ShuttleButton
+            variant="green"
+            onClick={() => {
+              audio.play('rally');
+              setIsUploadOpen(true);
+            }}
+            className="py-2.5 px-5 text-xs font-black flex items-center gap-1.5 shadow-md"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Upload Vlog / Clip ⚡</span>
+          </ShuttleButton>
+        ) : (
+          <div className="flex items-center gap-2 bg-sl-panel px-3 py-2 rounded-xl border border-sl-border text-xs text-sl-muted font-semibold">
+            <Video className="w-4 h-4 text-cyan-400" />
+            <span>Curated by Media Personnel</span>
+          </div>
+        )}
       </div>
+
+      {/* Non-Media Notice if regular member */}
+      {!canUploadMedia && (
+        <div className="p-3.5 bg-sl-panel/80 rounded-2xl border border-sl-border/80 flex items-center justify-between text-xs text-sl-muted font-medium">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
+            <span>
+              Official video vlogs and training clips are published exclusively by the appointed <strong>ShuttleLions Media Personnel</strong>.
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Filter Tabs */}
       <div className="flex items-center gap-2 bg-sl-panel p-1 rounded-xl border border-sl-border w-fit">
@@ -189,51 +224,53 @@ export default function MediaGalleryPage() {
         ))}
       </div>
 
-      {/* Upload Modal */}
-      <ShuttleModal
-        isOpen={isUploadOpen}
-        onClose={() => setIsUploadOpen(false)}
-        title="Upload Vlog or Match Highlight"
-      >
-        <form onSubmit={handleUploadMedia} className="space-y-4">
-          <ShuttleInput
-            label="Title"
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            placeholder="e.g. UNN Semi-Final Rally Highlights"
-            required
-          />
+      {/* Upload Modal (Only accessible if permitted) */}
+      {canUploadMedia && (
+        <ShuttleModal
+          isOpen={isUploadOpen}
+          onClose={() => setIsUploadOpen(false)}
+          title="Upload Vlog or Match Highlight (Media Personnel)"
+        >
+          <form onSubmit={handleUploadMedia} className="space-y-4">
+            <ShuttleInput
+              label="Title"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              placeholder="e.g. UNN Semi-Final Rally Highlights"
+              required
+            />
 
-          <ShuttleInput
-            label="Media / Video / Image URL"
-            value={newUrl}
-            onChange={(e) => setNewUrl(e.target.value)}
-            placeholder="https://..."
-            required
-          />
+            <ShuttleInput
+              label="Media / Video / Image URL"
+              value={newUrl}
+              onChange={(e) => setNewUrl(e.target.value)}
+              placeholder="https://..."
+              required
+            />
 
-          <ShuttleInput
-            label="Description"
-            value={newDesc}
-            onChange={(e) => setNewDesc(e.target.value)}
-            placeholder="Short description of the match rally..."
-          />
+            <ShuttleInput
+              label="Description"
+              value={newDesc}
+              onChange={(e) => setNewDesc(e.target.value)}
+              placeholder="Short description of the match rally..."
+            />
 
-          <div className="flex gap-3 pt-2">
-            <ShuttleButton
-              type="button"
-              variant="white"
-              onClick={() => setIsUploadOpen(false)}
-              className="flex-1"
-            >
-              Cancel
-            </ShuttleButton>
-            <ShuttleButton type="submit" variant="green" className="flex-1 font-black">
-              Publish Media 📹
-            </ShuttleButton>
-          </div>
-        </form>
-      </ShuttleModal>
+            <div className="flex gap-3 pt-2">
+              <ShuttleButton
+                type="button"
+                variant="white"
+                onClick={() => setIsUploadOpen(false)}
+                className="flex-1"
+              >
+                Cancel
+              </ShuttleButton>
+              <ShuttleButton type="submit" variant="green" className="flex-1 font-black">
+                Publish Media 📹
+              </ShuttleButton>
+            </div>
+          </form>
+        </ShuttleModal>
+      )}
     </div>
   );
 }

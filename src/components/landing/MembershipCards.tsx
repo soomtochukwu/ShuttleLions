@@ -3,7 +3,6 @@
 import { motion } from 'framer-motion';
 import { TiltCard } from '@/components/ui/TiltCard';
 import { ShuttleButton } from '@/components/ui/ShuttleButton';
-import { KineticSplitReveal } from '@/components/ui/KineticText';
 import { formatKobo, REGISTRATION_FEE, MONTHLY_FEE } from '@/lib/constants';
 import { Zap, Calendar, ShoppingBag, Check } from 'lucide-react';
 
@@ -15,16 +14,16 @@ export function MembershipCards({ onSelectTier }: MembershipCardsProps) {
   return (
     <section className="relative w-full py-20 px-4 sm:px-8 select-none z-10">
       <div className="max-w-6xl mx-auto space-y-12">
-        {/* Header with Kinetic Text */}
+        {/* Header */}
         <div className="text-center space-y-3">
           <span className="text-xs font-black uppercase tracking-widest text-sl-green">
             TRANSPARENT ATHLETIC MEMBERSHIP
           </span>
           <h2
-            className="text-3xl sm:text-6xl font-black uppercase text-sl-foreground"
+            className="text-3xl sm:text-5xl font-black uppercase text-sl-foreground"
             style={{ fontFamily: 'var(--font-title)' }}
           >
-            <KineticSplitReveal text="REGISTRATION & DUES" />
+            REGISTRATION & <span className="text-sl-green">DUES</span>
           </h2>
           <p className="text-xs sm:text-sm text-sl-muted max-w-xl mx-auto font-medium">
             Affordable collegiate pricing covering indoor hall lighting, tournament entry, and gear logistics.
@@ -86,7 +85,7 @@ export function MembershipCards({ onSelectTier }: MembershipCardsProps) {
               <ShuttleButton
                 variant="green"
                 onClick={() => onSelectTier('registration')}
-                className="w-full py-3 text-xs font-black shadow-md"
+                className="w-full py-3 text-xs font-black"
               >
                 Pay Registration Fee ⚡
               </ShuttleButton>

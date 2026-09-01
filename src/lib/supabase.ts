@@ -1,6 +1,16 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-// ---- Types ----
+export type CustomRole = {
+  id: string;
+  title: string;
+  description: string;
+  badge_color: string;
+  can_upload_media: boolean;
+  can_audit_finances: boolean;
+  can_manage_schedule: boolean;
+  is_system: boolean;
+  created_at: string;
+};
 
 export type Profile = {
   id: string;
@@ -13,7 +23,7 @@ export type Profile = {
   level: string;
   reg_number: string | null;
   avatar_url: string | null;
-  role: 'member' | 'admin' | 'captain';
+  role: 'member' | 'admin' | 'captain' | 'media_personnel' | 'treasurer' | string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
