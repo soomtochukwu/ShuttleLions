@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase, type Profile, type Payment } from '@/lib/supabase';
+import { supabase, type Profile, type Payment, type CustomRole } from '@/lib/supabase';
 import { useAuth } from '@/components/AuthContext';
 import { TiltCard } from '@/components/ui/TiltCard';
 import { ShuttleInput } from '@/components/ui/ShuttleInput';
 import { ShuttleButton } from '@/components/ui/ShuttleButton';
 import { PaymentWidgetPlaceholder } from '@/components/PaymentWidgetPlaceholder';
-import { Users, Shield, Search, Sparkles, Lock, CheckCircle2 } from 'lucide-react';
+import { Users, Shield, Search, Sparkles, Lock, CheckCircle2, Crown, Video, DollarSign, Zap } from 'lucide-react';
 import { audio } from '@/lib/audio';
 import { useFeedback } from '@/components/ui/FeedbackModal';
 
@@ -16,6 +16,7 @@ export default function CommunityMembersPage() {
   const { showAlert } = useFeedback();
 
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'executives' | 'members'>('all');
@@ -24,8 +25,11 @@ export default function CommunityMembersPage() {
   useEffect(() => {
     async function loadData() {
       if (!user?.id) return;
-      const { data: profData } = await supabase.from('profiles').select('*');
+      const { data: profData } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
       setProfiles(profData || []);
+
+      const { data: rData } = await supabase.from('custom_roles').select('*');
+      setCustomRoles(rData || []);
 
       const { data: payData } = await supabase
         .from('payments')
@@ -36,26 +40,83 @@ export default function CommunityMembersPage() {
     loadData();
   }, [user]);
 
-  // Paid Access Gate Check (Registration or current monthly dues paid)
+  // Executive Role Determination (Any role appointment other than plain 'member')
+  const isExecutiveRole = (role: string | null | undefined) => {
+    if (!role) return false;
+    return role !== 'member';
+  };
+
+  // Paid Access Gate Check (Registration paid or any executive appointment)
   const hasPaidReg = payments.some((p) => p.type === 'registration' && p.status === 'success');
-  const isAdminOrCapt = user?.role === 'admin' || user?.role === 'captain';
-  const isPaidMember = hasPaidReg || isAdminOrCapt;
+  const isExecutiveUser = isExecutiveRole(user?.role);
+  const isPaidMember = hasPaidReg || isExecutiveUser;
 
   const filteredProfiles = profiles.filter((p) => {
     const matchesSearch =
       p.full_name?.toLowerCase().includes(search.toLowerCase()) ||
       p.department?.toLowerCase().includes(search.toLowerCase()) ||
-      p.faculty?.toLowerCase().includes(search.toLowerCase());
+      p.faculty?.toLowerCase().includes(search.toLowerCase()) ||
+      p.role?.toLowerCase().includes(search.toLowerCase());
+
+    const isExec = isExecutiveRole(p.role);
 
     const matchesRole =
       roleFilter === 'all'
         ? true
         : roleFilter === 'executives'
-        ? p.role === 'admin' || p.role === 'captain'
-        : p.role === 'member';
+        ? isExec
+        : !isExec;
 
     return matchesSearch && matchesRole;
   });
+
+  const getRoleBadge = (role: string | null | undefined) => {
+    if (!role || role === 'member') {
+      return {
+        label: '🦁 Student Athlete',
+        colorClass: 'bg-sl-green/10 text-sl-green border-sl-green/20',
+        avatarColor: 'bg-sl-green/20 border-sl-green text-sl-green',
+      };
+    }
+    if (role === 'admin') {
+      return {
+        label: '🛡️ Executive Coach & Admin',
+        colorClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+        avatarColor: 'bg-amber-500/20 border-amber-400 text-amber-400',
+      };
+    }
+    if (role === 'captain') {
+      return {
+        label: '👑 Team Captain',
+        colorClass: 'bg-sl-green/25 text-sl-green-glow border-sl-green/50',
+        avatarColor: 'bg-sl-green/20 border-sl-green text-sl-green',
+      };
+    }
+    if (role === 'media_personnel') {
+      return {
+        label: '📹 Official Media Personnel',
+        colorClass: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
+        avatarColor: 'bg-cyan-500/20 border-cyan-400 text-cyan-400',
+      };
+    }
+    if (role === 'treasurer') {
+      return {
+        label: '💰 Club Treasurer',
+        colorClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+        avatarColor: 'bg-emerald-500/20 border-emerald-400 text-emerald-400',
+      };
+    }
+
+    // Dynamic Custom Role Match (e.g. Logistician)
+    const custom = customRoles.find((r) => r.id === role);
+    const title = custom ? custom.title : role.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+    return {
+      label: `⚡ ${title}`,
+      colorClass: 'bg-purple-500/20 text-purple-300 border-purple-500/40',
+      avatarColor: 'bg-purple-500/20 border-purple-400 text-purple-400',
+    };
+  };
 
   const handleUnlockPayment = async (reference: string) => {
     if (!user?.id) return;
@@ -137,7 +198,7 @@ export default function CommunityMembersPage() {
             👥 UNN Athlete Directory
           </h1>
           <p className="text-xs text-sl-muted font-medium mt-1">
-            Browse registered student athletes, sort for club executives & team captains.
+            Browse registered student athletes, club executives, and appointed committee leads.
           </p>
         </div>
 
@@ -152,7 +213,7 @@ export default function CommunityMembersPage() {
               roleFilter === 'all' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
             }`}
           >
-            All Members ({profiles.length})
+            All Athletes ({profiles.length})
           </button>
           <button
             onClick={() => {
@@ -160,10 +221,21 @@ export default function CommunityMembersPage() {
               setRoleFilter('executives');
             }}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              roleFilter === 'executives' ? 'bg-sl-warning text-black shadow-sm font-black' : 'text-sl-muted hover:text-sl-foreground'
+              roleFilter === 'executives' ? 'bg-amber-400 text-black shadow-sm font-black' : 'text-sl-muted hover:text-sl-foreground'
             }`}
           >
-            🛡️ Executives Only
+            🛡️ Appointed Executives ({profiles.filter((p) => isExecutiveRole(p.role)).length})
+          </button>
+          <button
+            onClick={() => {
+              audio.play('rally');
+              setRoleFilter('members');
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              roleFilter === 'members' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
+            }`}
+          >
+            🦁 Athletes Only
           </button>
         </div>
       </div>
@@ -171,7 +243,7 @@ export default function CommunityMembersPage() {
       {/* Search Input */}
       <div className="max-w-md">
         <ShuttleInput
-          placeholder="Search by student name, faculty, or department..."
+          placeholder="Search by student name, faculty, department, or role..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="py-2.5 text-xs"
@@ -181,39 +253,36 @@ export default function CommunityMembersPage() {
       {/* Members Grid with 3D Tilt */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProfiles.map((p) => {
-          const isExec = p.role === 'admin' || p.role === 'captain';
+          const badgeInfo = getRoleBadge(p.role);
+          const isExec = isExecutiveRole(p.role);
 
           return (
-            <TiltCard key={p.id} className="p-5 bg-sl-panel space-y-4">
+            <TiltCard key={p.id} className="p-5 bg-sl-panel space-y-4 border border-sl-border">
               <div className="flex items-center gap-3.5">
                 <div
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-black border-2 ${
-                    isExec
-                      ? 'bg-sl-warning/20 border-sl-warning text-sl-warning'
-                      : 'bg-sl-green/20 border-sl-green text-sl-green'
-                  }`}
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-black border-2 ${badgeInfo.avatarColor}`}
                 >
-                  {p.full_name?.charAt(0) || 'L'}
+                  {p.avatar_url ? (
+                    <img src={p.avatar_url} alt={p.full_name || 'Athlete'} className="w-full h-full rounded-lg object-cover" />
+                  ) : (
+                    p.full_name?.charAt(0) || 'L'
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <h3 className="text-sm font-black text-sl-foreground truncate">{p.full_name}</h3>
                   </div>
                   <span
-                    className={`inline-block text-[9px] font-black uppercase px-2 py-0.5 rounded ${
-                      isExec
-                        ? 'bg-sl-warning/20 text-sl-warning border border-sl-warning/30'
-                        : 'bg-sl-green/10 text-sl-green'
-                    }`}
+                    className={`inline-block text-[9px] font-black uppercase px-2 py-0.5 rounded border mt-0.5 ${badgeInfo.colorClass}`}
                   >
-                    {p.role === 'captain' ? '👑 Team Captain' : p.role === 'admin' ? '🛡️ Executive' : '🦁 Member'}
+                    {badgeInfo.label}
                   </span>
                 </div>
               </div>
 
               <div className="p-3 bg-sl-bg rounded-xl border border-sl-border text-[11px] space-y-1 font-semibold text-sl-muted">
                 <p className="truncate text-sl-foreground font-bold">{p.department || 'Department pending'}</p>
-                <p className="truncate">{p.faculty}</p>
+                <p className="truncate">{p.faculty || 'Faculty of Physical Sciences'}</p>
                 <p className="font-mono text-sl-green">{p.level ? `${p.level} Level` : ''}</p>
               </div>
             </TiltCard>

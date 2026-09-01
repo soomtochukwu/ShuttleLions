@@ -9,24 +9,24 @@ import { audio } from '@/lib/audio';
 const HIGHLIGHTS = [
   {
     id: 1,
-    title: 'Weekend Singles Open Knockout',
-    date: 'Saturday Open Drill',
+    title: 'Saturday In-House Tournament & Knockout League',
+    date: 'Saturday In-House Tournament (7:00 AM)',
     location: 'UNN Indoor Sports Hall',
     image: 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=1200&auto=format&fit=crop&q=80',
-    desc: 'High-intensity rally matchplay testing player endurance and cross-court drop accuracy.',
+    desc: 'Weekly club championship matchplay, knockout brackets, tactical doubles rotations, and inter-faculty points race.',
   },
   {
     id: 2,
     title: 'Beginner & Intermediate Footwork Masterclass',
-    date: 'Monday Drills',
+    date: 'Tuesday Drills (4:00 PM)',
     location: 'Court 1 & 2',
     image: 'https://images.unsplash.com/photo-1613918108466-292b78a8ef95?w=1200&auto=format&fit=crop&q=80',
     desc: 'Focusing on 6-corner split steps, explosive scissor jumps, and injury prevention mechanics.',
   },
   {
     id: 3,
-    title: 'Inter-Faculty Doubles Showdown',
-    date: 'Monthly Championship',
+    title: 'Inter-Faculty Doubles Showdown & Open Rallies',
+    date: 'Sunday Matchplay (4:00 PM)',
     location: 'Main Gymnasium',
     image: 'https://images.unsplash.com/photo-1521537634581-0dced2fee2ef?w=1200&auto=format&fit=crop&q=80',
     desc: 'Engineering, Medicine, Arts, and Sciences clash for collegiate glory and Yonex gear medals.',
@@ -130,10 +130,10 @@ export function ActivitiesHighlight() {
                   </p>
                   <div className="p-3 bg-sl-bg rounded-xl border border-sl-border text-xs space-y-1 font-semibold">
                     <div className="text-sl-green font-black flex items-center gap-1">
-                      🏸 Training Schedule
+                      🏸 Weekly Activity Schedule
                     </div>
                     <p className="text-sl-muted">
-                      Monday (16:00 - 18:00) • Wednesday (16:00 - 18:00) • Saturday (08:00 - 11:30)
+                      Tuesday (4:00 PM Training) • Saturday (7:00 AM In-House Tournament) • Sunday (4:00 PM Training)
                     </p>
                   </div>
                 </div>

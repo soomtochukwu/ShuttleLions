@@ -47,8 +47,12 @@ export default function AdminCommandRoom() {
 
   // New Event Form State
   const [newEvTitle, setNewEvTitle] = useState('');
+  const [newEvDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
+  const [newEvStartTime, setNewStartTime] = useState('16:00');
+  const [newEvEndTime, setNewEndTime] = useState('18:00');
   const [newEvLoc, setNewEvLoc] = useState('UNN Indoor Sports Hall');
-  const [newEvType, setNewEvType] = useState<'training' | 'competition'>('training');
+  const [newEvType, setNewEvType] = useState<'training' | 'competition' | 'social' | 'meeting' | 'workshop'>('training');
+  const [newEvDesc, setNewEvDesc] = useState('');
 
   useEffect(() => {
     async function loadAdminData() {
@@ -86,14 +90,16 @@ export default function AdminCommandRoom() {
     if (!newEvTitle.trim() || !user?.id) return;
     audio.play('whistle');
 
-    const newEv: EventItem = {
-      id: `ev-${Date.now()}`,
+    const startDateTime = new Date(`${newEvDate}T${newEvStartTime}:00`).toISOString();
+    const endDateTime = new Date(`${newEvDate}T${newEvEndTime}:00`).toISOString();
+
+    const newEvRecord = {
       title: newEvTitle.trim(),
-      description: 'Scheduled via Admin Command Room',
+      description: newEvDesc.trim() || 'Scheduled via Admin Command Room',
       event_type: newEvType,
-      location: newEvLoc,
-      start_at: new Date(Date.now() + 86400000 * 3).toISOString(),
-      end_at: new Date(Date.now() + 86400000 * 3 + 7200000).toISOString(),
+      location: newEvLoc.trim() || 'UNN Indoor Sports Hall',
+      start_at: startDateTime,
+      end_at: endDateTime,
       is_recurring: false,
       recurrence_rule: null,
       created_by: user.id,
@@ -102,13 +108,24 @@ export default function AdminCommandRoom() {
       updated_at: new Date().toISOString(),
     };
 
-    setEvents((prev) => [...prev, newEv]);
-    setNewEvTitle('');
-    showAlert({
-      title: 'Event Scheduled! 📅',
-      message: `"${newEv.title}" has been published to the ShuttleLions calendar.`,
-      type: 'success',
-    });
+    try {
+      const { data: inserted, error } = await supabase.from('events').insert(newEvRecord).select().single();
+      if (!error && inserted) {
+        setEvents((prev) => [...prev, inserted as EventItem]);
+      } else {
+        setEvents((prev) => [...prev, { id: `ev-${Date.now()}`, ...newEvRecord } as EventItem]);
+      }
+
+      setNewEvTitle('');
+      setNewEvDesc('');
+      showAlert({
+        title: 'Event Scheduled! 📅',
+        message: `"${newEvRecord.title}" has been published to the ShuttleLions calendar for ${newEvDate} at ${newEvStartTime}.`,
+        type: 'success',
+      });
+    } catch (err) {
+      console.error('Error creating event:', err);
+    }
   };
 
   const handleSaveParallaxStudio = () => {
@@ -305,6 +322,48 @@ export default function AdminCommandRoom() {
               placeholder="e.g. Saturday Smash Drills"
               required
             />
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-black uppercase tracking-wider text-sl-foreground">
+                  Date
+                </label>
+                <input
+                  type="date"
+                  value={newEvDate}
+                  onChange={(e) => setNewDate(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-sl-bg border border-sl-border text-xs font-bold text-sl-foreground focus:border-sl-green outline-none"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-black uppercase tracking-wider text-sl-foreground">
+                  Start Time
+                </label>
+                <input
+                  type="time"
+                  value={newEvStartTime}
+                  onChange={(e) => setNewStartTime(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-sl-bg border border-sl-border text-xs font-bold text-sl-foreground focus:border-sl-green outline-none"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-black uppercase tracking-wider text-sl-foreground">
+                  End Time
+                </label>
+                <input
+                  type="time"
+                  value={newEvEndTime}
+                  onChange={(e) => setNewEndTime(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-sl-bg border border-sl-border text-xs font-bold text-sl-foreground focus:border-sl-green outline-none"
+                  required
+                />
+              </div>
+            </div>
+
             <ShuttleInput
               label="Location"
               value={newEvLoc}
@@ -312,6 +371,7 @@ export default function AdminCommandRoom() {
               placeholder="UNN Indoor Sports Hall"
               required
             />
+
             <ShuttleSelect
               label="Event Type"
               value={newEvType}
@@ -319,8 +379,19 @@ export default function AdminCommandRoom() {
               options={[
                 { value: 'training', label: 'Training Drill' },
                 { value: 'competition', label: 'Tournament / Cup' },
+                { value: 'social', label: 'Club Social' },
+                { value: 'workshop', label: 'Tactics Workshop' },
+                { value: 'meeting', label: 'Executive Meeting' },
               ]}
             />
+
+            <ShuttleInput
+              label="Description (Optional)"
+              value={newEvDesc}
+              onChange={(e) => setNewEvDesc(e.target.value)}
+              placeholder="Session objectives, sparring rules..."
+            />
+
             <ShuttleButton type="submit" variant="green" className="w-full py-3 text-xs font-black">
               Publish Event to Schedule 📅
             </ShuttleButton>
