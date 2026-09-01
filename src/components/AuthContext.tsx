@@ -131,8 +131,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user && isMounted) {
+          const meta = session.user.user_metadata || {};
+          const googleName = meta.full_name || meta.name || session.user.email?.split('@')[0] || 'Lion Athlete';
+          const googleAvatar = meta.avatar_url || meta.picture || null;
+          const fallbackProfile: Profile = {
+            id: session.user.id,
+            auth_user_id: session.user.id,
+            email: session.user.email || '',
+            full_name: googleName,
+            phone: session.user.phone || null,
+            faculty: '',
+            department: '',
+            level: '100',
+            reg_number: null,
+            avatar_url: googleAvatar,
+            role: 'member',
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+
           const profile = await fetchProfile(session.user.id, session.user);
-          if (isMounted) setUser(profile);
+          if (isMounted) setUser(profile || fallbackProfile);
         }
       } catch (err) {
         console.error('Auth init error:', err);
@@ -149,8 +169,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (isGuestAdmin) return; // ignore standard auth changes in guest admin mode
 
         if (session?.user) {
+          const meta = session.user.user_metadata || {};
+          const googleName = meta.full_name || meta.name || session.user.email?.split('@')[0] || 'Lion Athlete';
+          const googleAvatar = meta.avatar_url || meta.picture || null;
+          const fallbackProfile: Profile = {
+            id: session.user.id,
+            auth_user_id: session.user.id,
+            email: session.user.email || '',
+            full_name: googleName,
+            phone: session.user.phone || null,
+            faculty: '',
+            department: '',
+            level: '100',
+            reg_number: null,
+            avatar_url: googleAvatar,
+            role: 'member',
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+
           const profile = await fetchProfile(session.user.id, session.user);
-          if (isMounted) setUser(profile);
+          if (isMounted) setUser(profile || fallbackProfile);
         } else {
           if (isMounted) setUser(null);
         }
