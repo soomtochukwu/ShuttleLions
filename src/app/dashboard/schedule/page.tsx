@@ -31,6 +31,8 @@ import {
 } from 'lucide-react';
 import { audio } from '@/lib/audio';
 
+import { useCachedQuery } from '@/lib/client-cache';
+
 interface MapModalData {
   title: string;
   location: string;
@@ -43,11 +45,36 @@ export default function SchedulePage() {
   const { user } = useAuth();
   const { showAlert, showConfirm } = useFeedback();
 
-  const [events, setEvents] = useState<EventItem[]>([]);
-  const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
+  // 1. Cached Events Query with Instant LocalStorage Hydration & Background Revalidation
+  const {
+    data: events,
+    setData: setEvents,
+    isLoading,
+    isRevalidating,
+  } = useCachedQuery<EventItem[]>({
+    key: 'schedule_events',
+    initialFallback: [],
+    fetcher: async () => {
+      const { data } = await supabase
+        .from('events')
+        .select('*')
+        .order('start_at', { ascending: true });
+      return data || [];
+    },
+  });
+
+  // 2. Cached Custom Roles
+  const { data: customRoles } = useCachedQuery<CustomRole[]>({
+    key: 'custom_roles',
+    initialFallback: [],
+    fetcher: async () => {
+      const { data } = await supabase.from('custom_roles').select('*');
+      return data || [];
+    },
+  });
+
   const [rsvps, setRsvps] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<'all' | 'weekly' | 'impromptu' | 'competition'>('all');
-  const [isLoading, setIsLoading] = useState(true);
 
   // Map Location Modal State
   const [activeMapModal, setActiveMapModal] = useState<MapModalData | null>(null);
@@ -66,27 +93,6 @@ export default function SchedulePage() {
   const [newType, setNewType] = useState<'training' | 'competition' | 'social' | 'meeting' | 'workshop'>('training');
   const [newDesc, setNewDesc] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    async function loadData() {
-      setIsLoading(true);
-      try {
-        const { data: evData } = await supabase
-          .from('events')
-          .select('*')
-          .order('start_at', { ascending: true });
-        setEvents(evData || []);
-
-        const { data: rData } = await supabase.from('custom_roles').select('*');
-        setCustomRoles(rData || []);
-      } catch (err) {
-        console.error('Error loading schedule from database:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadData();
-  }, []);
 
   // Permission Gate: Admin, Captain, Logistician, or any custom role with can_manage_schedule / executive appointment
   const userCustomRole = customRoles.find((r) => r.id === user?.role);

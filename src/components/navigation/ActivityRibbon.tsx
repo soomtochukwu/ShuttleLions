@@ -5,8 +5,21 @@ import { supabase, type EventItem } from '@/lib/supabase';
 import Link from 'next/link';
 import { Calendar, Trophy, Zap, ChevronRight } from 'lucide-react';
 
+import { useCachedQuery } from '@/lib/client-cache';
+
 export function ActivityRibbon() {
-  const [dbEvents, setDbEvents] = useState<EventItem[]>([]);
+  const { data: dbEvents } = useCachedQuery<EventItem[]>({
+    key: 'schedule_events',
+    initialFallback: [],
+    fetcher: async () => {
+      const { data } = await supabase
+        .from('events')
+        .select('*')
+        .order('start_at', { ascending: true });
+      return data || [];
+    },
+  });
+
   const [nextActivity, setNextActivity] = useState<{
     label: string;
     venue: string;
@@ -18,23 +31,6 @@ export function ActivityRibbon() {
     name: 'In-House Tournament',
     timeLeft: { days: 0, hours: 0, mins: 0 },
   });
-
-  useEffect(() => {
-    async function loadEvents() {
-      try {
-        const { data } = await supabase
-          .from('events')
-          .select('*')
-          .order('start_at', { ascending: true });
-        if (data && data.length > 0) {
-          setDbEvents(data);
-        }
-      } catch (e) {
-        console.error('Error fetching ribbon schedule from database:', e);
-      }
-    }
-    loadEvents();
-  }, []);
 
   useEffect(() => {
     const calculateNextSession = () => {

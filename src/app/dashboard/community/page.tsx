@@ -11,33 +11,47 @@ import { Users, Shield, Search, Sparkles, Lock, CheckCircle2, Crown, Video, Doll
 import { audio } from '@/lib/audio';
 import { useFeedback } from '@/components/ui/FeedbackModal';
 
+import { useCachedQuery } from '@/lib/client-cache';
+
 export default function CommunityMembersPage() {
   const { user } = useAuth();
   const { showAlert } = useFeedback();
 
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
+  // 1. Cached Athlete Profiles
+  const { data: profiles } = useCachedQuery<Profile[]>({
+    key: 'community_profiles',
+    initialFallback: [],
+    fetcher: async () => {
+      const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+      return data || [];
+    },
+  });
+
+  // 2. Cached Custom Roles
+  const { data: customRoles } = useCachedQuery<CustomRole[]>({
+    key: 'custom_roles',
+    initialFallback: [],
+    fetcher: async () => {
+      const { data } = await supabase.from('custom_roles').select('*');
+      return data || [];
+    },
+  });
+
   const [payments, setPayments] = useState<Payment[]>([]);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'executives' | 'members'>('all');
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   useEffect(() => {
-    async function loadData() {
+    async function loadPayments() {
       if (!user?.id) return;
-      const { data: profData } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-      setProfiles(profData || []);
-
-      const { data: rData } = await supabase.from('custom_roles').select('*');
-      setCustomRoles(rData || []);
-
       const { data: payData } = await supabase
         .from('payments')
         .select('*')
         .eq('profile_id', user.id);
       setPayments(payData || []);
     }
-    loadData();
+    loadPayments();
   }, [user]);
 
   // Executive Role Determination (Any role appointment other than plain 'member')

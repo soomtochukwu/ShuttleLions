@@ -45,13 +45,36 @@ interface StagedMediaItem {
   size: number;
 }
 
+import { useCachedQuery } from '@/lib/client-cache';
+
 export default function MediaGalleryPage() {
   const { user } = useAuth();
   const { showAlert, showConfirm } = useFeedback();
 
-  const [mediaList, setMediaList] = useState<MediaUpload[]>([]);
+  // 1. Cached Media Gallery List
+  const { data: mediaList, setData: setMediaList } = useCachedQuery<MediaUpload[]>({
+    key: 'media_gallery_list',
+    initialFallback: [],
+    fetcher: async () => {
+      const { data } = await supabase
+        .from('media_uploads')
+        .select('*')
+        .order('created_at', { ascending: false });
+      return data || [];
+    },
+  });
+
+  // 2. Cached Custom Roles
+  const { data: customRoles } = useCachedQuery<CustomRole[]>({
+    key: 'custom_roles',
+    initialFallback: [],
+    fetcher: async () => {
+      const { data } = await supabase.from('custom_roles').select('*');
+      return data || [];
+    },
+  });
+
   const [likedMediaIds, setLikedMediaIds] = useState<Set<string>>(new Set());
-  const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
   const [filter, setFilter] = useState<'all' | 'training' | 'highlights' | 'photos'>('all');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
 
@@ -84,16 +107,7 @@ export default function MediaGalleryPage() {
   const viewedMediaRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    async function loadData() {
-      const { data: mData } = await supabase
-        .from('media_uploads')
-        .select('*')
-        .order('created_at', { ascending: false });
-      setMediaList(mData || []);
-
-      const { data: rData } = await supabase.from('custom_roles').select('*');
-      setCustomRoles(rData || []);
-
+    async function loadLikes() {
       if (user?.id) {
         const { data: likesData } = await supabase
           .from('media_likes')
@@ -104,7 +118,7 @@ export default function MediaGalleryPage() {
         }
       }
     }
-    loadData();
+    loadLikes();
   }, [user?.id]);
 
   // Permission Gate: Media Personnel, Admin, Captain, or Custom Role with can_upload_media
