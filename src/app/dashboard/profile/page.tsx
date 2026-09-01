@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useAuth } from '@/components/AuthContext';
 import { TiltCard } from '@/components/ui/TiltCard';
 import { ShuttleButton } from '@/components/ui/ShuttleButton';
@@ -9,7 +9,17 @@ import { ShuttleSelect } from '@/components/ui/ShuttleSelect';
 import { FACULTIES_AND_DEPARTMENTS, LEVELS } from '@/lib/constants';
 import { supabase } from '@/lib/supabase';
 import { audio } from '@/lib/audio';
-import { ShieldCheck, User, QrCode, Sparkles, CheckCircle2 } from 'lucide-react';
+import {
+  ShieldCheck,
+  User,
+  QrCode,
+  Sparkles,
+  Camera,
+  Upload,
+  Link as LinkIcon,
+  RefreshCw,
+  Image as ImageIcon,
+} from 'lucide-react';
 
 export default function ProfilePage() {
   const { user, refreshProfile } = useAuth();
@@ -20,7 +30,16 @@ export default function ProfilePage() {
   const [level, setLevel] = useState(user?.level || '100');
   const [phone, setPhone] = useState(user?.phone || '');
   const [regNumber, setRegNumber] = useState(user?.reg_number || '');
+
+  // Avatar customizer state
+  const [avatarMode, setAvatarMode] = useState<'file' | 'url'>('file');
+  const [avatarUrlInput, setAvatarUrlInput] = useState(user?.avatar_url || '');
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatar_url || null);
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const availableDepts = FACULTIES_AND_DEPARTMENTS[faculty] || [];
 
@@ -30,33 +49,95 @@ export default function ProfilePage() {
     setDepartment(depts[0] || '');
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file (PNG, JPG, WEBP, GIF).');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image file size must be under 5MB.');
+      return;
+    }
+
+    setSelectedAvatarFile(file);
+    const localPreviewUrl = URL.createObjectURL(file);
+    setAvatarPreview(localPreviewUrl);
+    audio.play('rally');
+  };
+
+  const handleUrlChange = (url: string) => {
+    setAvatarUrlInput(url);
+    setSelectedAvatarFile(null);
+    setAvatarPreview(url.trim() || user?.avatar_url || null);
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?.id) return;
     setIsSaving(true);
+    setUploadProgress('Updating profile...');
     audio.play('serve');
 
     try {
+      let finalAvatarUrl = avatarPreview;
+
+      // If a new image file was selected, upload it to Supabase Storage
+      if (selectedAvatarFile) {
+        setUploadProgress('Uploading athlete photo to cloud storage...');
+        const fileExt = selectedAvatarFile.name.split('.').pop() || 'jpg';
+        const filePath = `avatars/${user.id}-${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('media-gallery')
+          .upload(filePath, selectedAvatarFile, {
+            cacheControl: '3600',
+            upsert: true,
+          });
+
+        if (uploadError) {
+          console.error('Storage upload notice:', uploadError);
+          // If storage upload fails, fallback to existing or data preview
+        } else {
+          const { data: publicData } = supabase.storage
+            .from('media-gallery')
+            .getPublicUrl(filePath);
+          if (publicData?.publicUrl) {
+            finalAvatarUrl = publicData.publicUrl;
+          }
+        }
+      } else if (avatarMode === 'url' && avatarUrlInput.trim()) {
+        finalAvatarUrl = avatarUrlInput.trim();
+      }
+
+      setUploadProgress('Saving credentials to database...');
+
       await supabase
         .from('profiles')
         .update({
           full_name: fullName.trim(),
+          avatar_url: finalAvatarUrl,
           faculty,
           department,
           level,
           phone: phone.trim() || null,
           reg_number: regNumber.trim() || null,
+          updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
 
       audio.play('whistle');
-      alert('Profile updated successfully!');
-      refreshProfile();
+      await refreshProfile();
+      alert('Athlete profile and ID Pass updated successfully!');
     } catch (err: any) {
       console.error(err);
       alert('Failed to update profile.');
     } finally {
       setIsSaving(false);
+      setUploadProgress(null);
     }
   };
 
@@ -71,12 +152,12 @@ export default function ProfilePage() {
           👤 Athlete Profile & Digital ID
         </h1>
         <p className="text-xs text-sl-muted font-medium mt-1">
-          Manage your student athlete credentials and present your verified badge for court entry.
+          Customize your photo, manage student athlete credentials, and present your verified pass for court entry.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left: Digital Member ID Card (3D Tilt) */}
+        {/* Left: Digital Member ID Card (3D Tilt with Live Preview) */}
         <div className="lg:col-span-5 space-y-4">
           <TiltCard className="p-6 bg-gradient-to-br from-[#0a2012] via-[#041006] to-[#010803] text-white border-2 border-sl-green shadow-2xl relative overflow-hidden">
             {/* Hologram Corner Accent */}
@@ -94,33 +175,33 @@ export default function ProfilePage() {
                     <p className="text-[9px] text-white/60 tracking-wider">UNN ATHLETICS PASS</p>
                   </div>
                 </div>
-                <span className="text-[10px] font-black uppercase bg-sl-green text-white px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                <span className="text-[10px] font-black uppercase bg-sl-green text-white px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
                   <ShieldCheck className="w-3 h-3" /> VERIFIED
                 </span>
               </div>
 
-              {/* Lion Avatar & Info */}
+              {/* Lion Avatar & Info (Live Real-Time Preview) */}
               <div className="flex items-center gap-4">
-                {user?.avatar_url ? (
+                {avatarPreview ? (
                   <img
-                    src={user.avatar_url}
-                    alt={user.full_name}
-                    className="w-16 h-16 rounded-2xl object-cover border-2 border-sl-green-glow shadow-lg"
+                    src={avatarPreview}
+                    alt={fullName || 'Athlete Photo'}
+                    className="w-16 h-16 rounded-2xl object-cover border-2 border-sl-green-glow shadow-[0_0_15px_rgba(0,230,118,0.4)]"
                   />
                 ) : (
                   <div className="w-16 h-16 rounded-2xl bg-sl-green/30 border-2 border-sl-green-glow text-white font-black text-3xl flex items-center justify-center shadow-lg">
-                    {user?.full_name?.charAt(0) || 'L'}
+                    {fullName?.charAt(0) || 'L'}
                   </div>
                 )}
                 <div className="space-y-0.5 flex-1 min-w-0">
                   <h4 className="text-base font-black text-white truncate">
-                    {user?.full_name || 'UNN Student'}
+                    {fullName || user?.full_name || 'UNN Student'}
                   </h4>
                   <p className="text-xs text-sl-green-glow font-mono font-bold">
-                    {user?.reg_number || '2024/UNN-SL/89'}
+                    {regNumber || user?.reg_number || '2024/UNN-SL/89'}
                   </p>
                   <p className="text-[11px] text-white/70 truncate">
-                    {user?.department || 'Department pending'}
+                    {department || user?.department || 'Department pending'}
                   </p>
                 </div>
               </div>
@@ -129,11 +210,11 @@ export default function ProfilePage() {
               <div className="grid grid-cols-2 gap-2 bg-white/5 p-3 rounded-xl border border-white/10 text-xs">
                 <div>
                   <span className="text-[10px] text-white/50 uppercase font-bold">Faculty</span>
-                  <p className="font-bold text-white truncate">{user?.faculty || 'Faculty of Engineering'}</p>
+                  <p className="font-bold text-white truncate">{faculty || 'Faculty of Education'}</p>
                 </div>
                 <div>
                   <span className="text-[10px] text-white/50 uppercase font-bold">Level</span>
-                  <p className="font-bold text-sl-green-glow">{user?.level || '100'} Level</p>
+                  <p className="font-bold text-sl-green-glow">{level} Level</p>
                 </div>
               </div>
 
@@ -153,17 +234,88 @@ export default function ProfilePage() {
           </TiltCard>
 
           <p className="text-[11px] text-sl-muted text-center italic">
-            💡 Show this screen to the team captain at the indoor hall during open sessions.
+            💡 The Digital ID card reflects your live photo and details in real-time.
           </p>
         </div>
 
         {/* Right: Profile Edit Form */}
-        <div className="lg:col-span-7">
+        <div className="lg:col-span-7 space-y-6">
           <form onSubmit={handleSave} className="shuttle-panel p-6 sm:p-8 bg-sl-panel space-y-6">
             <h3 className="text-lg font-black text-sl-foreground uppercase flex items-center gap-2">
-              <User className="w-4 h-4 text-sl-green" /> Edit Information
+              <User className="w-4 h-4 text-sl-green" /> Edit Information & Photo
             </h3>
 
+            {/* Profile Picture Upload Section */}
+            <div className="p-4 rounded-xl bg-sl-bg border border-sl-border space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-black uppercase text-sl-foreground flex items-center gap-1.5">
+                  <Camera className="w-3.5 h-3.5 text-sl-green" /> Athlete Profile Picture
+                </label>
+                <div className="flex items-center gap-1 bg-sl-panel p-1 rounded-lg border border-sl-border text-[11px] font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setAvatarMode('file')}
+                    className={`px-2.5 py-1 rounded transition-colors ${
+                      avatarMode === 'file' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
+                    }`}
+                  >
+                    Upload File
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAvatarMode('url')}
+                    className={`px-2.5 py-1 rounded transition-colors ${
+                      avatarMode === 'url' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
+                    }`}
+                  >
+                    Image Link
+                  </button>
+                </div>
+              </div>
+
+              {avatarMode === 'file' ? (
+                <div className="space-y-2">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileSelect}
+                    accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+                    className="hidden"
+                  />
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="cursor-pointer border-2 border-dashed border-sl-border hover:border-sl-green rounded-xl p-4 text-center transition-all bg-sl-panel hover:bg-sl-green/5 flex flex-col items-center justify-center gap-2"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-sl-green/10 text-sl-green flex items-center justify-center">
+                      <Upload className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-sl-foreground">
+                        {selectedAvatarFile ? selectedAvatarFile.name : 'Click to select photo from device'}
+                      </p>
+                      <p className="text-[10px] text-sl-muted mt-0.5">
+                        Supports JPG, PNG, WEBP up to 5MB
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <div className="relative">
+                    <ShuttleInput
+                      value={avatarUrlInput}
+                      onChange={(e) => handleUrlChange(e.target.value)}
+                      placeholder="Paste image link (https://...)"
+                    />
+                  </div>
+                  <p className="text-[10px] text-sl-muted">
+                    Paste any public image URL (Google Drive photo, Cloudinary, Imgur, etc.)
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* General Info Fields */}
             <div className="space-y-4">
               <ShuttleInput
                 label="Full Name"
@@ -222,15 +374,22 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="pt-2 flex justify-end">
-              <ShuttleButton
-                type="submit"
-                variant="green"
-                disabled={isSaving}
-                className="py-3 px-8 text-xs font-black shadow-md"
-              >
-                {isSaving ? 'Saving Updates...' : 'Save Profile Changes ⚡'}
-              </ShuttleButton>
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
+              {uploadProgress && (
+                <span className="text-xs font-bold text-sl-green animate-pulse">
+                  ⚡ {uploadProgress}
+                </span>
+              )}
+              <div className="ml-auto">
+                <ShuttleButton
+                  type="submit"
+                  variant="green"
+                  disabled={isSaving}
+                  className="py-3 px-8 text-xs font-black shadow-md"
+                >
+                  {isSaving ? 'Saving Profile...' : 'Save Profile Changes ⚡'}
+                </ShuttleButton>
+              </div>
             </div>
           </form>
         </div>

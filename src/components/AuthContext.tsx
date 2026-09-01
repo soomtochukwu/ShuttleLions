@@ -45,7 +45,10 @@ async function fetchProfile(authUserId: string, authUser?: any): Promise<Profile
     .maybeSingle();
 
   if (error) {
-    console.error('Failed to fetch profile:', error.message);
+    const isAbort = error.message?.includes('AbortError') || error.name === 'AbortError' || error.message?.includes('signal is aborted');
+    if (!isAbort) {
+      console.error('Failed to fetch profile:', error.message);
+    }
   }
 
   let profile = data as Profile | null;
