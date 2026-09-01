@@ -28,6 +28,7 @@ import {
   Check,
   AlertCircle,
   Loader2,
+  Edit3,
 } from 'lucide-react';
 import { audio } from '@/lib/audio';
 
@@ -173,6 +174,165 @@ export default function SchedulePage() {
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
+  };
+
+  // Edit Schedule Modal State
+  const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDate, setEditDate] = useState('');
+  const [editStartTime, setEditStartTime] = useState('');
+  const [editEndTime, setEditEndTime] = useState('');
+  const [editLoc, setEditLoc] = useState('');
+  const [editLat, setEditLat] = useState('');
+  const [editLng, setEditLng] = useState('');
+  const [editMapUrl, setEditMapUrl] = useState('');
+  const [editType, setEditType] = useState<'training' | 'competition' | 'social' | 'meeting' | 'workshop'>('training');
+  const [editDesc, setEditDesc] = useState('');
+  const [isEditSubmitting, setIsEditSubmitting] = useState(false);
+  const [isDetectingEditGps, setIsDetectingEditGps] = useState(false);
+  const [editGpsSource, setEditGpsSource] = useState<'device' | 'database' | null>(null);
+
+  const handleOpenEditModal = (ev: EventItem) => {
+    audio.play('rally');
+    setEditingEvent(ev);
+    setEditTitle(ev.title);
+
+    const startD = new Date(ev.start_at);
+    setEditDate(startD.toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' }));
+    setEditStartTime(startD.toLocaleTimeString('en-GB', { timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit' }));
+
+    const endD = new Date(ev.end_at);
+    setEditEndTime(endD.toLocaleTimeString('en-GB', { timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit' }));
+
+    setEditLoc(ev.location || 'UNN Badminton Court');
+    setEditLat(ev.latitude != null ? String(ev.latitude) : '');
+    setEditLng(ev.longitude != null ? String(ev.longitude) : '');
+    setEditMapUrl(ev.map_url || '');
+    setEditType(ev.event_type);
+    setEditDesc(ev.description || '');
+    setEditGpsSource(null);
+  };
+
+  const handleUseCurrentLocationEdit = () => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      showAlert({
+        title: 'Geolocation Unsupported',
+        message: 'Your browser or device does not support GPS geolocation.',
+        type: 'warning',
+      });
+      return;
+    }
+
+    setIsDetectingEditGps(true);
+    audio.play('rally');
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setEditLat(latitude.toFixed(6));
+        setEditLng(longitude.toFixed(6));
+        setEditMapUrl(`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`);
+        setEditGpsSource('device');
+        setIsDetectingEditGps(false);
+        audio.play('smash');
+        showAlert({
+          title: 'Current GPS Acquired! 📍',
+          message: `Live coordinates captured: ${latitude.toFixed(6)}° N, ${longitude.toFixed(6)}° E`,
+          type: 'success',
+        });
+      },
+      (err) => {
+        setIsDetectingEditGps(false);
+        let errorMsg = 'Could not retrieve your physical location.';
+        if (err.code === 1) {
+          errorMsg = 'Location permission was denied. Please allow location access in your browser.';
+        } else if (err.code === 2) {
+          errorMsg = 'Position unavailable. Please check your device GPS sensor.';
+        } else if (err.code === 3) {
+          errorMsg = 'GPS detection request timed out. Please try again.';
+        }
+        showAlert({
+          title: 'GPS Detection Failed',
+          message: errorMsg,
+          type: 'error',
+        });
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
+
+  const handleSaveEditedEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEvent) return;
+    if (!canManageSchedule && editingEvent.created_by !== user?.id) {
+      showAlert({
+        title: 'Access Denied',
+        message: 'Only administrators, logisticians, or the schedule creator can edit this activity.',
+        type: 'warning',
+      });
+      return;
+    }
+    if (!editTitle.trim() || !editDate || !editStartTime) return;
+
+    setIsEditSubmitting(true);
+    audio.play('smash');
+
+    try {
+      const startDateTime = createIsoWAT(editDate, editStartTime);
+      const endDateTime = createIsoWAT(editDate, editEndTime || editStartTime);
+
+      const parsedLat = editLat.trim() ? parseFloat(editLat.trim()) : null;
+      const parsedLng = editLng.trim() ? parseFloat(editLng.trim()) : null;
+      const parsedMapUrl =
+        editMapUrl.trim() ||
+        (parsedLat != null && parsedLng != null
+          ? `https://www.google.com/maps/search/?api=1&query=${parsedLat},${parsedLng}`
+          : null);
+
+      const updatedFields = {
+        title: editTitle.trim(),
+        description: editDesc.trim() || 'Custom badminton session coordinated by the executive committee.',
+        event_type: editType,
+        location: editLoc.trim() || 'UNN Badminton Court',
+        start_at: startDateTime,
+        end_at: endDateTime,
+        latitude: parsedLat,
+        longitude: parsedLng,
+        map_url: parsedMapUrl,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from('events')
+        .update(updatedFields)
+        .eq('id', editingEvent.id);
+
+      if (error) throw error;
+
+      setEvents((prev) =>
+        prev.map((ev) =>
+          ev.id === editingEvent.id
+            ? { ...ev, ...updatedFields }
+            : ev
+        )
+      );
+
+      setEditingEvent(null);
+      showAlert({
+        title: 'Schedule Updated! ⚡✏️',
+        message: `"${editTitle}" has been updated successfully on the court calendar.`,
+        type: 'success',
+      });
+    } catch (err: any) {
+      console.error('Update event error:', err);
+      showAlert({
+        title: 'Update Failed',
+        message: err.message || 'Could not update schedule details. Please check your inputs.',
+        type: 'error',
+      });
+    } finally {
+      setIsEditSubmitting(false);
+    }
   };
 
   // Permission Gate: Strictly Admin or any appointed Logistician
@@ -611,15 +771,27 @@ export default function SchedulePage() {
                       </div>
                     </div>
 
-                    <div className="shrink-0 flex items-center gap-3 w-full md:w-auto">
-                      {canManageSchedule && !ev.is_recurring && (
-                        <button
-                          onClick={() => handleDeleteEvent(ev.id, ev.title)}
-                          className="p-2.5 rounded-xl border border-rose-500/20 text-rose-400 hover:bg-rose-500/10 transition-colors"
-                          title="Delete Schedule"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                    <div className="shrink-0 flex items-center gap-2.5 w-full md:w-auto">
+                      {(canManageSchedule || ev.created_by === user?.id) && !ev.is_recurring && (
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditModal(ev)}
+                            className="p-2.5 rounded-xl border border-sl-green/30 text-sl-green hover:bg-sl-green/10 transition-colors cursor-pointer"
+                            title="Edit Schedule Details ✏️"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteEvent(ev.id, ev.title)}
+                            className="p-2.5 rounded-xl border border-rose-500/20 text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                            title="Delete Schedule 🗑️"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       )}
 
                       <ShuttleButton
@@ -943,6 +1115,218 @@ export default function SchedulePage() {
                 className="flex-1 font-black"
               >
                 {isSubmitting ? 'Publishing...' : 'Publish Schedule ⚡'}
+              </ShuttleButton>
+            </div>
+          </form>
+        </ShuttleModal>
+      )}
+
+      {/* 5. Edit Schedule Modal */}
+      {editingEvent && (
+        <ShuttleModal
+          isOpen={Boolean(editingEvent)}
+          onClose={() => !isEditSubmitting && setEditingEvent(null)}
+          title="Edit Custom Badminton Schedule ✏️"
+        >
+          <form onSubmit={handleSaveEditedEvent} className="space-y-4">
+            <ShuttleInput
+              label="Activity / Match Title"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              placeholder="e.g. Saturday Evening Singles Sparring"
+              required
+            />
+
+            {/* Date & Time Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-black uppercase tracking-wider text-sl-foreground">
+                  Date
+                </label>
+                <input
+                  type="date"
+                  value={editDate}
+                  onChange={(e) => setEditDate(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-sl-bg border border-sl-border text-xs font-bold text-sl-foreground focus:border-sl-green outline-none"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-black uppercase tracking-wider text-sl-foreground">
+                  Start Time (WAT)
+                </label>
+                <input
+                  type="time"
+                  value={editStartTime}
+                  onChange={(e) => setEditStartTime(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-sl-bg border border-sl-border text-xs font-bold text-sl-foreground focus:border-sl-green outline-none"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-black uppercase tracking-wider text-sl-foreground">
+                  End Time (WAT)
+                </label>
+                <input
+                  type="time"
+                  value={editEndTime}
+                  onChange={(e) => setEditEndTime(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-sl-bg border border-sl-border text-xs font-bold text-sl-foreground focus:border-sl-green outline-none"
+                  required
+                />
+              </div>
+            </div>
+
+            <ShuttleInput
+              label="Venue Location Name"
+              value={editLoc}
+              onChange={(e) => setEditLoc(e.target.value)}
+              placeholder="UNN Badminton Court"
+              required
+            />
+
+            {/* GPS Coordinates Inputs (Optional) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-black uppercase tracking-wider text-sl-foreground flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-sl-green" />
+                  <span>Venue GPS Coordinates</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={handleUseCurrentLocationEdit}
+                  disabled={isDetectingEditGps}
+                  className="px-2.5 py-1 rounded-lg bg-sl-green/15 hover:bg-sl-green text-sl-green hover:text-white border border-sl-green/30 text-[11px] font-bold flex items-center gap-1.5 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                >
+                  {isDetectingEditGps ? (
+                    <>
+                      <Loader2 className="w-3 h-3 animate-spin text-sl-green" />
+                      <span>Detecting GPS...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Navigation className="w-3 h-3" />
+                      <span>Use My Current GPS Position 📍</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <ShuttleInput
+                  label="Latitude (GPS - Optional)"
+                  value={editLat}
+                  onChange={(e) => {
+                    setEditLat(e.target.value);
+                    setEditGpsSource(null);
+                  }}
+                  placeholder="e.g. 6.868800"
+                />
+                <ShuttleInput
+                  label="Longitude (GPS - Optional)"
+                  value={editLng}
+                  onChange={(e) => {
+                    setEditLng(e.target.value);
+                    setEditGpsSource(null);
+                  }}
+                  placeholder="e.g. 7.407400"
+                />
+              </div>
+
+              {editGpsSource === 'device' ? (
+                <div className="flex items-center justify-between text-[11px] p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+                  <span className="font-medium flex items-center gap-1.5">
+                    <Navigation className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                    Detected from device live GPS position ({editLat}, {editLng})
+                  </span>
+                  {defaultCourtEvent?.latitude != null && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditLat(String(defaultCourtEvent.latitude));
+                        setEditLng(String(defaultCourtEvent.longitude));
+                        if (defaultCourtEvent.map_url) setEditMapUrl(defaultCourtEvent.map_url);
+                        setEditGpsSource('database');
+                        audio.play('serve');
+                      }}
+                      className="text-[10px] font-bold text-sl-foreground hover:text-sl-green underline underline-offset-2 shrink-0 ml-2 cursor-pointer"
+                    >
+                      Reset to DB Default
+                    </button>
+                  )}
+                </div>
+              ) : defaultCourtEvent?.latitude != null && defaultCourtEvent?.longitude != null ? (
+                <div className="flex items-center justify-between text-[11px] p-2 rounded-lg bg-sl-green/10 border border-sl-green/20">
+                  <span className="text-sl-green font-medium flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-sl-green shrink-0" />
+                    Default database coordinates ({defaultCourtEvent.latitude.toFixed(4)}, {defaultCourtEvent.longitude.toFixed(4)})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditLoc(defaultCourtEvent.location || 'UNN Badminton Court');
+                      setEditLat(String(defaultCourtEvent.latitude));
+                      setEditLng(String(defaultCourtEvent.longitude));
+                      if (defaultCourtEvent.map_url) setEditMapUrl(defaultCourtEvent.map_url);
+                      setEditGpsSource('database');
+                      audio.play('serve');
+                    }}
+                    className="text-[10px] font-bold text-sl-foreground hover:text-sl-green underline underline-offset-2 shrink-0 ml-2 cursor-pointer"
+                  >
+                    Reset to DB GPS
+                  </button>
+                </div>
+              ) : (
+                <p className="text-[11px] text-sl-muted flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  Default GPS not set in DB. You can click &quot;Use My Current GPS Position&quot; to auto-fill.
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-black uppercase tracking-wider text-sl-foreground">
+                Category
+              </label>
+              <select
+                value={editType}
+                onChange={(e: any) => setEditType(e.target.value)}
+                className="w-full p-2.5 rounded-xl bg-sl-bg border border-sl-border text-xs font-bold text-sl-foreground focus:border-sl-green outline-none"
+              >
+                <option value="training">Training Drill & Sparring</option>
+                <option value="competition">Tournament / Championship</option>
+                <option value="social">Club Social & Exhibition</option>
+                <option value="workshop">Tactics & Referee Workshop</option>
+                <option value="meeting">Executive & Squad Meeting</option>
+              </select>
+            </div>
+
+            <ShuttleInput
+              label="Description / Instructions (Optional)"
+              value={editDesc}
+              onChange={(e) => setEditDesc(e.target.value)}
+              placeholder="Key objectives, sparring partner pairings, gear required..."
+            />
+
+            <div className="flex gap-3 pt-2">
+              <ShuttleButton
+                type="button"
+                variant="white"
+                onClick={() => setEditingEvent(null)}
+                disabled={isEditSubmitting}
+                className="flex-1"
+              >
+                Cancel
+              </ShuttleButton>
+              <ShuttleButton
+                type="submit"
+                variant="green"
+                disabled={isEditSubmitting}
+                className="flex-1 font-black"
+              >
+                {isEditSubmitting ? 'Saving Changes...' : 'Save Changes ⚡'}
               </ShuttleButton>
             </div>
           </form>
