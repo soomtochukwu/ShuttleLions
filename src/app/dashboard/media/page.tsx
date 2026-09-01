@@ -34,6 +34,7 @@ export default function MediaGalleryPage() {
   const { showAlert, showConfirm } = useFeedback();
 
   const [mediaList, setMediaList] = useState<MediaUpload[]>([]);
+  const [likedMediaIds, setLikedMediaIds] = useState<Set<string>>(new Set());
   const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
   const [filter, setFilter] = useState<'all' | 'training' | 'highlights' | 'photos'>('all');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -55,6 +56,7 @@ export default function MediaGalleryPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const viewedMediaRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     async function loadData() {
@@ -66,9 +68,19 @@ export default function MediaGalleryPage() {
 
       const { data: rData } = await supabase.from('custom_roles').select('*');
       setCustomRoles(rData || []);
+
+      if (user?.id) {
+        const { data: likesData } = await supabase
+          .from('media_likes')
+          .select('media_id')
+          .eq('profile_id', user.id);
+        if (likesData) {
+          setLikedMediaIds(new Set(likesData.map((l: any) => l.media_id)));
+        }
+      }
     }
     loadData();
-  }, []);
+  }, [user?.id]);
 
   // Permission Gate: Media Personnel, Admin, Captain, or Custom Role with can_upload_media
   const userCustomRole = customRoles.find((r) => r.id === user?.role);
@@ -111,21 +123,76 @@ export default function MediaGalleryPage() {
   };
 
   const handleLike = async (id: string) => {
-    audio.play('rally');
+    if (!user?.id) {
+      showAlert({
+        title: 'Authentication Required',
+        message: 'Please log in to like tournament matches and training drills.',
+        type: 'info',
+      });
+      return;
+    }
+
+    const isCurrentlyLiked = likedMediaIds.has(id);
+    audio.play(isCurrentlyLiked ? 'courtSqueak' : 'rally');
+
+    // Optimistic state update
+    setLikedMediaIds((prev) => {
+      const next = new Set(prev);
+      if (isCurrentlyLiked) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+
     setMediaList((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, likes_count: (m.likes_count || 0) + 1 } : m))
+      prev.map((m) =>
+        m.id === id
+          ? { ...m, likes_count: Math.max(0, (m.likes_count || 0) + (isCurrentlyLiked ? -1 : 1)) }
+          : m
+      )
     );
 
     try {
-      const item = mediaList.find((m) => m.id === id);
-      if (item) {
-        await supabase
-          .from('media_uploads')
-          .update({ likes_count: (item.likes_count || 0) + 1 })
-          .eq('id', id);
+      const { data, error } = await supabase.rpc('toggle_media_like', {
+        p_media_id: id,
+        p_profile_id: user.id,
+      });
+
+      if (error) {
+        console.error('Like toggle error:', error);
+      } else if (data && typeof data.likes_count === 'number') {
+        setMediaList((prev) =>
+          prev.map((m) => (m.id === id ? { ...m, likes_count: data.likes_count } : m))
+        );
       }
     } catch (err) {
-      console.error('Failed to update likes in database:', err);
+      console.error('Failed to update likes:', err);
+    }
+  };
+
+  const recordView = async (id: string) => {
+    if (viewedMediaRef.current.has(id)) return;
+    viewedMediaRef.current.add(id);
+
+    // Optimistic increment
+    setMediaList((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, views_count: (m.views_count || 0) + 1 } : m))
+    );
+
+    try {
+      const { data, error } = await supabase.rpc('increment_media_views', {
+        p_media_id: id,
+      });
+
+      if (!error && typeof data === 'number') {
+        setMediaList((prev) =>
+          prev.map((m) => (m.id === id ? { ...m, views_count: data } : m))
+        );
+      }
+    } catch (err) {
+      console.error('Failed to record view:', err);
     }
   };
 
@@ -419,6 +486,7 @@ export default function MediaGalleryPage() {
         {filteredMedia.map((m) => {
           const parsed = parseMediaSource(m.media_url, m.thumbnail_url);
           const isOwnerOrAdmin = canUploadMedia || m.uploader_id === user?.id;
+          const isLiked = likedMediaIds.has(m.id);
 
           return (
             <TiltCard key={m.id} className="p-5 bg-sl-panel space-y-4 overflow-hidden border border-sl-border">
@@ -431,6 +499,7 @@ export default function MediaGalleryPage() {
                     className="w-full h-full"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
+                    onLoad={() => recordView(m.id)}
                   />
                 ) : parsed.kind === 'vimeo' && parsed.embedUrl ? (
                   <iframe
@@ -439,6 +508,7 @@ export default function MediaGalleryPage() {
                     className="w-full h-full"
                     allow="autoplay; fullscreen; picture-in-picture"
                     allowFullScreen
+                    onLoad={() => recordView(m.id)}
                   />
                 ) : parsed.kind === 'direct_video' ? (
                   <video
@@ -446,11 +516,15 @@ export default function MediaGalleryPage() {
                     controls
                     preload="metadata"
                     poster={m.thumbnail_url && m.thumbnail_url !== m.media_url ? m.thumbnail_url : undefined}
+                    onPlay={() => recordView(m.id)}
                     className="w-full h-full object-contain"
                   />
                 ) : parsed.kind === 'image' ? (
                   <div
-                    onClick={() => setLightboxImage(m.media_url)}
+                    onClick={() => {
+                      setLightboxImage(m.media_url);
+                      recordView(m.id);
+                    }}
                     className="relative w-full h-full cursor-pointer group"
                   >
                     <img
@@ -475,6 +549,7 @@ export default function MediaGalleryPage() {
                       href={m.media_url}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => recordView(m.id)}
                       className="absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/20 transition-colors"
                     >
                       <div className="p-3 rounded-2xl bg-sl-green text-white font-black text-xs flex items-center gap-2 shadow-xl">
@@ -500,8 +575,9 @@ export default function MediaGalleryPage() {
                 )}
 
                 <div className="flex items-center justify-between pt-3 border-t border-sl-border/40 text-xs font-bold text-sl-muted">
-                  <span className="flex items-center gap-1 text-[11px]">
-                    <Eye className="w-3.5 h-3.5 text-sl-green" /> {m.views_count || 1} views
+                  <span className="flex items-center gap-1.5 text-xs text-sl-foreground font-mono">
+                    <Eye className="w-4 h-4 text-sl-green" />
+                    <span>{m.views_count || 1} {m.views_count === 1 ? 'view' : 'views'}</span>
                   </span>
 
                   <div className="flex items-center gap-2">
@@ -520,12 +596,17 @@ export default function MediaGalleryPage() {
                       </button>
                     )}
 
-                    {/* Like Counter */}
+                    {/* Interactive Like / Unlike Button */}
                     <button
                       onClick={() => handleLike(m.id)}
-                      className="flex items-center gap-1.5 text-rose-500 hover:scale-110 active:scale-95 transition-all bg-rose-500/10 px-2.5 py-1 rounded-lg border border-rose-500/20"
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-bold text-xs transition-all ${
+                        isLiked
+                          ? 'bg-rose-500 text-white border-rose-600 shadow-[0_0_12px_rgba(244,63,94,0.45)] scale-105'
+                          : 'text-rose-500 hover:scale-110 active:scale-95 bg-rose-500/10 border-rose-500/25 hover:bg-rose-500/20'
+                      }`}
+                      title={isLiked ? 'Unlike' : 'Like'}
                     >
-                      <Heart className="w-3.5 h-3.5 fill-rose-500" />
+                      <Heart className={`w-4 h-4 transition-transform ${isLiked ? 'fill-white text-white scale-110' : 'fill-rose-500 text-rose-500'}`} />
                       <span>{m.likes_count || 0}</span>
                     </button>
                   </div>
