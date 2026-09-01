@@ -95,54 +95,56 @@ export default function CommunityChatPage() {
  </p>
  </div>
 
- <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[600px]">
- {/* Left: Channels List */}
- <div className="lg:col-span-4 shuttle-panel bg-sl-panel p-4 flex flex-col justify-between overflow-y-auto">
- <div className="space-y-3">
- <span className="text-[10px] font-black text-sl-muted uppercase tracking-widest px-2">
- Channels
- </span>
- <div className="space-y-1">
- {channels.map((chan) => {
- const isActive = chan.id === activeChannelId;
- return (
- <button
- key={chan.id}
- onClick={() => {
- audio.play('rally');
- setActiveChannelId(chan.id);
- }}
- className={`flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl font-bold text-xs transition-all text-left ${
- isActive
- ? 'bg-sl-green text-white shadow-md'
- : 'text-sl-foreground hover:bg-sl-green/10'
- }`}
- >
- <span>{chan.icon || ''}</span>
- <span className="truncate">#{chan.name}</span>
- </button>
- );
- })}
- </div>
- </div>
- </div>
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-[calc(100vh-16rem)] min-h-[550px]">
+      {/* Left: Channels List */}
+      <div className="lg:col-span-4 shuttle-panel bg-sl-panel p-5 flex flex-col justify-between overflow-y-auto">
+        <div className="space-y-4">
+          <span className="text-[10px] font-black text-sl-muted uppercase tracking-widest px-2">
+            Chat Channels
+          </span>
+          <div className="space-y-1.5">
+            {channels.map((chan) => {
+              const isActive = chan.id === activeChannelId;
+              return (
+                <button
+                  key={chan.id}
+                  onClick={() => {
+                    audio.play('rally');
+                    setActiveChannelId(chan.id);
+                  }}
+                  className={`flex items-center gap-2.5 w-full px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all text-left cursor-pointer ${
+                    isActive
+                      ? 'bg-sl-green text-white shadow-md'
+                      : 'text-sl-foreground hover:bg-sl-green/10 hover:text-sl-green'
+                  }`}
+                >
+                  <Hash className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-sl-green'}`} />
+                  <span className="truncate">#{chan.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
 
- {/* Right: Messages Area */}
- <div className="lg:col-span-8 shuttle-panel bg-sl-panel flex flex-col justify-between overflow-hidden">
- {/* Channel Info Bar */}
- <div className="p-4 border-b border-sl-border/40 bg-sl-panel/60 flex items-center justify-between">
- <div className="flex items-center gap-2">
- <span className="text-lg">{activeChannel?.icon}</span>
- <div>
- <h3 className="text-xs font-black text-sl-foreground uppercase">
- #{activeChannel?.name || 'general'}
- </h3>
- <p className="text-[10px] text-sl-muted truncate max-w-sm">
- {activeChannel?.description}
- </p>
- </div>
- </div>
- </div>
+      {/* Right: Messages Area */}
+      <div className="lg:col-span-8 shuttle-panel bg-sl-panel flex flex-col justify-between overflow-hidden">
+        {/* Channel Info Bar */}
+        <div className="p-4 border-b border-sl-border/40 bg-sl-panel flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-sl-green/15 text-sl-green flex items-center justify-center">
+              <Hash className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-xs font-black text-sl-foreground uppercase">
+                #{activeChannel?.name || 'general'}
+              </h3>
+              <p className="text-[10px] text-sl-muted truncate max-w-sm">
+                {activeChannel?.description}
+              </p>
+            </div>
+          </div>
+        </div>
 
  {/* Messages Scroll Area */}
  <div className="flex-1 p-4 overflow-y-auto space-y-4">
