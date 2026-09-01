@@ -1,0 +1,86 @@
+'use client';
+
+import React, { useRef, useState } from 'react';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+
+interface TiltCardProps extends React.HTMLAttributes<HTMLDivElement> {
+  children: React.ReactNode;
+  className?: string;
+  maxTilt?: number;
+  glowEffect?: boolean;
+}
+
+export function TiltCard({
+  children,
+  className = '',
+  maxTilt = 12,
+  glowEffect = true,
+  ...props
+}: TiltCardProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Normalized mouse coordinates (-0.5 to 0.5)
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  // Smooth spring physics for rotation
+  const springConfig = { damping: 20, stiffness: 220 };
+  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [maxTilt, -maxTilt]), springConfig);
+  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-maxTilt, maxTilt]), springConfig);
+
+  // Glare / Sheen position
+  const sheenX = useTransform(mouseX, [-0.5, 0.5], ['0%', '100%']);
+  const sheenY = useTransform(mouseY, [-0.5, 0.5], ['0%', '100%']);
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    mouseX.set(x);
+    mouseY.set(y);
+  };
+
+  const handlePointerEnter = () => setIsHovered(true);
+
+  const handlePointerLeave = () => {
+    setIsHovered(false);
+    mouseX.set(0);
+    mouseY.set(0);
+  };
+
+  return (
+    <div style={{ perspective: 1000 }} className="relative">
+      <motion.div
+        ref={cardRef}
+        onPointerMove={handlePointerMove}
+        onPointerEnter={handlePointerEnter}
+        onPointerLeave={handlePointerLeave}
+        style={{
+          rotateX,
+          rotateY,
+          transformStyle: 'preserve-3d',
+        }}
+        className={`shuttle-panel relative overflow-hidden transition-shadow duration-300 ${
+          isHovered ? 'shadow-[0_20px_50px_rgba(0,200,83,0.15)] border-sl-green/40' : ''
+        } ${className}`}
+        {...(props as any)}
+      >
+        {/* Dynamic Light Sheen Overlay */}
+        {glowEffect && isHovered && (
+          <motion.div
+            className="pointer-events-none absolute inset-0 z-20 opacity-40 mix-blend-overlay transition-opacity duration-300"
+            style={{
+              background: `radial-gradient(circle at ${sheenX} ${sheenY}, rgba(255,255,255,0.45) 0%, transparent 60%)`,
+            }}
+          />
+        )}
+
+        <div className="relative z-10" style={{ transform: 'translateZ(20px)' }}>
+          {children}
+        </div>
+      </motion.div>
+    </div>
+  );
+}

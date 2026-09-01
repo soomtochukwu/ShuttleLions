@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
+import { ShuttleCursor } from "@/components/ShuttleCursor";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -9,18 +10,18 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "ShuttleLions 🏸 | UNN Badminton Registration & Fees",
+  title: "ShuttleLions 🏸 | Official UNN Badminton Community Platform",
   description:
-    "Official badminton registration and fee payment platform for the University of Nigeria, Nsukka (UNN).",
+    "Official badminton registration, community leagues, court schedules, and equipment portal for the University of Nigeria, Nsukka (UNN).",
   openGraph: {
-    title: "ShuttleLions 🏸",
-    description: "Official UNN Badminton Club Registration & Fees Portal.",
+    title: "ShuttleLions 🏸 | UNN Badminton Club",
+    description: "Join the ShuttleLions Badminton Club at UNN. Registration, weekly training schedules, community chat & pro gear.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "ShuttleLions 🏸",
-    description: "Join the ShuttleLions Badminton Club at UNN. Register and pay dues online.",
+    title: "ShuttleLions 🏸 | UNN Badminton Club",
+    description: "Join the ShuttleLions Badminton Club at UNN. Registration, weekly training schedules, community chat & pro gear.",
   },
 };
 
@@ -43,8 +44,9 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className={`${inter.variable} antialiased min-h-screen flex flex-col bg-sl-bg`}>
+      <body className={`${inter.variable} antialiased min-h-screen flex flex-col bg-sl-bg text-sl-foreground`}>
         <Providers>
+          <ShuttleCursor />
           <main className="flex-grow flex flex-col w-full relative z-10">
             {children}
           </main>
