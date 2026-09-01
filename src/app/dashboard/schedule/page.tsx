@@ -94,13 +94,21 @@ export default function SchedulePage() {
   const [newDesc, setNewDesc] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Permission Gate: Admin, Captain, Logistician, or any custom role with can_manage_schedule / executive appointment
-  const userCustomRole = customRoles.find((r) => r.id === user?.role);
-  const canManageSchedule =
-    user?.role === 'admin' ||
-    user?.role === 'captain' ||
-    Boolean(userCustomRole?.can_manage_schedule) ||
-    (Boolean(user?.role) && user?.role !== 'member');
+  // Permission Gate: Strictly Admin or any appointed Logistician
+  const isLogistician =
+    user?.role === 'logistician' ||
+    Boolean(user?.role && user.role.toLowerCase().includes('logistician')) ||
+    Boolean(
+      customRoles.some(
+        (r) =>
+          r.id === user?.role &&
+          (r.can_manage_schedule ||
+            r.id.toLowerCase().includes('logistician') ||
+            r.title.toLowerCase().includes('logistician'))
+      )
+    );
+
+  const canManageSchedule = user?.role === 'admin' || isLogistician;
 
   const handleToggleRsvp = (eventId: string) => {
     audio.play('whistle');
@@ -139,7 +147,7 @@ export default function SchedulePage() {
     if (!canManageSchedule) {
       showAlert({
         title: 'Access Denied',
-        message: 'Only club executives and appointed coordinators can publish custom schedules.',
+        message: 'Only administrators and appointed Logisticians can create or alter schedules.',
         type: 'warning',
       });
       return;
