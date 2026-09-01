@@ -204,7 +204,7 @@ export default function DashboardOverviewPage() {
                 <p className="text-[11px] text-sl-muted">{upcomingEvents[0].location}</p>
               </div>
             ) : (
-              <p className="text-xs text-sl-muted">Saturday 08:00 AM • Indoor Hall</p>
+              <p className="text-xs text-sl-muted">Saturday 07:00 AM • UNN Badminton Court</p>
             )}
           </div>
           <Link
