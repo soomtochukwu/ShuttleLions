@@ -32,6 +32,7 @@ import {
 import { audio } from '@/lib/audio';
 
 import { useCachedQuery } from '@/lib/client-cache';
+import { formatTimeRangeWAT, formatFullDateTimeRangeWAT, createIsoWAT } from '@/lib/date-utils';
 
 interface MapModalData {
   title: string;
@@ -185,8 +186,8 @@ export default function SchedulePage() {
     audio.play('smash');
 
     try {
-      const startDateTime = new Date(`${newDate}T${newStartTime}:00`).toISOString();
-      const endDateTime = new Date(`${newDate}T${newEndTime || newStartTime}:00`).toISOString();
+      const startDateTime = createIsoWAT(newDate, newStartTime);
+      const endDateTime = createIsoWAT(newDate, newEndTime || newStartTime);
 
       const parsedLat = newLat.trim() ? parseFloat(newLat.trim()) : null;
       const parsedLng = newLng.trim() ? parseFloat(newLng.trim()) : null;
@@ -296,11 +297,7 @@ export default function SchedulePage() {
   };
 
   const formatEventTimeRange = (ev: EventItem) => {
-    const start = new Date(ev.start_at);
-    const end = new Date(ev.end_at);
-    const startStr = start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-    const endStr = end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-    return `${startStr} – ${endStr}`;
+    return formatTimeRangeWAT(ev.start_at, ev.end_at);
   };
 
   return (
@@ -535,16 +532,7 @@ export default function SchedulePage() {
                       <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-sl-foreground pt-2">
                         <span className="flex items-center gap-1.5 text-sl-green font-mono">
                           <Clock className="w-3.5 h-3.5" />
-                          {startDate.toLocaleDateString('en-GB', {
-                            weekday: 'short',
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                          })}{' '}
-                          •{' '}
-                          {startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          {' – '}
-                          {endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {formatFullDateTimeRangeWAT(ev.start_at, ev.end_at)}
                         </span>
 
                         {/* Interactive Clickable Location Tag */}

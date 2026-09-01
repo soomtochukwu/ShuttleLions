@@ -21,7 +21,7 @@ const STATS = [
     icon: <Clock className="w-6 h-6 text-sl-green" />,
     value: '3x',
     label: 'Weekly Club Activities',
-    desc: 'Tuesday (4PM Training), Saturday (7AM In-House Tournament) & Sunday (4PM Training).',
+    desc: 'Tuesday (4PM–6:30PM), Saturday (7AM–12PM) & Sunday (4PM–6:30PM WAT).',
   },
   {
     icon: <CheckCircle2 className="w-6 h-6 text-sl-green-glow" />,

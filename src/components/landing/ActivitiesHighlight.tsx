@@ -10,7 +10,7 @@ const HIGHLIGHTS = [
   {
     id: 1,
     title: 'Saturday In-House Tournament & Knockout League',
-    date: 'Saturday In-House Tournament (7:00 AM)',
+    date: 'Saturday In-House Tournament (7:00 AM – 12:00 PM WAT)',
     location: 'UNN Badminton Court',
     image: 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=1200&auto=format&fit=crop&q=80',
     desc: 'Weekly club championship matchplay, knockout brackets, tactical doubles rotations, and inter-faculty points race.',
@@ -18,7 +18,7 @@ const HIGHLIGHTS = [
   {
     id: 2,
     title: 'Beginner & Intermediate Footwork Masterclass',
-    date: 'Tuesday Drills (4:00 PM)',
+    date: 'Tuesday Drills (4:00 PM – 6:30 PM WAT)',
     location: 'UNN Badminton Court',
     image: 'https://images.unsplash.com/photo-1613918108466-292b78a8ef95?w=1200&auto=format&fit=crop&q=80',
     desc: 'Focusing on 6-corner split steps, explosive scissor jumps, and injury prevention mechanics.',
@@ -26,7 +26,7 @@ const HIGHLIGHTS = [
   {
     id: 3,
     title: 'Inter-Faculty Doubles Showdown & Open Rallies',
-    date: 'Sunday Matchplay (4:00 PM)',
+    date: 'Sunday Matchplay (4:00 PM – 6:30 PM WAT)',
     location: 'UNN Badminton Court',
     image: 'https://images.unsplash.com/photo-1521537634581-0dced2fee2ef?w=1200&auto=format&fit=crop&q=80',
     desc: 'Engineering, Medicine, Arts, and Sciences clash for collegiate glory and Yonex gear medals.',

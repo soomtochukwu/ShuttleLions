@@ -7,6 +7,8 @@ import { Calendar, Trophy, Zap, ChevronRight } from 'lucide-react';
 
 import { useCachedQuery } from '@/lib/client-cache';
 
+import { formatTimeWAT } from '@/lib/date-utils';
+
 export function ActivityRibbon() {
   const { data: dbEvents } = useCachedQuery<EventItem[]>({
     key: 'schedule_events',
@@ -26,7 +28,7 @@ export function ActivityRibbon() {
     name: string;
     timeLeft: { days: number; hours: number; mins: number };
   }>({
-    label: 'Saturday 07:00 AM',
+    label: 'Saturday 07:00 AM WAT',
     venue: 'UNN Badminton Court',
     name: 'In-House Tournament',
     timeLeft: { days: 0, hours: 0, mins: 0 },
@@ -70,8 +72,11 @@ export function ActivityRibbon() {
           const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
           const mins = Math.floor((totalSeconds % 3600) / 60);
 
-          const dayName = closestTarget.toLocaleDateString('en-GB', { weekday: 'long' });
-          const timeFormatted = closestTarget.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const dayName = closestTarget.toLocaleDateString('en-GB', {
+            timeZone: 'Africa/Lagos',
+            weekday: 'long',
+          });
+          const timeFormatted = formatTimeWAT(closestTarget);
 
           setNextActivity({
             label: `${dayName} ${timeFormatted}`,
