@@ -3,15 +3,10 @@
 import { useEffect, useState } from 'react';
 import { supabase, type EventItem } from '@/lib/supabase';
 import Link from 'next/link';
-import { Calendar, Trophy, Zap, ChevronRight, MapPin } from 'lucide-react';
-
-const FIXED_SESSIONS = [
-  { day: 2, hour: 16, min: 0, label: 'Tuesday 04:00 PM', name: 'Varsity Training' },
-  { day: 6, hour: 7, min: 0, label: 'Saturday 07:00 AM', name: 'In-House Tournament' },
-  { day: 0, hour: 16, min: 0, label: 'Sunday 04:00 PM', name: 'Open Matchplay' },
-];
+import { Calendar, Trophy, Zap, ChevronRight } from 'lucide-react';
 
 export function ActivityRibbon() {
+  const [dbEvents, setDbEvents] = useState<EventItem[]>([]);
   const [nextActivity, setNextActivity] = useState<{
     label: string;
     venue: string;
@@ -25,49 +20,94 @@ export function ActivityRibbon() {
   });
 
   useEffect(() => {
+    async function loadEvents() {
+      try {
+        const { data } = await supabase
+          .from('events')
+          .select('*')
+          .order('start_at', { ascending: true });
+        if (data && data.length > 0) {
+          setDbEvents(data);
+        }
+      } catch (e) {
+        console.error('Error fetching ribbon schedule from database:', e);
+      }
+    }
+    loadEvents();
+  }, []);
+
+  useEffect(() => {
     const calculateNextSession = () => {
       const now = new Date();
 
-      // Find the next upcoming session from fixed weekly routines
-      let closestTarget: Date | null = null;
-      let closestSession = FIXED_SESSIONS[1];
+      // Use database events if loaded
+      const recurring = dbEvents.filter((e) => e.is_recurring);
 
-      for (const session of FIXED_SESSIONS) {
-        const target = new Date(now);
-        let dayDiff = (session.day - now.getDay() + 7) % 7;
-        target.setDate(now.getDate() + dayDiff);
-        target.setHours(session.hour, session.min, 0, 0);
+      if (recurring.length > 0) {
+        let closestTarget: Date | null = null;
+        let closestEvent: EventItem | null = null;
 
-        // If target is in the past today, move to next week
-        if (target.getTime() <= now.getTime()) {
-          target.setDate(target.getDate() + 7);
+        for (const ev of recurring) {
+          const evDate = new Date(ev.start_at);
+          const targetDay = evDate.getDay();
+          const targetHours = evDate.getHours();
+          const targetMins = evDate.getMinutes();
+
+          const target = new Date(now);
+          let dayDiff = (targetDay - now.getDay() + 7) % 7;
+          target.setDate(now.getDate() + dayDiff);
+          target.setHours(targetHours, targetMins, 0, 0);
+
+          if (target.getTime() <= now.getTime()) {
+            target.setDate(target.getDate() + 7);
+          }
+
+          if (!closestTarget || target.getTime() < closestTarget.getTime()) {
+            closestTarget = target;
+            closestEvent = ev;
+          }
         }
 
-        if (!closestTarget || target.getTime() < closestTarget.getTime()) {
-          closestTarget = target;
-          closestSession = session;
+        if (closestTarget && closestEvent) {
+          const totalSeconds = Math.max(0, Math.floor((closestTarget.getTime() - now.getTime()) / 1000));
+          const days = Math.floor(totalSeconds / (3600 * 24));
+          const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
+          const mins = Math.floor((totalSeconds % 3600) / 60);
+
+          const dayName = closestTarget.toLocaleDateString('en-GB', { weekday: 'long' });
+          const timeFormatted = closestTarget.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+          setNextActivity({
+            label: `${dayName} ${timeFormatted}`,
+            venue: closestEvent.location || 'UNN Badminton Court',
+            name: closestEvent.title,
+            timeLeft: { days, hours, mins },
+          });
+          return;
         }
       }
 
-      if (closestTarget) {
-        const totalSeconds = Math.max(0, Math.floor((closestTarget.getTime() - now.getTime()) / 1000));
-        const days = Math.floor(totalSeconds / (3600 * 24));
-        const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
-        const mins = Math.floor((totalSeconds % 3600) / 60);
+      // Fallback calculation until DB loads
+      const fallbackTarget = new Date(now);
+      let dayDiff = (6 - now.getDay() + 7) % 7 || 7;
+      fallbackTarget.setDate(now.getDate() + dayDiff);
+      fallbackTarget.setHours(7, 0, 0, 0);
 
-        setNextActivity({
-          label: closestSession.label,
-          venue: 'UNN Badminton Court',
-          name: closestSession.name,
-          timeLeft: { days, hours, mins },
-        });
-      }
+      const totalSeconds = Math.max(0, Math.floor((fallbackTarget.getTime() - now.getTime()) / 1000));
+      const days = Math.floor(totalSeconds / (3600 * 24));
+      const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
+      const mins = Math.floor((totalSeconds % 3600) / 60);
+
+      setNextActivity((prev) => ({
+        ...prev,
+        timeLeft: { days, hours, mins },
+      }));
     };
 
     calculateNextSession();
     const interval = setInterval(calculateNextSession, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [dbEvents]);
 
   return (
     <div className="w-full bg-gradient-to-r from-[#031508] via-[#08200f] to-[#031508] border-b border-sl-border/40 text-sl-foreground py-1 px-4 text-xs font-semibold select-none">

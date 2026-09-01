@@ -51,8 +51,8 @@ export default function AdminCommandRoom() {
   const [newEvStartTime, setNewStartTime] = useState('16:00');
   const [newEvEndTime, setNewEndTime] = useState('18:00');
   const [newEvLoc, setNewEvLoc] = useState('UNN Badminton Court');
-  const [newEvLat, setNewEvLat] = useState('6.8688');
-  const [newEvLng, setNewEvLng] = useState('7.4074');
+  const [newEvLat, setNewEvLat] = useState('');
+  const [newEvLng, setNewEvLng] = useState('');
   const [newEvType, setNewEvType] = useState<'training' | 'competition' | 'social' | 'meeting' | 'workshop'>('training');
   const [newEvDesc, setNewEvDesc] = useState('');
 
@@ -95,8 +95,12 @@ export default function AdminCommandRoom() {
     const startDateTime = new Date(`${newEvDate}T${newEvStartTime}:00`).toISOString();
     const endDateTime = new Date(`${newEvDate}T${newEvEndTime}:00`).toISOString();
 
-    const parsedLat = parseFloat(newEvLat) || 6.8688;
-    const parsedLng = parseFloat(newEvLng) || 7.4074;
+    const parsedLat = newEvLat.trim() ? parseFloat(newEvLat.trim()) : null;
+    const parsedLng = newEvLng.trim() ? parseFloat(newEvLng.trim()) : null;
+    const parsedMapUrl =
+      parsedLat != null && parsedLng != null
+        ? `https://www.google.com/maps/search/?api=1&query=${parsedLat},${parsedLng}`
+        : null;
 
     const newEvRecord = {
       title: newEvTitle.trim(),
@@ -109,7 +113,7 @@ export default function AdminCommandRoom() {
       recurrence_rule: null,
       latitude: parsedLat,
       longitude: parsedLng,
-      map_url: `https://www.google.com/maps/search/?api=1&query=${parsedLat},${parsedLng}`,
+      map_url: parsedMapUrl,
       created_by: user.id,
       status: 'upcoming',
       created_at: new Date().toISOString(),
@@ -126,6 +130,8 @@ export default function AdminCommandRoom() {
 
       setNewEvTitle('');
       setNewEvDesc('');
+      setNewEvLat('');
+      setNewEvLng('');
       showAlert({
         title: 'Event Scheduled! 📅',
         message: `"${newEvRecord.title}" has been published to the ShuttleLions calendar for ${newEvDate} at ${newEvStartTime}.`,

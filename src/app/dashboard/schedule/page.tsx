@@ -26,53 +26,16 @@ import {
   ExternalLink,
   Map as MapIcon,
   Check,
+  AlertCircle,
+  Loader2,
 } from 'lucide-react';
 import { audio } from '@/lib/audio';
-
-const CORE_WEEKLY_ROUTINES = [
-  {
-    day: 'Tuesdays',
-    time: '4:00 PM – 6:00 PM',
-    title: 'Varsity Training & Footwork Conditioning',
-    location: 'UNN Badminton Court',
-    latitude: 6.8688,
-    longitude: 7.4074,
-    category: 'Training Drill',
-    description: 'High-intensity tactical footwork, multi-shuttle smash-and-net drills, and singles matchplay conditioning.',
-    badge: 'Weekly Drill 🏸',
-    color: 'emerald',
-  },
-  {
-    day: 'Saturdays',
-    time: '7:00 AM – 10:00 AM',
-    title: 'In-House Tournament & Doubles Championship',
-    location: 'UNN Badminton Court',
-    latitude: 6.8688,
-    longitude: 7.4074,
-    category: 'In-House Tournament',
-    description: 'Weekly club tournament brackets, competitive singles & doubles points league, and varsity match sparring.',
-    badge: 'In-House Tournament 🏆',
-    color: 'amber',
-  },
-  {
-    day: 'Sundays',
-    time: '4:00 PM – 6:30 PM',
-    title: 'Afternoon Open Rallies & Club Matchplay',
-    location: 'UNN Badminton Court',
-    latitude: 6.8688,
-    longitude: 7.4074,
-    category: 'Club Matchplay',
-    description: 'Casual and competitive open club matchplay, tactical doubles rotations, and umpire practice.',
-    badge: 'Open Matchplay 🏆',
-    color: 'amber',
-  },
-];
 
 interface MapModalData {
   title: string;
   location: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number | null;
+  longitude?: number | null;
   mapUrl?: string | null;
 }
 
@@ -84,6 +47,7 @@ export default function SchedulePage() {
   const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
   const [rsvps, setRsvps] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<'all' | 'weekly' | 'impromptu' | 'competition'>('all');
+  const [isLoading, setIsLoading] = useState(true);
 
   // Map Location Modal State
   const [activeMapModal, setActiveMapModal] = useState<MapModalData | null>(null);
@@ -96,8 +60,8 @@ export default function SchedulePage() {
   const [newStartTime, setNewStartTime] = useState('16:00');
   const [newEndTime, setNewEndTime] = useState('18:00');
   const [newLoc, setNewLoc] = useState('UNN Badminton Court');
-  const [newLat, setNewLat] = useState('6.8688');
-  const [newLng, setNewLng] = useState('7.4074');
+  const [newLat, setNewLat] = useState('');
+  const [newLng, setNewLng] = useState('');
   const [newMapUrl, setNewMapUrl] = useState('');
   const [newType, setNewType] = useState<'training' | 'competition' | 'social' | 'meeting' | 'workshop'>('training');
   const [newDesc, setNewDesc] = useState('');
@@ -105,14 +69,21 @@ export default function SchedulePage() {
 
   useEffect(() => {
     async function loadData() {
-      const { data: evData } = await supabase
-        .from('events')
-        .select('*')
-        .order('start_at', { ascending: true });
-      setEvents(evData || []);
+      setIsLoading(true);
+      try {
+        const { data: evData } = await supabase
+          .from('events')
+          .select('*')
+          .order('start_at', { ascending: true });
+        setEvents(evData || []);
 
-      const { data: rData } = await supabase.from('custom_roles').select('*');
-      setCustomRoles(rData || []);
+        const { data: rData } = await supabase.from('custom_roles').select('*');
+        setCustomRoles(rData || []);
+      } catch (err) {
+        console.error('Error loading schedule from database:', err);
+      } finally {
+        setIsLoading(false);
+      }
     }
     loadData();
   }, []);
@@ -142,14 +113,14 @@ export default function SchedulePage() {
     setActiveMapModal({
       title,
       location: location || 'UNN Badminton Court',
-      latitude: latitude ?? 6.8688,
-      longitude: longitude ?? 7.4074,
+      latitude: typeof latitude === 'number' ? latitude : null,
+      longitude: typeof longitude === 'number' ? longitude : null,
       mapUrl: mapUrl || null,
     });
   };
 
   const handleCopyCoordinates = () => {
-    if (!activeMapModal) return;
+    if (!activeMapModal || activeMapModal.latitude == null || activeMapModal.longitude == null) return;
     const coordString = `${activeMapModal.latitude}, ${activeMapModal.longitude}`;
     navigator.clipboard.writeText(coordString);
     setIsCopiedGps(true);
@@ -176,8 +147,13 @@ export default function SchedulePage() {
       const startDateTime = new Date(`${newDate}T${newStartTime}:00`).toISOString();
       const endDateTime = new Date(`${newDate}T${newEndTime || newStartTime}:00`).toISOString();
 
-      const parsedLat = parseFloat(newLat) || 6.8688;
-      const parsedLng = parseFloat(newLng) || 7.4074;
+      const parsedLat = newLat.trim() ? parseFloat(newLat.trim()) : null;
+      const parsedLng = newLng.trim() ? parseFloat(newLng.trim()) : null;
+      const parsedMapUrl =
+        newMapUrl.trim() ||
+        (parsedLat != null && parsedLng != null
+          ? `https://www.google.com/maps/search/?api=1&query=${parsedLat},${parsedLng}`
+          : null);
 
       const newEventRecord = {
         title: newTitle.trim(),
@@ -189,7 +165,7 @@ export default function SchedulePage() {
         is_recurring: false,
         latitude: parsedLat,
         longitude: parsedLng,
-        map_url: newMapUrl.trim() || `https://www.google.com/maps/search/?api=1&query=${parsedLat},${parsedLng}`,
+        map_url: parsedMapUrl,
         created_by: user?.id || null,
         status: 'upcoming',
       };
@@ -217,9 +193,12 @@ export default function SchedulePage() {
       setIsModalOpen(false);
       setNewTitle('');
       setNewDesc('');
+      setNewLat('');
+      setNewLng('');
+      setNewMapUrl('');
       showAlert({
         title: 'Schedule Published! ⚡📅',
-        message: `"${newTitle}" has been scheduled for ${newDate} at ${newStartTime} at ${newLoc} and added to the court calendar.`,
+        message: `"${newTitle}" has been scheduled for ${newDate} at ${newStartTime} and added to the court calendar.`,
         type: 'success',
       });
     } catch (err: any) {
@@ -257,6 +236,9 @@ export default function SchedulePage() {
     });
   };
 
+  // Derive Weekly Recurring Routines Dynamically From Database Records
+  const weeklyRoutines = events.filter((e) => e.is_recurring);
+
   const filteredEvents = events.filter((ev) => {
     if (filter === 'all') return true;
     if (filter === 'weekly') return ev.is_recurring;
@@ -264,6 +246,21 @@ export default function SchedulePage() {
     if (filter === 'competition') return ev.event_type === 'competition';
     return true;
   });
+
+  const formatEventDay = (ev: EventItem) => {
+    if (ev.recurrence_rule?.includes(':TUE:')) return 'Tuesdays';
+    if (ev.recurrence_rule?.includes(':SAT:')) return 'Saturdays';
+    if (ev.recurrence_rule?.includes(':SUN:')) return 'Sundays';
+    return new Date(ev.start_at).toLocaleDateString('en-GB', { weekday: 'long' }) + 's';
+  };
+
+  const formatEventTimeRange = (ev: EventItem) => {
+    const start = new Date(ev.start_at);
+    const end = new Date(ev.end_at);
+    const startStr = start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    const endStr = end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    return `${startStr} – ${endStr}`;
+  };
 
   return (
     <div className="space-y-10 pb-16">
@@ -296,7 +293,7 @@ export default function SchedulePage() {
         )}
       </div>
 
-      {/* 1. Official Core Weekly Routines */}
+      {/* 1. Official Core Weekly Routines (100% Sourced From Database) */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -306,54 +303,84 @@ export default function SchedulePage() {
             </h2>
           </div>
           <span className="text-[11px] font-bold text-sl-green bg-sl-green/10 px-2.5 py-0.5 rounded-full border border-sl-green/20">
-            3 Fixed Sessions / Week
+            {weeklyRoutines.length} Recurring Sessions in Database
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {CORE_WEEKLY_ROUTINES.map((routine) => (
-            <TiltCard
-              key={routine.day}
-              className="p-5 bg-sl-panel border border-sl-border relative overflow-hidden space-y-3"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-black uppercase text-sl-green bg-sl-green/15 px-2.5 py-1 rounded-lg border border-sl-green/30">
-                  {routine.day}
-                </span>
-                <span className="text-[11px] font-black text-sl-foreground font-mono">
-                  {routine.time}
-                </span>
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="p-6 rounded-2xl bg-sl-panel border border-sl-border animate-pulse space-y-4"
+              >
+                <div className="h-4 bg-sl-border rounded w-1/3" />
+                <div className="h-6 bg-sl-border rounded w-3/4" />
+                <div className="h-10 bg-sl-border rounded w-full" />
               </div>
+            ))}
+          </div>
+        ) : weeklyRoutines.length === 0 ? (
+          <div className="p-6 bg-sl-panel rounded-2xl border border-sl-border text-center text-xs text-sl-muted">
+            No recurring weekly routines found in the database.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {weeklyRoutines.map((routine) => {
+              const dayLabel = formatEventDay(routine);
+              const timeRange = formatEventTimeRange(routine);
+              const isCompetition = routine.event_type === 'competition';
 
-              <div>
-                <h3 className="text-sm font-black text-sl-foreground">{routine.title}</h3>
-                <p className="text-xs text-sl-muted mt-1 leading-relaxed font-medium">
-                  {routine.description}
-                </p>
-              </div>
-
-              <div className="pt-2 border-t border-sl-border/50 flex items-center justify-between text-[11px] text-sl-muted font-bold">
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleOpenMap(
-                      routine.title,
-                      routine.location,
-                      routine.latitude,
-                      routine.longitude
-                    )
-                  }
-                  className="flex items-center gap-1.5 text-sl-foreground hover:text-sl-green transition-colors cursor-pointer group"
-                  title="Click to view court GPS coordinates & directions"
+              return (
+                <TiltCard
+                  key={routine.id}
+                  className="p-5 bg-sl-panel border border-sl-border relative overflow-hidden space-y-3"
                 >
-                  <MapPin className="w-3.5 h-3.5 text-sl-green group-hover:scale-110 transition-transform" />
-                  <span className="underline decoration-dotted group-hover:text-sl-green">{routine.location}</span>
-                </button>
-                <span className="text-sl-green">{routine.badge}</span>
-              </div>
-            </TiltCard>
-          ))}
-        </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black uppercase text-sl-green bg-sl-green/15 px-2.5 py-1 rounded-lg border border-sl-green/30">
+                      {dayLabel}
+                    </span>
+                    <span className="text-[11px] font-black text-sl-foreground font-mono">
+                      {timeRange}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-black text-sl-foreground">{routine.title}</h3>
+                    <p className="text-xs text-sl-muted mt-1 leading-relaxed font-medium">
+                      {routine.description}
+                    </p>
+                  </div>
+
+                  <div className="pt-2 border-t border-sl-border/50 flex items-center justify-between text-[11px] text-sl-muted font-bold">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleOpenMap(
+                          routine.title,
+                          routine.location,
+                          routine.latitude,
+                          routine.longitude,
+                          routine.map_url
+                        )
+                      }
+                      className="flex items-center gap-1.5 text-sl-foreground hover:text-sl-green transition-colors cursor-pointer group"
+                      title="Click to view court GPS coordinates & directions"
+                    >
+                      <MapPin className="w-3.5 h-3.5 text-sl-green group-hover:scale-110 transition-transform" />
+                      <span className="underline decoration-dotted group-hover:text-sl-green">
+                        {routine.location}
+                      </span>
+                    </button>
+                    <span className="text-sl-green">
+                      {isCompetition ? 'In-House Tournament 🏆' : 'Weekly Routine 🏸'}
+                    </span>
+                  </div>
+                </TiltCard>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* 2. Calendar Activities & Filter */}
@@ -417,7 +444,12 @@ export default function SchedulePage() {
 
         {/* Events List */}
         <div className="space-y-4">
-          {filteredEvents.length === 0 ? (
+          {isLoading ? (
+            <div className="p-8 text-center bg-sl-panel rounded-2xl border border-sl-border flex items-center justify-center gap-2 text-sl-muted text-xs">
+              <Loader2 className="w-4 h-4 animate-spin text-sl-green" />
+              <span>Loading schedules from database...</span>
+            </div>
+          ) : filteredEvents.length === 0 ? (
             <div className="p-8 text-center bg-sl-panel rounded-2xl border border-sl-border text-sl-muted text-xs font-medium">
               No upcoming schedules found for this category filter.
             </div>
@@ -552,33 +584,44 @@ export default function SchedulePage() {
                 </div>
               </div>
 
-              {/* GPS Coordinates Badge & Copy Action */}
-              <div className="flex items-center justify-between p-2.5 rounded-lg bg-sl-panel border border-sl-border text-xs">
-                <div className="space-y-0.5">
-                  <span className="text-[10px] font-mono font-bold text-sl-muted uppercase">GPS Coordinates</span>
-                  <p className="font-mono font-black text-sl-green">
-                    {activeMapModal.latitude.toFixed(6)}° N, {activeMapModal.longitude.toFixed(6)}° E
-                  </p>
-                </div>
+              {/* GPS Coordinates Display (Read directly from database) */}
+              {activeMapModal.latitude != null && activeMapModal.longitude != null ? (
+                <div className="flex items-center justify-between p-2.5 rounded-lg bg-sl-panel border border-sl-border text-xs">
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] font-mono font-bold text-sl-muted uppercase">
+                      GPS Coordinates (Database)
+                    </span>
+                    <p className="font-mono font-black text-sl-green">
+                      {activeMapModal.latitude.toFixed(6)}° N, {activeMapModal.longitude.toFixed(6)}° E
+                    </p>
+                  </div>
 
-                <button
-                  type="button"
-                  onClick={handleCopyCoordinates}
-                  className="px-3 py-1.5 rounded-lg bg-sl-bg hover:bg-sl-green/10 text-sl-foreground border border-sl-border hover:border-sl-green font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95"
-                >
-                  {isCopiedGps ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-sl-green" />
-                      <span className="text-sl-green">Copied!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5 text-sl-muted" />
-                      <span>Copy GPS</span>
-                    </>
-                  )}
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyCoordinates}
+                    className="px-3 py-1.5 rounded-lg bg-sl-bg hover:bg-sl-green/10 text-sl-foreground border border-sl-border hover:border-sl-green font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95"
+                  >
+                    {isCopiedGps ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-sl-green" />
+                        <span className="text-sl-green">Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 text-sl-muted" />
+                        <span>Copy GPS</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <div className="p-2.5 rounded-lg bg-sl-panel border border-sl-border text-xs flex items-center gap-2 text-sl-muted">
+                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span className="text-[11px]">
+                    GPS coordinates not yet configured in database for this venue.
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Navigation Actions */}
@@ -586,7 +629,9 @@ export default function SchedulePage() {
               <a
                 href={
                   activeMapModal.mapUrl ||
-                  `https://www.google.com/maps/dir/?api=1&destination=${activeMapModal.latitude},${activeMapModal.longitude}`
+                  (activeMapModal.latitude != null && activeMapModal.longitude != null
+                    ? `https://www.google.com/maps/dir/?api=1&destination=${activeMapModal.latitude},${activeMapModal.longitude}`
+                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activeMapModal.location)}`)
                 }
                 target="_blank"
                 rel="noopener noreferrer"
@@ -597,15 +642,17 @@ export default function SchedulePage() {
                 <ExternalLink className="w-3.5 h-3.5 ml-1" />
               </a>
 
-              <a
-                href={`https://www.openstreetmap.org/?mlat=${activeMapModal.latitude}&mlon=${activeMapModal.longitude}#map=17/${activeMapModal.latitude}/${activeMapModal.longitude}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full py-2.5 px-4 rounded-xl bg-sl-panel hover:bg-sl-bg text-sl-foreground border border-sl-border font-bold text-xs flex items-center justify-center gap-2 transition-colors"
-              >
-                <MapIcon className="w-4 h-4 text-sl-green" />
-                <span>View on OpenStreetMap 🌍</span>
-              </a>
+              {activeMapModal.latitude != null && activeMapModal.longitude != null && (
+                <a
+                  href={`https://www.openstreetmap.org/?mlat=${activeMapModal.latitude}&mlon=${activeMapModal.longitude}#map=17/${activeMapModal.latitude}/${activeMapModal.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2.5 px-4 rounded-xl bg-sl-panel hover:bg-sl-bg text-sl-foreground border border-sl-border font-bold text-xs flex items-center justify-center gap-2 transition-colors"
+                >
+                  <MapIcon className="w-4 h-4 text-sl-green" />
+                  <span>View on OpenStreetMap 🌍</span>
+                </a>
+              )}
             </div>
           </div>
         </ShuttleModal>
@@ -677,19 +724,19 @@ export default function SchedulePage() {
               required
             />
 
-            {/* GPS Coordinates Inputs */}
+            {/* GPS Coordinates Inputs (Optional) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <ShuttleInput
-                label="Latitude (GPS)"
+                label="Latitude (GPS - Optional)"
                 value={newLat}
                 onChange={(e) => setNewLat(e.target.value)}
-                placeholder="6.868800"
+                placeholder="e.g. 6.868800"
               />
               <ShuttleInput
-                label="Longitude (GPS)"
+                label="Longitude (GPS - Optional)"
                 value={newLng}
                 onChange={(e) => setNewLng(e.target.value)}
-                placeholder="7.407400"
+                placeholder="e.g. 7.407400"
               />
             </div>
 
