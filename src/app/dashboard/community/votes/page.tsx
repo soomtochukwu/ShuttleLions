@@ -9,9 +9,11 @@ import { ShuttleModal } from '@/components/ui/ShuttleModal';
 import { ShuttleInput } from '@/components/ui/ShuttleInput';
 import { Vote, CheckCircle2, Plus, Clock, BarChart3 } from 'lucide-react';
 import { audio } from '@/lib/audio';
+import { useFeedback } from '@/components/ui/FeedbackModal';
 
 export default function CommunityVotesPage() {
   const { user } = useAuth();
+  const { showAlert } = useFeedback();
 
   const [polls, setPolls] = useState<Poll[]>([]);
   const [userVotes, setUserVotes] = useState<Record<string, string>>({});
@@ -29,20 +31,19 @@ export default function CommunityVotesPage() {
   }, []);
 
   const handleVote = async (pollId: string, optionId: string) => {
-    if (!user?.id) return;
-    audio.play('whistle');
+    if (!user?.id || userVotes[pollId]) return;
+    audio.play('rally');
 
     setUserVotes((prev) => ({ ...prev, [pollId]: optionId }));
-
     setPolls((prev) =>
       prev.map((p) => {
-        if (p.id === pollId && p.options) {
-          const updated = p.options.map((opt) =>
+        if (p.id !== pollId) return p;
+        return {
+          ...p,
+          options: p.options?.map((opt) =>
             opt.id === optionId ? { ...opt, vote_count: opt.vote_count + 1 } : opt
-          );
-          return { ...p, options: updated };
-        }
-        return p;
+          ),
+        };
       })
     );
   };
@@ -51,21 +52,29 @@ export default function CommunityVotesPage() {
     e.preventDefault();
     if (!newTitle.trim() || !user?.id) return;
 
-    audio.play('serve');
     const validOptions = newOptions.filter((o) => o.trim().length > 0);
+    if (validOptions.length < 2) {
+      showAlert({
+        title: 'More Options Required',
+        message: 'Please provide at least 2 distinct poll options.',
+        type: 'warning',
+      });
+      return;
+    }
 
+    audio.play('whistle');
     const newPoll: Poll = {
       id: `poll-${Date.now()}`,
+      created_by: user.id,
       title: newTitle.trim(),
       description: newDesc.trim(),
       poll_type: 'single',
       status: 'active',
       closes_at: new Date(Date.now() + 86400000 * 7).toISOString(),
-      created_by: user.id,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       options: validOptions.map((text, idx) => ({
-        id: `opt-${Date.now()}-${idx}`,
+        id: `opt-${idx}-${Date.now()}`,
         poll_id: `poll-${Date.now()}`,
         option_text: text,
         vote_count: 0,
@@ -78,7 +87,11 @@ export default function CommunityVotesPage() {
     setNewTitle('');
     setNewDesc('');
     setNewOptions(['', '', '']);
-    alert('Community poll created successfully!');
+    showAlert({
+      title: 'Poll Published! 🗳️',
+      message: `"${newPoll.title}" is now open for athlete voting.`,
+      type: 'success',
+    });
   };
 
   return (

@@ -9,9 +9,11 @@ import { ShuttleButton } from '@/components/ui/ShuttleButton';
 import { PaymentWidgetPlaceholder } from '@/components/PaymentWidgetPlaceholder';
 import { Users, Shield, Search, Sparkles, Lock, CheckCircle2 } from 'lucide-react';
 import { audio } from '@/lib/audio';
+import { useFeedback } from '@/components/ui/FeedbackModal';
 
 export default function CommunityMembersPage() {
   const { user } = useAuth();
+  const { showAlert } = useFeedback();
 
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -32,10 +34,12 @@ export default function CommunityMembersPage() {
       setPayments(payData || []);
     }
     loadData();
-  }, [user?.id]);
+  }, [user]);
 
   // Paid Access Gate Check (Registration or current monthly dues paid)
-  const isPaidMember = payments.some((p) => p.status === 'success');
+  const hasPaidReg = payments.some((p) => p.type === 'registration' && p.status === 'success');
+  const isAdminOrCapt = user?.role === 'admin' || user?.role === 'captain';
+  const isPaidMember = hasPaidReg || isAdminOrCapt;
 
   const filteredProfiles = profiles.filter((p) => {
     const matchesSearch =
@@ -65,10 +69,19 @@ export default function CommunityMembersPage() {
         provider: 'simulated',
       });
       audio.play('whistle');
-      alert('Community membership unlocked!');
-      window.location.reload();
+      showAlert({
+        title: 'Membership Unlocked! 🏸',
+        message: 'Your athlete registration fee has been verified. Welcome to the full community directory.',
+        type: 'success',
+        onConfirm: () => window.location.reload(),
+      });
     } catch (err) {
       console.error(err);
+      showAlert({
+        title: 'Verification Error',
+        message: 'Could not record membership payment.',
+        type: 'error',
+      });
     }
   };
 

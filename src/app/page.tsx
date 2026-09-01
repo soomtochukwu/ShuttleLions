@@ -16,6 +16,7 @@ import { AuthModal } from '@/components/AuthModal';
 import { PaymentWidgetPlaceholder } from '@/components/PaymentWidgetPlaceholder';
 import { supabase } from '@/lib/supabase';
 import { audio } from '@/lib/audio';
+import { useFeedback } from '@/components/ui/FeedbackModal';
 
 function AuthParamListener({ onOpenAuth }: { onOpenAuth: () => void }) {
   const searchParams = useSearchParams();
@@ -33,6 +34,7 @@ function AuthParamListener({ onOpenAuth }: { onOpenAuth: () => void }) {
 export default function HomePage() {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
+  const { showAlert } = useFeedback();
 
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -85,10 +87,19 @@ export default function HomePage() {
       });
 
       audio.play('whistle');
-      alert('Membership dues recorded and verified! Directing to your active dashboard.');
-      router.push('/dashboard');
+      showAlert({
+        title: 'Membership Verified! 🏸',
+        message: 'Your athlete dues have been recorded. Directing to your athlete dashboard.',
+        type: 'success',
+        onConfirm: () => router.push('/dashboard'),
+      });
     } catch (err: any) {
       console.error('Payment error:', err);
+      showAlert({
+        title: 'Payment Notice',
+        message: 'Could not record payment transaction.',
+        type: 'error',
+      });
     }
   };
 

@@ -10,9 +10,11 @@ import { ShuttleSelect } from '@/components/ui/ShuttleSelect';
 import { formatKobo } from '@/lib/constants';
 import { ShoppingBag, ShieldCheck, Truck, Sparkles, Check } from 'lucide-react';
 import { audio } from '@/lib/audio';
+import { useFeedback } from '@/components/ui/FeedbackModal';
 
 export default function ShopPage() {
   const { user } = useAuth();
+  const { showAlert } = useFeedback();
 
   const [products, setProducts] = useState<ShopProduct[]>([]);
   const [executives, setExecutives] = useState<Profile[]>([]);
@@ -32,9 +34,7 @@ export default function ShopPage() {
         .select('*')
         .in('role', ['admin', 'captain']);
       setExecutives(execData || []);
-      if (execData && execData.length > 0) {
-        setAssignedExecId(execData[0].id);
-      }
+      if (execData?.[0]) setAssignedExecId(execData[0].id);
     }
     loadShop();
   }, []);
@@ -64,13 +64,20 @@ export default function ShopPage() {
       });
 
       audio.play('whistle');
-      alert(
-        `Procurement request submitted! Your assigned executive will coordinate purchase & court handoff.`
-      );
       setIsProcurementModalOpen(false);
       setNotes('');
+      showAlert({
+        title: 'Procurement Submitted! 🏸',
+        message: `Your order for "${selectedProduct.name}" has been routed to the executive logistics coordinator for purchase and court handoff.`,
+        type: 'success',
+      });
     } catch (err) {
       console.error('Order error:', err);
+      showAlert({
+        title: 'Procurement Error',
+        message: 'Failed to submit procurement request. Please try again.',
+        type: 'error',
+      });
     } finally {
       setIsSubmitting(false);
     }

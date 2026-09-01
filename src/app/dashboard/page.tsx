@@ -9,6 +9,7 @@ import { TiltCard } from '@/components/ui/TiltCard';
 import { ShuttleButton } from '@/components/ui/ShuttleButton';
 import { supabase, type Payment, type EventItem, type Poll } from '@/lib/supabase';
 import { audio } from '@/lib/audio';
+import { useFeedback } from '@/components/ui/FeedbackModal';
 import Link from 'next/link';
 import {
   Calendar,
@@ -24,6 +25,7 @@ import {
 
 export default function DashboardOverviewPage() {
   const { user, refreshProfile } = useAuth();
+  const { showAlert } = useFeedback();
 
   const [payments, setPayments] = useState<Payment[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<EventItem[]>([]);
@@ -109,11 +111,19 @@ export default function DashboardOverviewPage() {
         metadata: checkoutType === 'monthly' ? { period: currentMonthKey } : null,
       });
 
-      audio.play('whistle');
-      alert('Payment confirmed! Your dashboard status has updated.');
+      showAlert({
+        title: 'Payment Confirmed! 🏸',
+        message: 'Your athlete dues have been recorded and your dashboard privileges updated.',
+        type: 'success',
+      });
       fetchData();
     } catch (err: any) {
       console.error(err);
+      showAlert({
+        title: 'Payment Notice',
+        message: 'Could not record payment transaction.',
+        type: 'error',
+      });
     }
   };
 

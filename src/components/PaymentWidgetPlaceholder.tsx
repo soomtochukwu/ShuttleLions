@@ -5,6 +5,7 @@ import { ShuttleModal } from '@/components/ui/ShuttleModal';
 import { ShuttleButton } from '@/components/ui/ShuttleButton';
 import { formatKobo } from '@/lib/constants';
 import { audio } from '@/lib/audio';
+import { useFeedback } from '@/components/ui/FeedbackModal';
 
 interface PaymentWidgetPlaceholderProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export function PaymentWidgetPlaceholder({
   onSuccess,
 }: PaymentWidgetPlaceholderProps) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const { showAlert } = useFeedback();
 
   const handleSimulateSuccess = () => {
     setIsProcessing(true);
@@ -46,7 +48,11 @@ export function PaymentWidgetPlaceholder({
     setTimeout(() => {
       setIsProcessing(false);
       audio.play('courtSqueak');
-      alert('Simulated transaction failed. Please try again.');
+      showAlert({
+        title: 'Transaction Failed',
+        message: 'Simulated payment failed. Please try again or switch payment method.',
+        type: 'error',
+      });
     }, 1500);
   };
 

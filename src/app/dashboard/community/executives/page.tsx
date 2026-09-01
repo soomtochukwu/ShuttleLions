@@ -21,6 +21,7 @@ import {
   Lock,
 } from 'lucide-react';
 import { audio } from '@/lib/audio';
+import { useFeedback } from '@/components/ui/FeedbackModal';
 
 const ROLE_ICONS: Record<string, any> = {
   admin: <Shield className="w-4 h-4 text-amber-400" />,
@@ -39,6 +40,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 export default function ExecutivesBoardPage() {
   const { user } = useAuth();
+  const { showAlert, showConfirm } = useFeedback();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -96,31 +98,54 @@ export default function ExecutivesBoardPage() {
         .eq('id', selectedMemberId);
 
       audio.play('whistle');
-      alert(`Role successfully assigned!`);
       setIsAppointModalOpen(false);
       loadData();
+      showAlert({
+        title: 'Appointment Confirmed! 🎖️',
+        message: `Member has been officially appointed to executive role "${ROLE_LABELS[targetRoleId] || targetRoleId}".`,
+        type: 'success',
+      });
     } catch (err) {
       console.error('Failed to update role:', err);
+      showAlert({
+        title: 'Appointment Failed',
+        message: 'Failed to assign role. Please try again.',
+        type: 'error',
+      });
     }
   };
 
-  const handleRevokeRole = async (memberId: string) => {
-    if (!confirm('Are you sure you want to revoke this executive appointment back to regular member?')) {
-      return;
-    }
-    audio.play('courtSqueak');
-    try {
-      await supabase
-        .from('profiles')
-        .update({ role: 'member' })
-        .eq('id', memberId);
+  const handleRevokeRole = (memberId: string, memberName: string) => {
+    showConfirm({
+      title: 'Revoke Executive Appointment',
+      message: `Are you sure you want to revoke executive privileges for ${memberName} back to Student Athlete?`,
+      type: 'warning',
+      confirmText: 'Revoke Appointment',
+      onConfirm: async () => {
+        audio.play('courtSqueak');
+        try {
+          await supabase
+            .from('profiles')
+            .update({ role: 'member' })
+            .eq('id', memberId);
 
-      audio.play('whistle');
-      alert('Role revoked back to Student Athlete.');
-      loadData();
-    } catch (err) {
-      console.error('Failed to revoke role:', err);
-    }
+          audio.play('whistle');
+          loadData();
+          showAlert({
+            title: 'Role Revoked',
+            message: `${memberName} has been returned to Student Athlete status.`,
+            type: 'info',
+          });
+        } catch (err) {
+          console.error('Failed to revoke role:', err);
+          showAlert({
+            title: 'Action Failed',
+            message: 'Failed to revoke role.',
+            type: 'error',
+          });
+        }
+      },
+    });
   };
 
   const handleCreateCustomRole = async (e: React.FormEvent) => {
@@ -145,7 +170,6 @@ export default function ExecutivesBoardPage() {
 
       await supabase.from('custom_roles').insert(newRoleObj);
       audio.play('whistle');
-      alert(`Custom role "${newRoleTitle}" created successfully!`);
       setIsCreateRoleOpen(false);
       setNewRoleTitle('');
       setNewRoleDesc('');
@@ -153,8 +177,18 @@ export default function ExecutivesBoardPage() {
       setCanAuditFinances(false);
       setCanManageSchedule(false);
       loadData();
+      showAlert({
+        title: 'Custom Role Created! ⚡',
+        message: `Executive role "${newRoleTitle}" with selected permissions is now active.`,
+        type: 'success',
+      });
     } catch (err) {
       console.error('Failed to create custom role:', err);
+      showAlert({
+        title: 'Creation Failed',
+        message: 'Failed to create custom role.',
+        type: 'error',
+      });
     }
   };
 
@@ -260,7 +294,7 @@ export default function ExecutivesBoardPage() {
                   {isAdmin && (
                     <div className="pt-2 flex justify-end">
                       <button
-                        onClick={() => handleRevokeRole(exec.id)}
+                        onClick={() => handleRevokeRole(exec.id, exec.full_name || 'Member')}
                         className="text-[11px] font-bold text-rose-400 hover:text-rose-300 flex items-center gap-1 transition-colors"
                       >
                         <RotateCcw className="w-3 h-3" />

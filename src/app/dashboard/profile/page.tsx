@@ -6,6 +6,7 @@ import { TiltCard } from '@/components/ui/TiltCard';
 import { ShuttleButton } from '@/components/ui/ShuttleButton';
 import { ShuttleInput } from '@/components/ui/ShuttleInput';
 import { ShuttleSelect } from '@/components/ui/ShuttleSelect';
+import { useFeedback } from '@/components/ui/FeedbackModal';
 import { FACULTIES_AND_DEPARTMENTS, LEVELS } from '@/lib/constants';
 import { supabase } from '@/lib/supabase';
 import { audio } from '@/lib/audio';
@@ -23,6 +24,7 @@ import {
 
 export default function ProfilePage() {
   const { user, refreshProfile } = useAuth();
+  const { showAlert } = useFeedback();
 
   const [fullName, setFullName] = useState(user?.full_name || '');
   const [faculty, setFaculty] = useState(user?.faculty || Object.keys(FACULTIES_AND_DEPARTMENTS)[0]);
@@ -54,12 +56,20 @@ export default function ProfilePage() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('Please select a valid image file (PNG, JPG, WEBP, GIF).');
+      showAlert({
+        title: 'Unsupported Image',
+        message: 'Please select a valid image file (PNG, JPG, WEBP, GIF).',
+        type: 'warning',
+      });
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image file size must be under 5MB.');
+      showAlert({
+        title: 'Image Too Large',
+        message: 'Athlete photo must be under 5MB.',
+        type: 'warning',
+      });
       return;
     }
 
@@ -129,12 +139,19 @@ export default function ProfilePage() {
         })
         .eq('id', user.id);
 
-      audio.play('whistle');
       await refreshProfile();
-      alert('Athlete profile and ID Pass updated successfully!');
+      showAlert({
+        title: 'Profile Updated! ⚡',
+        message: 'Your athlete credentials and Digital Lion ID Pass have been saved successfully.',
+        type: 'success',
+      });
     } catch (err: any) {
       console.error(err);
-      alert('Failed to update profile.');
+      showAlert({
+        title: 'Update Failed',
+        message: 'Failed to update profile. Please try again.',
+        type: 'error',
+      });
     } finally {
       setIsSaving(false);
       setUploadProgress(null);

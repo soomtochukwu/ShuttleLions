@@ -22,11 +22,13 @@ import {
   Sliders,
 } from 'lucide-react';
 import { audio } from '@/lib/audio';
+import { useFeedback } from '@/components/ui/FeedbackModal';
 
 type Tab = 'members' | 'payments' | 'orders' | 'events' | 'parallax';
 
 export default function AdminCommandRoom() {
   const { user } = useAuth();
+  const { showAlert } = useFeedback();
   const [activeTab, setActiveTab] = useState<Tab>('members');
 
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -37,11 +39,11 @@ export default function AdminCommandRoom() {
 
   // Parallax Asset Studio live states
   const [courtUrl, setCourtUrl] = useState(PARALLAX_ASSETS_CONFIG.courtEntrance.src);
-  const [courtDepth, setCourtDepth] = useState(PARALLAX_ASSETS_CONFIG.courtEntrance.depthMultiplier);
+  const [courtDepth, setCourtDepth] = useState<number>(PARALLAX_ASSETS_CONFIG.courtEntrance.depthMultiplier);
   const [serverUrl, setServerUrl] = useState(PARALLAX_ASSETS_CONFIG.playerServer.src);
-  const [serverDepth, setServerDepth] = useState(PARALLAX_ASSETS_CONFIG.playerServer.depthMultiplier);
+  const [serverDepth, setServerDepth] = useState<number>(PARALLAX_ASSETS_CONFIG.playerServer.depthMultiplier);
   const [receiverUrl, setReceiverUrl] = useState(PARALLAX_ASSETS_CONFIG.playerReceiver.src);
-  const [receiverDepth, setReceiverDepth] = useState(PARALLAX_ASSETS_CONFIG.playerReceiver.depthMultiplier);
+  const [receiverDepth, setReceiverDepth] = useState<number>(PARALLAX_ASSETS_CONFIG.playerReceiver.depthMultiplier);
 
   // New Event Form State
   const [newEvTitle, setNewEvTitle] = useState('');
@@ -50,16 +52,16 @@ export default function AdminCommandRoom() {
 
   useEffect(() => {
     async function loadAdminData() {
-      const { data: pData } = await supabase.from('profiles').select('*');
+      const { data: pData } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
       setProfiles(pData || []);
 
       const { data: rData } = await supabase.from('custom_roles').select('*');
       setCustomRoles(rData || []);
 
-      const { data: payData } = await supabase.from('payments').select('*');
+      const { data: payData } = await supabase.from('payments').select('*').order('created_at', { ascending: false });
       setPayments(payData || []);
 
-      const { data: ordData } = await supabase.from('shop_orders').select('*');
+      const { data: ordData } = await supabase.from('shop_orders').select('*').order('created_at', { ascending: false });
       setOrders(ordData || []);
 
       const { data: evData } = await supabase.from('events').select('*');
@@ -72,7 +74,11 @@ export default function AdminCommandRoom() {
     audio.play('serve');
     await supabase.from('profiles').update({ role }).eq('id', profId);
     setProfiles((prev) => prev.map((p) => (p.id === profId ? { ...p, role } : p)));
-    alert(`Role updated to ${role}`);
+    showAlert({
+      title: 'Role Updated',
+      message: `Member role has been successfully changed to "${role}".`,
+      type: 'success',
+    });
   };
 
   const handleCreateEvent = async (e: React.FormEvent) => {
@@ -98,7 +104,11 @@ export default function AdminCommandRoom() {
 
     setEvents((prev) => [...prev, newEv]);
     setNewEvTitle('');
-    alert('Event added to master calendar!');
+    showAlert({
+      title: 'Event Scheduled! 📅',
+      message: `"${newEv.title}" has been published to the ShuttleLions calendar.`,
+      type: 'success',
+    });
   };
 
   const handleSaveParallaxStudio = () => {
@@ -110,7 +120,11 @@ export default function AdminCommandRoom() {
     PARALLAX_ASSETS_CONFIG.playerReceiver.src = receiverUrl;
     PARALLAX_ASSETS_CONFIG.playerReceiver.depthMultiplier = Number(receiverDepth);
 
-    alert('Parallax assets and depth calibration saved live to landing page!');
+    showAlert({
+      title: 'Parallax Studio Saved! ⚡',
+      message: 'Visual depth calibrations and kinetic assets updated live for the landing experience.',
+      type: 'success',
+    });
   };
 
   return (

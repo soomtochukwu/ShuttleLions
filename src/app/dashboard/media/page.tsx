@@ -7,6 +7,7 @@ import { TiltCard } from '@/components/ui/TiltCard';
 import { ShuttleButton } from '@/components/ui/ShuttleButton';
 import { ShuttleModal } from '@/components/ui/ShuttleModal';
 import { ShuttleInput } from '@/components/ui/ShuttleInput';
+import { useFeedback } from '@/components/ui/FeedbackModal';
 import { parseMediaSource } from '@/lib/media-utils';
 import {
   Video,
@@ -30,6 +31,7 @@ import { audio } from '@/lib/audio';
 
 export default function MediaGalleryPage() {
   const { user } = useAuth();
+  const { showAlert, showConfirm } = useFeedback();
 
   const [mediaList, setMediaList] = useState<MediaUpload[]>([]);
   const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
@@ -84,12 +86,20 @@ export default function MediaGalleryPage() {
     const isImage = file.type.startsWith('image/');
 
     if (!isVideo && !isImage) {
-      alert('Please select a valid video (.mp4, .webm, .mov) or image (.png, .jpg, .webp) file.');
+      showAlert({
+        title: 'Unsupported File',
+        message: 'Please select a valid video (.mp4, .webm, .mov) or image (.png, .jpg, .webp) file.',
+        type: 'warning',
+      });
       return;
     }
 
     if (file.size > 100 * 1024 * 1024) {
-      alert('File size exceeds the 100MB limit.');
+      showAlert({
+        title: 'File Too Large',
+        message: 'The selected media file exceeds the 100MB cloud upload limit.',
+        type: 'warning',
+      });
       return;
     }
 
@@ -119,50 +129,75 @@ export default function MediaGalleryPage() {
     }
   };
 
-  const handleDeleteMedia = async (mediaItem: MediaUpload) => {
-    const confirmed = window.confirm(`Are you sure you want to delete "${mediaItem.title}"? This cannot be undone.`);
-    if (!confirmed) return;
+  const handleDeleteMedia = (mediaItem: MediaUpload) => {
+    showConfirm({
+      title: 'Delete Media Clip',
+      message: `Are you sure you want to permanently delete "${mediaItem.title}"? This action cannot be undone.`,
+      type: 'danger',
+      confirmText: 'Delete Clip 🗑️',
+      onConfirm: async () => {
+        setDeletingId(mediaItem.id);
+        audio.play('netDrop');
 
-    setDeletingId(mediaItem.id);
-    audio.play('netDrop');
+        try {
+          // 1. If stored in Supabase Storage bucket, remove file
+          if (mediaItem.media_url.includes('/media-gallery/')) {
+            const parts = mediaItem.media_url.split('/media-gallery/');
+            if (parts[1]) {
+              const storagePath = decodeURIComponent(parts[1]);
+              await supabase.storage.from('media-gallery').remove([storagePath]);
+            }
+          }
 
-    try {
-      // 1. If stored in Supabase Storage bucket, remove file
-      if (mediaItem.media_url.includes('/media-gallery/')) {
-        const parts = mediaItem.media_url.split('/media-gallery/');
-        if (parts[1]) {
-          const storagePath = decodeURIComponent(parts[1]);
-          await supabase.storage.from('media-gallery').remove([storagePath]);
+          // 2. Delete database record
+          await supabase.from('media_uploads').delete().eq('id', mediaItem.id);
+
+          // 3. Update local state
+          setMediaList((prev) => prev.filter((m) => m.id !== mediaItem.id));
+          showAlert({
+            title: 'Media Deleted',
+            message: `"${mediaItem.title}" has been removed from the court feed.`,
+            type: 'info',
+          });
+        } catch (err: any) {
+          console.error('Delete error:', err);
+          showAlert({
+            title: 'Deletion Failed',
+            message: 'Failed to delete media clip. Please check your connection and permissions.',
+            type: 'error',
+          });
+        } finally {
+          setDeletingId(null);
         }
-      }
-
-      // 2. Delete database record
-      await supabase.from('media_uploads').delete().eq('id', mediaItem.id);
-
-      // 3. Update local state
-      setMediaList((prev) => prev.filter((m) => m.id !== mediaItem.id));
-      audio.play('whistle');
-    } catch (err: any) {
-      console.error('Delete error:', err);
-      alert('Failed to delete media clip.');
-    } finally {
-      setDeletingId(null);
-    }
+      },
+    });
   };
 
   const handleUploadMedia = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canUploadMedia) {
-      alert('Only appointed Media Personnel or Admins can upload media.');
+      showAlert({
+        title: 'Access Denied',
+        message: 'Only appointed Media Personnel or Admins can upload media.',
+        type: 'warning',
+      });
       return;
     }
     if (!newTitle.trim() || !user?.id) return;
     if (uploadMode === 'file' && !selectedFile) {
-      alert('Please select a media file to upload.');
+      showAlert({
+        title: 'Missing File',
+        message: 'Please select a media file to upload.',
+        type: 'warning',
+      });
       return;
     }
     if (uploadMode === 'url' && !newUrl.trim()) {
-      alert('Please enter a valid media URL.');
+      showAlert({
+        title: 'Missing URL',
+        message: 'Please enter a valid video, YouTube, or image URL.',
+        type: 'warning',
+      });
       return;
     }
 
@@ -190,7 +225,11 @@ export default function MediaGalleryPage() {
 
         if (uploadError) {
           console.error('Storage upload error:', uploadError);
-          alert(`Storage upload notice: ${uploadError.message}`);
+          showAlert({
+            title: 'Upload Notice',
+            message: `Storage notice: ${uploadError.message}`,
+            type: 'error',
+          });
           setIsUploading(false);
           setUploadProgressText(null);
           return;
@@ -249,17 +288,24 @@ export default function MediaGalleryPage() {
         setMediaList((prev) => [fallbackMedia, ...prev]);
       }
 
-      audio.play('whistle');
       setIsUploadOpen(false);
       setNewTitle('');
       setNewDesc('');
       setNewUrl('');
       setSelectedFile(null);
       setFilePreviewUrl(null);
-      alert('Media successfully uploaded and published to the club feed! 🏸');
+      showAlert({
+        title: 'Published to Club Feed! 🏸',
+        message: `"${newMediaRecord.title}" has been published to the ShuttleLions media feed.`,
+        type: 'success',
+      });
     } catch (err: any) {
       console.error('Upload failed:', err);
-      alert('Failed to upload media.');
+      showAlert({
+        title: 'Upload Failed',
+        message: 'Failed to upload media clip. Please try again.',
+        type: 'error',
+      });
     } finally {
       setIsUploading(false);
       setUploadProgressText(null);
