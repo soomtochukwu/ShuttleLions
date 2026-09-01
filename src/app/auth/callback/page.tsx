@@ -1,31 +1,56 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/components/AuthContext';
 
 export default function AuthCallbackPage() {
-  const router = useRouter();
-  const { refreshProfile } = useAuth();
+  const [statusText, setStatusText] = useState('Establishing your athlete session...');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    let isMounted = true;
+    let isHandled = false;
 
-    async function handleAuthCallback() {
+    async function handleAuth() {
+      if (isHandled) return;
+      isHandled = true;
+
       try {
-        // 1. Get session (Supabase automatically parses #access_token=... from URL hash)
-        const { data: { session }, error } = await supabase.auth.getSession();
+        // 1. Check for tokens in hash fragment (#access_token=...&refresh_token=...)
+        const hash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
+        const search = typeof window !== 'undefined' ? window.location.search.substring(1) : '';
+        const hashParams = new URLSearchParams(hash);
+        const searchParams = new URLSearchParams(search);
 
-        if (error) {
-          console.error('Auth callback session error:', error.message);
-          if (isMounted) setErrorMsg(error.message);
-          return;
+        const accessToken = hashParams.get('access_token') || searchParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token') || searchParams.get('refresh_token');
+
+        let userSession = null;
+
+        if (accessToken && refreshToken) {
+          setStatusText('Authenticating with Google credentials...');
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (error) {
+            console.error('setSession error:', error);
+            setErrorMsg(error.message);
+            return;
+          }
+          userSession = data.session;
+        } else {
+          // Fallback to getSession or onAuthStateChange
+          const { data, error } = await supabase.auth.getSession();
+          if (error) {
+            console.error('getSession error:', error);
+          }
+          userSession = data?.session;
         }
 
-        if (session?.user) {
-          const user = session.user;
+        // If session was retrieved or established
+        if (userSession?.user) {
+          const user = userSession.user;
           const metadata = user.user_metadata || {};
           const fullName =
             metadata.full_name ||
@@ -34,7 +59,9 @@ export default function AuthCallbackPage() {
             'Lion Athlete';
           const avatarUrl = metadata.avatar_url || metadata.picture || null;
 
-          // 2. Sync Google name and picture to public.profiles database table
+          setStatusText('Syncing profile details to court roster...');
+
+          // Sync with database
           try {
             const { data: existingProfile } = await supabase
               .from('profiles')
@@ -68,37 +95,38 @@ export default function AuthCallbackPage() {
               });
             }
           } catch (dbErr) {
-            console.error('Failed to sync profile to database:', dbErr);
+            console.error('Profile DB sync notice:', dbErr);
           }
 
-          await refreshProfile();
-          if (isMounted) {
-            router.replace('/dashboard');
-          }
+          setStatusText('Redirecting to dashboard...');
+          // Full window redirect guarantees all state and localStorage are re-read cleanly
+          window.location.href = '/dashboard';
         } else {
-          // If no session found yet, listen for onAuthStateChange
+          // Wait briefly for onAuthStateChange
           const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (event, newSession) => {
-              if (newSession?.user && isMounted) {
-                await refreshProfile();
-                router.replace('/dashboard');
+            async (event, session) => {
+              if (session?.user) {
+                subscription.unsubscribe();
+                window.location.href = '/dashboard';
               }
             }
           );
-          return () => subscription.unsubscribe();
+
+          // Fallback timeout in case auth failed completely
+          setTimeout(() => {
+            if (!userSession?.user) {
+              setErrorMsg('Unable to retrieve active session. Please try signing in again.');
+            }
+          }, 3500);
         }
       } catch (err: any) {
-        console.error('Unexpected auth callback error:', err);
-        if (isMounted) setErrorMsg(err.message || 'Authentication failed');
+        console.error('Fatal auth callback error:', err);
+        setErrorMsg(err.message || 'Authentication failed');
       }
     }
 
-    handleAuthCallback();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [router, refreshProfile]);
+    handleAuth();
+  }, []);
 
   return (
     <div className="min-h-screen bg-sl-bg flex flex-col items-center justify-center text-sl-foreground p-6">
@@ -112,8 +140,10 @@ export default function AuthCallbackPage() {
             <h2 className="text-base font-black text-rose-400 uppercase">Authentication Notice</h2>
             <p className="text-xs text-sl-muted leading-relaxed">{errorMsg}</p>
             <button
-              onClick={() => router.replace('/')}
-              className="px-4 py-2 bg-sl-green text-white text-xs font-black rounded-lg uppercase tracking-wider"
+              onClick={() => {
+                window.location.href = '/';
+              }}
+              className="px-4 py-2 bg-sl-green text-white text-xs font-black rounded-lg uppercase tracking-wider hover:brightness-110 shadow-md"
             >
               Return to Home
             </button>
@@ -121,13 +151,13 @@ export default function AuthCallbackPage() {
         ) : (
           <div className="space-y-2">
             <h2
-              className="text-base font-black uppercase text-sl-foreground"
+              className="text-base font-black uppercase text-sl-foreground tracking-wider"
               style={{ fontFamily: 'var(--font-title)' }}
             >
-              Signing In with Google...
+              SHUTTLE<span className="text-sl-green">LIONS</span>
             </h2>
-            <p className="text-xs text-sl-muted font-medium">
-              Establishing your UNN athlete session and entering court.
+            <p className="text-xs text-sl-muted font-medium animate-pulse">
+              {statusText}
             </p>
           </div>
         )}

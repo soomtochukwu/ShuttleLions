@@ -721,7 +721,13 @@ export function getSupabase(): SupabaseClient {
   }
 
   if (_supabase) return _supabase;
-  _supabase = createClient(supabaseUrl, supabaseAnonKey);
+  _supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  });
   return _supabase;
 }
 
