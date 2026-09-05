@@ -54,13 +54,14 @@ export function MainNav({ onOpenAuth }: MainNavProps) {
  description: 'Channels for training, banter & announcements',
  href: '/dashboard/community/chat',
  icon: <MessageSquare className="w-4 h-4" />,
- badge: 'Real-time',
+ badge: 'Coming Soon',
  },
  {
  title: 'Community Votes & Polls',
  description: 'Vote on club tournaments & match formats',
  href: '/dashboard/community/votes',
  icon: <Vote className="w-4 h-4" />,
+ badge: 'Coming Soon',
  },
  ];
 
@@ -70,7 +71,7 @@ export function MainNav({ onOpenAuth }: MainNavProps) {
  description: 'Order pro rackets & gear with executive pickup',
  href: '/dashboard/shop',
  icon: <ShoppingBag className="w-4 h-4" />,
- badge: 'Yonex',
+ badge: 'Coming Soon',
  },
  {
  title: 'Vlogs & Match Media',

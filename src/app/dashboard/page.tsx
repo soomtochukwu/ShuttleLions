@@ -217,56 +217,62 @@ export default function DashboardOverviewPage() {
  </Link>
  </TiltCard>
 
- {/* Live Community Chat */}
- <TiltCard className="p-6 bg-sl-panel flex flex-col justify-between space-y-4">
- <div className="space-y-3">
- <div className="p-2.5 rounded-xl bg-sl-bg w-fit text-sl-green border border-sl-border">
- <MessageSquare className="w-5 h-5" />
- </div>
- <h3 className="text-sm font-black text-sl-foreground uppercase">
- Community Chat
- </h3>
- <p className="text-xs text-sl-muted leading-relaxed">
- Connect with fellow athletes across departments. Strategy, match banter & gear advice.
- </p>
- </div>
- <Link
- href="/dashboard/community/chat"
- onClick={() => audio.play('rally')}
- className="text-xs font-black text-sl-green hover:underline flex items-center gap-1"
- >
- <span>Open Chat Channels</span>
- <ArrowRight className="w-3.5 h-3.5" />
- </Link>
- </TiltCard>
+        {/* Community Chat - Coming Soon */}
+        <TiltCard className="p-6 bg-sl-panel/60 border border-sl-border/60 opacity-60 flex flex-col justify-between space-y-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="p-2.5 rounded-xl bg-sl-bg w-fit text-sl-muted border border-sl-border">
+                <MessageSquare className="w-5 h-5" />
+              </div>
+              <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20 font-mono">
+                Coming Soon
+              </span>
+            </div>
+            <h3 className="text-sm font-black text-sl-foreground/80 uppercase">
+              Community Chat
+            </h3>
+            <p className="text-xs text-sl-muted leading-relaxed">
+              Inter-faculty chat rooms, match strategy channels, and direct coaching communications are currently in development.
+            </p>
+          </div>
+          <Link
+            href="/dashboard/community/chat"
+            onClick={() => audio.play('rally')}
+            className="text-xs font-bold text-sl-muted hover:text-sl-foreground flex items-center gap-1"
+          >
+            <span>Preview Feature</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </TiltCard>
 
- {/* Active Poll */}
- <TiltCard className="p-6 bg-sl-panel flex flex-col justify-between space-y-4">
- <div className="space-y-3">
- <div className="p-2.5 rounded-xl bg-sl-bg w-fit text-amber-500 border border-sl-border">
- <Vote className="w-5 h-5" />
- </div>
- <h3 className="text-sm font-black text-sl-foreground uppercase">
- Community Voting
- </h3>
- {activePolls.length > 0 ? (
- <p className="text-xs text-sl-foreground font-semibold line-clamp-2">
- {activePolls[0].title}
- </p>
- ) : (
- <p className="text-xs text-sl-muted">Vote on tournament rules and varsity match schedules.</p>
- )}
- </div>
- <Link
- href="/dashboard/community/votes"
- onClick={() => audio.play('rally')}
- className="text-xs font-black text-sl-green hover:underline flex items-center gap-1"
- >
- <span>Cast Your Vote</span>
- <ArrowRight className="w-3.5 h-3.5" />
- </Link>
- </TiltCard>
- </div>
+        {/* Community Voting - Coming Soon */}
+        <TiltCard className="p-6 bg-sl-panel/60 border border-sl-border/60 opacity-60 flex flex-col justify-between space-y-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="p-2.5 rounded-xl bg-sl-bg w-fit text-sl-muted border border-sl-border">
+                <Vote className="w-5 h-5" />
+              </div>
+              <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20 font-mono">
+                Coming Soon
+              </span>
+            </div>
+            <h3 className="text-sm font-black text-sl-foreground/80 uppercase">
+              Community Voting
+            </h3>
+            <p className="text-xs text-sl-muted leading-relaxed">
+              Democratic athlete voting on tournament rules, varsity match schedules, and equipment surveys.
+            </p>
+          </div>
+          <Link
+            href="/dashboard/community/votes"
+            onClick={() => audio.play('rally')}
+            className="text-xs font-bold text-sl-muted hover:text-sl-foreground flex items-center gap-1"
+          >
+            <span>Preview Feature</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </TiltCard>
+      </div>
 
  {/* Checkout Sim Modal */}
  <PaymentWidgetPlaceholder

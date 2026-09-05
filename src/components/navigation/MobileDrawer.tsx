@@ -143,29 +143,47 @@ export function MobileDrawer({ isOpen, onClose, onOpenAuth }: MobileDrawerProps)
  <Users className="w-4 h-4 text-sl-green" /> Member Directory
  </Link>
 
- <Link
- href="/dashboard/community/chat"
- onClick={handleLinkClick('/dashboard/community/chat')}
- className="flex items-center gap-3 px-3 py-2.5 rounded-lg font-bold text-sm text-sl-foreground hover:bg-sl-green/10 hover:text-sl-green transition-colors"
- >
- <MessageSquare className="w-4 h-4 text-sl-green" /> Community Chat
- </Link>
+          <Link
+            href="/dashboard/community/chat"
+            onClick={handleLinkClick('/dashboard/community/chat')}
+            className="flex items-center justify-between px-3 py-2.5 rounded-lg font-bold text-sm text-sl-foreground hover:bg-sl-green/10 hover:text-sl-green transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <MessageSquare className="w-4 h-4 text-sl-green" />
+              <span>Community Chat</span>
+            </div>
+            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">
+              Coming Soon
+            </span>
+          </Link>
 
- <Link
- href="/dashboard/community/votes"
- onClick={handleLinkClick('/dashboard/community/votes')}
- className="flex items-center gap-3 px-3 py-2.5 rounded-lg font-bold text-sm text-sl-foreground hover:bg-sl-green/10 hover:text-sl-green transition-colors"
- >
- <Vote className="w-4 h-4 text-sl-green" /> Community Votes
- </Link>
+          <Link
+            href="/dashboard/community/votes"
+            onClick={handleLinkClick('/dashboard/community/votes')}
+            className="flex items-center justify-between px-3 py-2.5 rounded-lg font-bold text-sm text-sl-foreground hover:bg-sl-green/10 hover:text-sl-green transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <Vote className="w-4 h-4 text-sl-green" />
+              <span>Community Votes</span>
+            </div>
+            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">
+              Coming Soon
+            </span>
+          </Link>
 
- <Link
- href="/dashboard/shop"
- onClick={handleLinkClick('/dashboard/shop')}
- className="flex items-center gap-3 px-3 py-2.5 rounded-lg font-bold text-sm text-sl-foreground hover:bg-sl-green/10 hover:text-sl-green transition-colors"
- >
- <ShoppingBag className="w-4 h-4 text-sl-green" /> Equipment Shop
- </Link>
+          <Link
+            href="/dashboard/shop"
+            onClick={handleLinkClick('/dashboard/shop')}
+            className="flex items-center justify-between px-3 py-2.5 rounded-lg font-bold text-sm text-sl-foreground hover:bg-sl-green/10 hover:text-sl-green transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <ShoppingBag className="w-4 h-4 text-sl-green" />
+              <span>Equipment Shop</span>
+            </div>
+            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">
+              Coming Soon
+            </span>
+          </Link>
 
  <Link
  href="/dashboard/media"

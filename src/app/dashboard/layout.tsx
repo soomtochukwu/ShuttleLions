@@ -34,9 +34,9 @@ const DASHBOARD_NAV = [
   { label: 'Executive Board', href: '/dashboard/community/executives', icon: <Crown className="w-4 h-4 text-sl-green" />, badge: 'Roles' },
   { label: 'Games & Schedules', href: '/dashboard/schedule', icon: <Calendar className="w-4 h-4" /> },
   { label: 'Member Directory', href: '/dashboard/community', icon: <Users className="w-4 h-4" />, badge: 'Paid' },
-  { label: 'Community Chat', href: '/dashboard/community/chat', icon: <MessageSquare className="w-4 h-4" />, badge: 'Live' },
-  { label: 'Community Votes', href: '/dashboard/community/votes', icon: <Vote className="w-4 h-4" /> },
-  { label: 'Equipment Shop', href: '/dashboard/shop', icon: <ShoppingBag className="w-4 h-4" /> },
+  { label: 'Community Chat', href: '/dashboard/community/chat', icon: <MessageSquare className="w-4 h-4" />, badge: 'Coming Soon' },
+  { label: 'Community Votes', href: '/dashboard/community/votes', icon: <Vote className="w-4 h-4" />, badge: 'Coming Soon' },
+  { label: 'Equipment Shop', href: '/dashboard/shop', icon: <ShoppingBag className="w-4 h-4" />, badge: 'Coming Soon' },
   { label: 'Vlogs & Media', href: '/dashboard/media', icon: <Video className="w-4 h-4" /> },
   { label: 'Drill Tutorials', href: '/dashboard/tutorials', icon: <BookOpen className="w-4 h-4" /> },
 ];
@@ -208,25 +208,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <nav className="space-y-1">
               {DASHBOARD_NAV.map((item) => {
                 const isActive = pathname === item.href;
+                const isDimmed = item.badge === 'Coming Soon';
+
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
-                    onClick={() => audio.play('rally')}
+                    onClick={(e) => {
+                      audio.play('rally');
+                    }}
                     className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all ${
-                      isActive
+                      isDimmed
+                        ? 'opacity-40 hover:opacity-75 text-sl-muted hover:text-sl-foreground bg-sl-bg/40'
+                        : isActive
                         ? 'bg-sl-green text-white shadow-[0_4px_12px_rgba(0,200,83,0.3)]'
                         : 'text-sl-foreground hover:bg-sl-green/10 hover:text-sl-green'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
                       {item.icon}
-                      <span>{item.label}</span>
+                      <span className={isDimmed ? 'line-through decoration-sl-muted/50' : ''}>{item.label}</span>
                     </div>
                     {item.badge && (
                       <span
-                        className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${
-                          isActive
+                        className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
+                          item.badge === 'Coming Soon'
+                            ? 'bg-amber-500/10 text-amber-500/70 border border-amber-500/20'
+                            : isActive
                             ? 'bg-white/20 text-white'
                             : 'bg-sl-green/15 text-sl-green'
                         }`}
@@ -314,6 +322,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <nav className="space-y-1">
                   {DASHBOARD_NAV.map((item) => {
                     const isActive = pathname === item.href;
+                    const isDimmed = item.badge === 'Coming Soon';
+
                     return (
                       <Link
                         key={item.href}
@@ -323,17 +333,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                           setIsMobileMenuOpen(false);
                         }}
                         className={`flex items-center justify-between px-3 py-2.5 rounded-xl font-bold text-xs ${
-                          isActive
+                          isDimmed
+                            ? 'opacity-40 text-sl-muted hover:opacity-75'
+                            : isActive
                             ? 'bg-sl-green text-white'
                             : 'text-sl-foreground hover:bg-sl-green/10'
                         }`}
                       >
                         <div className="flex items-center gap-2.5">
                           {item.icon}
-                          <span>{item.label}</span>
+                          <span className={isDimmed ? 'line-through decoration-sl-muted/50' : ''}>{item.label}</span>
                         </div>
                         {item.badge && (
-                          <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-sl-green/15 text-sl-green">
+                          <span
+                            className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
+                              item.badge === 'Coming Soon'
+                                ? 'bg-amber-500/10 text-amber-500/70 border border-amber-500/20'
+                                : 'bg-sl-green/15 text-sl-green'
+                            }`}
+                          >
                             {item.badge}
                           </span>
                         )}
