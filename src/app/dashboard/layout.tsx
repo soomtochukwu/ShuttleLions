@@ -60,6 +60,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     else setTheme('system');
   };
 
+  const [showStallWarning, setShowStallWarning] = useState(false);
+
+  useEffect(() => {
+    if (isLoading) {
+      const timer = setTimeout(() => {
+        setShowStallWarning(true);
+      }, 2500);
+      return () => clearTimeout(timer);
+    } else {
+      setShowStallWarning(false);
+    }
+  }, [isLoading]);
+
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.replace('/?auth=required');
@@ -73,11 +86,52 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-sl-bg flex flex-col items-center justify-center text-sl-foreground space-y-4">
-        <div className="w-12 h-12 rounded-2xl bg-sl-green flex items-center justify-center shadow-[0_0_20px_rgba(0,200,83,0.5)] animate-bounce" />
-        <p className="text-xs font-black uppercase text-sl-green tracking-widest font-mono">
-          Verifying ShuttleLions Athlete Credentials...
-        </p>
+      <div className="min-h-screen bg-sl-bg flex flex-col items-center justify-center text-sl-foreground p-6">
+        <div className="shuttle-panel p-8 bg-sl-panel max-w-sm w-full text-center space-y-4 border border-sl-border shadow-2xl">
+          <div className="w-14 h-14 rounded-2xl bg-sl-green text-white flex items-center justify-center mx-auto shadow-[0_0_20px_rgba(0,200,83,0.5)] animate-bounce">
+            <span className="w-4 h-4 rounded-full bg-white animate-ping" />
+          </div>
+
+          <div className="space-y-1">
+            <h2
+              className="text-base font-black uppercase text-sl-foreground tracking-wider"
+              style={{ fontFamily: 'var(--font-title)' }}
+            >
+              SHUTTLE<span className="text-sl-green">LIONS</span>
+            </h2>
+            <p className="text-xs font-black uppercase text-sl-green tracking-widest font-mono">
+              Verifying ShuttleLions Athlete Credentials...
+            </p>
+          </div>
+
+          {showStallWarning && (
+            <div className="pt-3 border-t border-sl-border/40 space-y-3">
+              <p className="text-xs text-sl-muted leading-relaxed">
+                Verification is taking a moment. You can force entry into the dashboard or return to sign in.
+              </p>
+              <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.location.replace('/dashboard');
+                  }}
+                  className="w-full py-2.5 bg-sl-green text-white text-xs font-black rounded-lg uppercase tracking-wider hover:brightness-110 shadow cursor-pointer transition-all"
+                >
+                  Force Load Dashboard
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    logout().finally(() => window.location.replace('/?auth=required'));
+                  }}
+                  className="w-full py-2.5 bg-sl-bg border border-sl-border text-sl-foreground text-xs font-black rounded-lg uppercase tracking-wider hover:bg-sl-panel cursor-pointer transition-all"
+                >
+                  Return to Sign In
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     );
   }

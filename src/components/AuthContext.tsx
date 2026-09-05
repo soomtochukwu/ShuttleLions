@@ -38,66 +38,81 @@ const AuthContext = createContext<AuthContextValue>({
 });
 
 async function fetchProfile(authUserId: string, authUser?: any): Promise<Profile | null> {
- const { data, error } = await supabase
- .from('profiles')
- .select('*')
- .eq('auth_user_id', authUserId)
- .maybeSingle();
+  try {
+    const fetchPromise = supabase
+      .from('profiles')
+      .select('*')
+      .eq('auth_user_id', authUserId)
+      .maybeSingle();
 
- if (error) {
- const isAbort = error.message?.includes('AbortError') || error.name === 'AbortError' || error.message?.includes('signal is aborted');
- if (!isAbort) {
- console.error('Failed to fetch profile:', error.message);
- }
- }
+    const timeoutPromise = new Promise<{ data: null; error: any }>((resolve) =>
+      setTimeout(() => resolve({ data: null, error: new Error('Profile fetch timeout') }), 2500)
+    );
 
- let profile = data as Profile | null;
+    const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
 
- // If user signed in with Google and profile is missing or missing avatar/name
- if (authUser && (!profile ||!profile.avatar_url ||!profile.full_name)) {
- const meta = authUser.user_metadata || {};
- const googleName = meta.full_name || meta.name || authUser.email?.split('@')[0] || 'Lion Athlete';
- const googleAvatar = meta.avatar_url || meta.picture || null;
+    if (error) {
+      const isAbort =
+        error.message?.includes('AbortError') ||
+        error.name === 'AbortError' ||
+        error.message?.includes('signal is aborted') ||
+        error.message?.includes('Profile fetch timeout');
+      if (!isAbort) {
+        console.warn('Failed to fetch profile:', error.message);
+      }
+    }
 
- if (!profile) {
- try {
- const newProf = {
- auth_user_id: authUserId,
- email: authUser.email || '',
- full_name: googleName,
- avatar_url: googleAvatar,
- faculty: '',
- department: '',
- level: '100',
- role: 'member',
- is_active: true,
- created_at: new Date().toISOString(),
- updated_at: new Date().toISOString(),
- };
- const { data: created } = await supabase.from('profiles').insert(newProf).select().maybeSingle();
- profile = created as Profile;
- } catch (insertErr) {
- console.error('Failed to auto-create profile:', insertErr);
- }
- } else if (!profile.avatar_url && googleAvatar) {
- try {
- await supabase
- .from('profiles')
- .update({
- avatar_url: googleAvatar,
- full_name: profile.full_name || googleName,
- updated_at: new Date().toISOString(),
- })
- .eq('id', profile.id);
- profile.avatar_url = googleAvatar;
- if (!profile.full_name) profile.full_name = googleName;
- } catch (updateErr) {
- console.error('Failed to sync google avatar:', updateErr);
- }
- }
- }
+    let profile = data as Profile | null;
 
- return profile;
+    // If user signed in with Google and profile is missing or missing avatar/name
+    if (authUser && (!profile || !profile.avatar_url || !profile.full_name)) {
+      const meta = authUser.user_metadata || {};
+      const googleName = meta.full_name || meta.name || authUser.email?.split('@')[0] || 'Lion Athlete';
+      const googleAvatar = meta.avatar_url || meta.picture || null;
+
+      if (!profile) {
+        try {
+          const newProf = {
+            auth_user_id: authUserId,
+            email: authUser.email || '',
+            full_name: googleName,
+            avatar_url: googleAvatar,
+            faculty: '',
+            department: '',
+            level: '100',
+            role: 'member',
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          const { data: created } = await supabase.from('profiles').insert(newProf).select().maybeSingle();
+          profile = created as Profile;
+        } catch (insertErr) {
+          console.warn('Failed to auto-create profile:', insertErr);
+        }
+      } else if (!profile.avatar_url && googleAvatar) {
+        try {
+          await supabase
+            .from('profiles')
+            .update({
+              avatar_url: googleAvatar,
+              full_name: profile.full_name || googleName,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', profile.id);
+          profile.avatar_url = googleAvatar;
+          if (!profile.full_name) profile.full_name = googleName;
+        } catch (updateErr) {
+          console.warn('Failed to sync google avatar:', updateErr);
+        }
+      }
+    }
+
+    return profile;
+  } catch (e) {
+    console.warn('Profile fetch exception:', e);
+    return null;
+  }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -156,47 +171,111 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isMounted = true;
 
+    // Safety watchdog timer: Never allow isLoading to stay stuck beyond 1.5s
+    const safetyTimer = setTimeout(() => {
+      if (isMounted) {
+        setIsLoading(false);
+      }
+    }, 1500);
+
+    const handleSessionUser = (sessionUser: any) => {
+      if (!sessionUser) {
+        persistProfile(null);
+        if (isMounted) setIsLoading(false);
+        return;
+      }
+
+      const meta = sessionUser.user_metadata || {};
+      const googleName =
+        meta.full_name ||
+        meta.name ||
+        sessionUser.email?.split('@')[0] ||
+        'Lion Athlete';
+      const googleAvatar = meta.avatar_url || meta.picture || null;
+
+      const fallbackProfile: Profile = {
+        id: sessionUser.id,
+        auth_user_id: sessionUser.id,
+        email: sessionUser.email || '',
+        full_name: googleName,
+        phone: sessionUser.phone || null,
+        faculty: '',
+        department: '',
+        level: '100',
+        reg_number: null,
+        avatar_url: googleAvatar,
+        role: 'member',
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      // 1. Immediately unblock UI with fallback / cached profile
+      persistProfile(fallbackProfile);
+      if (isMounted) setIsLoading(false);
+
+      // 2. Fetch rich profile in background and sync
+      fetchProfile(sessionUser.id, sessionUser).then((dbProfile) => {
+        if (isMounted && dbProfile) {
+          persistProfile(dbProfile);
+        }
+      });
+    };
+
     async function initAuth() {
       try {
-        const isGuestAdmin = localStorage.getItem('shuttlelions_guest_admin') === 'true';
+        const isGuestAdmin = typeof window !== 'undefined' && localStorage.getItem('shuttlelions_guest_admin') === 'true';
         if (isGuestAdmin) {
-          setIsLoading(false);
+          if (isMounted) setIsLoading(false);
           return;
         }
 
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user && isMounted) {
-          const meta = session.user.user_metadata || {};
-          const googleName = meta.full_name || meta.name || session.user.email?.split('@')[0] || 'Lion Athlete';
-          const googleAvatar = meta.avatar_url || meta.picture || null;
-          const fallbackProfile: Profile = {
-            id: session.user.id,
-            auth_user_id: session.user.id,
-            email: session.user.email || '',
-            full_name: googleName,
-            phone: session.user.phone || null,
-            faculty: '',
-            department: '',
-            level: '100',
-            reg_number: null,
-            avatar_url: googleAvatar,
-            role: 'member',
-            is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          };
+        // Direct token or code ingestion if landed directly on dashboard
+        if (typeof window !== 'undefined') {
+          const hash = window.location.hash.substring(1);
+          const search = window.location.search.substring(1);
+          const hashParams = new URLSearchParams(hash);
+          const searchParams = new URLSearchParams(search);
 
-          const profile = await fetchProfile(session.user.id, session.user);
-          if (isMounted) {
-            persistProfile(profile || fallbackProfile);
+          const accessToken = hashParams.get('access_token') || searchParams.get('access_token');
+          const refreshToken = hashParams.get('refresh_token') || searchParams.get('refresh_token');
+          const code = searchParams.get('code') || hashParams.get('code');
+
+          if (accessToken && refreshToken) {
+            const { data } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+            if (window.history.replaceState) {
+              window.history.replaceState(null, '', window.location.pathname);
+            }
+            if (data?.session?.user) {
+              handleSessionUser(data.session.user);
+              return;
+            }
+          } else if (code) {
+            const { data } = await supabase.auth.exchangeCodeForSession(code);
+            if (window.history.replaceState) {
+              window.history.replaceState(null, '', window.location.pathname);
+            }
+            if (data?.session?.user) {
+              handleSessionUser(data.session.user);
+              return;
+            }
           }
-        } else if (!session?.user && isMounted) {
-          // No active session in Supabase, clear cache if not guest admin
-          persistProfile(null);
+        }
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (isMounted) {
+          if (session?.user) {
+            handleSessionUser(session.user);
+          } else {
+            const cached = localStorage.getItem('shuttlelions_cached_profile');
+            if (!cached) {
+              persistProfile(null);
+            }
+            setIsLoading(false);
+          }
         }
       } catch (err) {
-        console.error('Auth init error:', err);
-      } finally {
+        console.warn('Auth init note:', err);
         if (isMounted) setIsLoading(false);
       }
     }
@@ -205,40 +284,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        const isGuestAdmin = localStorage.getItem('shuttlelions_guest_admin') === 'true';
-        if (isGuestAdmin) return;
+        const isGuestAdmin = typeof window !== 'undefined' && localStorage.getItem('shuttlelions_guest_admin') === 'true';
+        if (isGuestAdmin) {
+          if (isMounted) setIsLoading(false);
+          return;
+        }
 
         if (session?.user) {
-          const meta = session.user.user_metadata || {};
-          const googleName = meta.full_name || meta.name || session.user.email?.split('@')[0] || 'Lion Athlete';
-          const googleAvatar = meta.avatar_url || meta.picture || null;
-          const fallbackProfile: Profile = {
-            id: session.user.id,
-            auth_user_id: session.user.id,
-            email: session.user.email || '',
-            full_name: googleName,
-            phone: session.user.phone || null,
-            faculty: '',
-            department: '',
-            level: '100',
-            reg_number: null,
-            avatar_url: googleAvatar,
-            role: 'member',
-            is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          };
-
-          const profile = await fetchProfile(session.user.id, session.user);
-          if (isMounted) persistProfile(profile || fallbackProfile);
+          handleSessionUser(session.user);
         } else {
-          if (isMounted) persistProfile(null);
+          if (isMounted) {
+            persistProfile(null);
+            setIsLoading(false);
+          }
         }
       }
     );
 
     return () => {
       isMounted = false;
+      clearTimeout(safetyTimer);
       subscription.unsubscribe();
     };
   }, [persistProfile]);

@@ -8,10 +8,42 @@ export default function AuthCallbackPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const redirectedRef = useRef(false);
 
-  const proceedToDashboard = () => {
+  const proceedToDashboard = (user?: any) => {
     if (redirectedRef.current) return;
     redirectedRef.current = true;
     setStatusText('Redirecting to dashboard...');
+
+    if (user && typeof window !== 'undefined') {
+      try {
+        const metadata = user.user_metadata || {};
+        const fullName =
+          metadata.full_name ||
+          metadata.name ||
+          user.email?.split('@')[0] ||
+          'Lion Athlete';
+        const avatarUrl = metadata.avatar_url || metadata.picture || null;
+        const cachedProfile = {
+          id: user.id,
+          auth_user_id: user.id,
+          email: user.email || '',
+          full_name: fullName,
+          phone: user.phone || null,
+          faculty: '',
+          department: '',
+          level: '100',
+          reg_number: null,
+          avatar_url: avatarUrl,
+          role: 'member',
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        localStorage.setItem('shuttlelions_cached_profile', JSON.stringify(cachedProfile));
+      } catch (e) {
+        console.warn('Failed to cache profile in local storage:', e);
+      }
+    }
+
     window.location.replace('/dashboard');
   };
 
@@ -73,7 +105,7 @@ export default function AuthCallbackPage() {
             syncProfileBackground(session.user),
             new Promise((resolve) => setTimeout(resolve, 800)),
           ]).finally(() => {
-            proceedToDashboard();
+            proceedToDashboard(session.user);
           });
         }
       }
@@ -108,7 +140,7 @@ export default function AuthCallbackPage() {
               syncProfileBackground(data.session.user),
               new Promise((resolve) => setTimeout(resolve, 800)),
             ]);
-            proceedToDashboard();
+            proceedToDashboard(data.session.user);
             return;
           }
         }
@@ -126,7 +158,7 @@ export default function AuthCallbackPage() {
               syncProfileBackground(data.session.user),
               new Promise((resolve) => setTimeout(resolve, 800)),
             ]);
-            proceedToDashboard();
+            proceedToDashboard(data.session.user);
             return;
           }
         }
@@ -138,14 +170,14 @@ export default function AuthCallbackPage() {
             syncProfileBackground(sessionData.session.user),
             new Promise((resolve) => setTimeout(resolve, 800)),
           ]);
-          proceedToDashboard();
+          proceedToDashboard(sessionData.session.user);
           return;
         }
 
         // Strategy D: Check user directly
         const { data: userData } = await supabase.auth.getUser();
         if (userData?.user) {
-          proceedToDashboard();
+          proceedToDashboard(userData.user);
           return;
         }
       } catch (err: any) {
@@ -162,7 +194,7 @@ export default function AuthCallbackPage() {
       try {
         const { data } = await supabase.auth.getSession();
         if (data?.session?.user) {
-          proceedToDashboard();
+          proceedToDashboard(data.session.user);
           return;
         }
       } catch {
