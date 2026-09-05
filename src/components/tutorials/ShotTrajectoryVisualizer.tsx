@@ -2,18 +2,7 @@
 
 import React, { useState } from 'react';
 import { audio } from '@/lib/audio';
-import {
-  Target,
-  Zap,
-  Activity,
-  RotateCcw,
-  Compass,
-  CheckCircle2,
-  Play,
-  Flame,
-  Shield,
-  Layers,
-} from 'lucide-react';
+import { Target, Zap, CheckCircle2, Shield } from 'lucide-react';
 
 export type ShotType = 'clear' | 'drop' | 'smash' | 'drive' | 'net' | 'lift';
 
@@ -132,7 +121,7 @@ export function ShotTrajectoryVisualizer() {
         </div>
 
         {/* Shot Selection Buttons */}
-        <div className="grid grid-cols-3 sm:flex sm:items-center gap-2 bg-sl-bg p-1.5 rounded-xl border border-sl-border">
+        <div className="grid grid-cols-3 sm:flex sm:items-center gap-1.5 sm:gap-2 bg-sl-bg p-1 sm:p-1.5 rounded-xl border border-sl-border">
           {(['smash', 'drop', 'clear', 'drive', 'net', 'lift'] as ShotType[]).map((shot) => {
             const isSelected = selectedShot === shot;
             return (
@@ -140,7 +129,7 @@ export function ShotTrajectoryVisualizer() {
                 key={shot}
                 type="button"
                 onClick={() => handleSelectShot(shot)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                   isSelected
                     ? 'bg-sl-green text-white shadow-md'
                     : 'text-sl-muted hover:text-sl-foreground hover:bg-sl-panel'
@@ -154,7 +143,7 @@ export function ShotTrajectoryVisualizer() {
       </div>
 
       {/* Trajectory Side-Profile SVG Graphic */}
-      <div className="bg-[#080d08] p-4 sm:p-6 rounded-2xl border-2 border-sl-border shadow-inner relative overflow-hidden">
+      <div className="bg-[#080d08] p-3 sm:p-6 rounded-2xl border-2 border-sl-border shadow-inner relative overflow-hidden">
         <svg viewBox="0 0 1000 420" className="w-full h-auto max-h-[360px] drop-shadow-lg">
           <defs>
             <linearGradient id="floorGrad" x1="0" y1="0" x2="0" y2="1">
@@ -170,12 +159,32 @@ export function ShotTrajectoryVisualizer() {
 
           {/* Background Ceiling Height Guide Lines */}
           <line x1="40" y1="60" x2="960" y2="60" stroke="rgba(255,255,255,0.06)" strokeDasharray="4 4" />
-          <text x="960" y="55" fill="rgba(255,255,255,0.2)" fontSize="11" textAnchor="end" fontFamily="monospace">
+          <text
+            x="960"
+            y="55"
+            fill="rgba(255,255,255,0.3)"
+            fontSize="15"
+            textAnchor="end"
+            fontFamily="monospace"
+            stroke="#080d08"
+            strokeWidth="3"
+            paintOrder="stroke fill"
+          >
             Ceiling Clearance (9.0m min)
           </text>
 
           <line x1="40" y1="150" x2="960" y2="150" stroke="rgba(255,255,255,0.04)" strokeDasharray="4 4" />
-          <text x="960" y="145" fill="rgba(255,255,255,0.2)" fontSize="11" textAnchor="end" fontFamily="monospace">
+          <text
+            x="960"
+            y="145"
+            fill="rgba(255,255,255,0.3)"
+            fontSize="15"
+            textAnchor="end"
+            fontFamily="monospace"
+            stroke="#080d08"
+            strokeWidth="3"
+            paintOrder="stroke fill"
+          >
             Jump Smash Apex (3.0m)
           </text>
 
@@ -186,13 +195,33 @@ export function ShotTrajectoryVisualizer() {
           {/* Court Floor Markings (Baselines, Short Service Lines) */}
           {/* Left Baseline */}
           <line x1="80" y1="360" x2="80" y2="375" stroke="#00E676" strokeWidth="4" />
-          <text x="80" y="400" fill="#8A9A8A" fontSize="12" fontWeight="bold" textAnchor="middle">
+          <text
+            x="80"
+            y="405"
+            fill="#00E676"
+            fontSize="18"
+            fontWeight="900"
+            textAnchor="middle"
+            stroke="#080d08"
+            strokeWidth="3"
+            paintOrder="stroke fill"
+          >
             Rear Baseline
           </text>
 
           {/* Left Short Service Line (1.98m from net) */}
           <line x1="360" y1="360" x2="360" y2="375" stroke="#F0F7F0" strokeWidth="3" />
-          <text x="360" y="400" fill="#8A9A8A" fontSize="11" textAnchor="middle">
+          <text
+            x="360"
+            y="405"
+            fill="#F0F7F0"
+            fontSize="16"
+            fontWeight="bold"
+            textAnchor="middle"
+            stroke="#080d08"
+            strokeWidth="3"
+            paintOrder="stroke fill"
+          >
             Short Service
           </text>
 
@@ -203,19 +232,49 @@ export function ShotTrajectoryVisualizer() {
           <rect x="494" y="200" width="12" height="90" fill="#3A3A3A" stroke="#00E676" strokeWidth="1" />
           {/* Top White Tape (75mm white tape) */}
           <rect x="492" y="196" width="16" height="8" fill="#FFFFFF" rx="1" />
-          <text x="500" y="185" fill="#00E676" fontSize="12" fontWeight="bold" textAnchor="middle">
+          <text
+            x="500"
+            y="180"
+            fill="#00E676"
+            fontSize="18"
+            fontWeight="900"
+            textAnchor="middle"
+            stroke="#080d08"
+            strokeWidth="4"
+            paintOrder="stroke fill"
+          >
             Net (1.55m)
           </text>
 
           {/* Right Short Service Line */}
           <line x1="640" y1="360" x2="640" y2="375" stroke="#F0F7F0" strokeWidth="3" />
-          <text x="640" y="400" fill="#8A9A8A" fontSize="11" textAnchor="middle">
+          <text
+            x="640"
+            y="405"
+            fill="#F0F7F0"
+            fontSize="16"
+            fontWeight="bold"
+            textAnchor="middle"
+            stroke="#080d08"
+            strokeWidth="3"
+            paintOrder="stroke fill"
+          >
             Short Service
           </text>
 
           {/* Right Baseline */}
           <line x1="920" y1="360" x2="920" y2="375" stroke="#00E676" strokeWidth="4" />
-          <text x="920" y="400" fill="#8A9A8A" fontSize="12" fontWeight="bold" textAnchor="middle">
+          <text
+            x="920"
+            y="405"
+            fill="#00E676"
+            fontSize="18"
+            fontWeight="900"
+            textAnchor="middle"
+            stroke="#080d08"
+            strokeWidth="3"
+            paintOrder="stroke fill"
+          >
             Rear Baseline
           </text>
 
@@ -273,25 +332,25 @@ export function ShotTrajectoryVisualizer() {
         </svg>
       </div>
 
-      {/* Trajectory Technical Diagnostics Card */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 rounded-xl bg-sl-bg border border-sl-border space-y-1">
+      {/* Trajectory Technical Diagnostics Cards (Mobile 2-Column Balanced Grid) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4">
+        <div className="p-3.5 sm:p-4 rounded-xl bg-sl-bg border border-sl-border space-y-1 col-span-1">
           <span className="text-[10px] font-black uppercase text-sl-muted flex items-center gap-1.5">
-            <Zap className="w-3.5 h-3.5 text-sl-green" /> Release Velocity
+            <Zap className="w-3.5 h-3.5 text-sl-green" /> Velocity
           </span>
-          <p className="text-base font-black text-sl-foreground font-mono">{details.speedKmH}</p>
-          <p className="text-[10px] text-sl-muted">Radar tracked feather shuttlecock launch</p>
+          <p className="text-sm sm:text-base font-black text-sl-foreground font-mono">{details.speedKmH}</p>
+          <p className="text-[10px] text-sl-muted">Feather shuttle launch</p>
         </div>
 
-        <div className="p-4 rounded-xl bg-sl-bg border border-sl-border space-y-1">
+        <div className="p-3.5 sm:p-4 rounded-xl bg-sl-bg border border-sl-border space-y-1 col-span-1">
           <span className="text-[10px] font-black uppercase text-sl-muted flex items-center gap-1.5">
-            <Target className="w-3.5 h-3.5 text-sl-green" /> Optimal Contact Point
+            <Target className="w-3.5 h-3.5 text-sl-green" /> Contact Point
           </span>
           <p className="text-xs font-black text-sl-foreground leading-snug">{details.contactHeight}</p>
-          <p className="text-[10px] text-sl-muted">Kinetic chain extension apex</p>
+          <p className="text-[10px] text-sl-muted">Extension apex</p>
         </div>
 
-        <div className="p-4 rounded-xl bg-sl-bg border border-sl-border space-y-1">
+        <div className="p-3.5 sm:p-4 rounded-xl bg-sl-bg border border-sl-border space-y-1 col-span-2 sm:col-span-1">
           <span className="text-[10px] font-black uppercase text-sl-muted flex items-center gap-1.5">
             <Shield className="w-3.5 h-3.5 text-sl-green" /> Tactical Intent
           </span>

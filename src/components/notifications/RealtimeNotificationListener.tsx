@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, Calendar, Sparkles, X, ChevronRight, ShieldAlert } from 'lucide-react';
+import { Bell, Calendar, X, ChevronRight, ShieldAlert } from 'lucide-react';
 import { useAuth } from '@/components/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { audio } from '@/lib/audio';

@@ -316,19 +316,25 @@ body {
   z-index: 0;
 }
 
+/* ---- Universal Smooth Scroll & Ergonomics ---- */
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* ---- Custom Scrollbar ---- */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--sl-bg);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--sl-border);
-  border-radius: 4px;
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -342,4 +348,9 @@ body {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* ---- Safe Area Utility for iOS Safari & Android Gesture Bars ---- */
+.safe-area-bottom {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
 }

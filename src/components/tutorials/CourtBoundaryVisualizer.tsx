@@ -2,17 +2,7 @@
 
 import React, { useState } from 'react';
 import { audio } from '@/lib/audio';
-import {
-  Maximize2,
-  Users,
-  User,
-  ArrowRight,
-  Info,
-  CheckCircle2,
-  AlertCircle,
-  Shield,
-  HelpCircle,
-} from 'lucide-react';
+import { Users, User, Info, CheckCircle2 } from 'lucide-react';
 
 export type CourtViewMode = 'singles_serve' | 'singles_rally' | 'doubles_serve' | 'doubles_rally';
 
@@ -97,11 +87,11 @@ export function CourtBoundaryVisualizer() {
         </div>
 
         {/* Mode Selector Buttons */}
-        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 bg-sl-bg p-1.5 rounded-xl border border-sl-border">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 sm:gap-2 bg-sl-bg p-1 sm:p-1.5 rounded-xl border border-sl-border">
           <button
             type="button"
             onClick={() => handleSelectMode('singles_serve')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 ${
               mode === 'singles_serve'
                 ? 'bg-sl-green text-white shadow-md'
                 : 'text-sl-muted hover:text-sl-foreground hover:bg-sl-panel'
@@ -114,7 +104,7 @@ export function CourtBoundaryVisualizer() {
           <button
             type="button"
             onClick={() => handleSelectMode('singles_rally')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 ${
               mode === 'singles_rally'
                 ? 'bg-sl-green text-white shadow-md'
                 : 'text-sl-muted hover:text-sl-foreground hover:bg-sl-panel'
@@ -127,7 +117,7 @@ export function CourtBoundaryVisualizer() {
           <button
             type="button"
             onClick={() => handleSelectMode('doubles_serve')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 ${
               mode === 'doubles_serve'
                 ? 'bg-sl-green text-white shadow-md'
                 : 'text-sl-muted hover:text-sl-foreground hover:bg-sl-panel'
@@ -140,7 +130,7 @@ export function CourtBoundaryVisualizer() {
           <button
             type="button"
             onClick={() => handleSelectMode('doubles_rally')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 ${
               mode === 'doubles_rally'
                 ? 'bg-sl-green text-white shadow-md'
                 : 'text-sl-muted hover:text-sl-foreground hover:bg-sl-panel'
@@ -155,10 +145,10 @@ export function CourtBoundaryVisualizer() {
       {/* Main Diagram Area */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
         {/* SVG Top-Down Court Graphic */}
-        <div className="lg:col-span-7 bg-[#070b07] p-4 sm:p-6 rounded-2xl border-2 border-sl-border relative overflow-hidden shadow-inner flex flex-col items-center">
+        <div className="lg:col-span-7 bg-[#070b07] p-3 sm:p-6 rounded-2xl border-2 border-sl-border relative overflow-hidden shadow-inner flex flex-col items-center">
           <svg
             viewBox="0 0 610 1340"
-            className="w-full max-h-[520px] object-contain drop-shadow-[0_0_15px_rgba(0,0,0,0.8)]"
+            className="w-full max-h-[380px] sm:max-h-[480px] md:max-h-[520px] object-contain drop-shadow-[0_0_15px_rgba(0,0,0,0.8)]"
           >
             <defs>
               {/* Active Zone Glow Pattern */}
@@ -303,28 +293,39 @@ export function CourtBoundaryVisualizer() {
               {/* Net posts */}
               <circle cx="-15" cy="670" r="7" fill="#F9A825" />
               <circle cx="625" cy="670" r="7" fill="#F9A825" />
-              <text x="305" y="675" fill="#00E676" fontSize="22" fontWeight="900" textAnchor="middle" letterSpacing="4">
+              <text
+                x="305"
+                y="676"
+                fill="#00E676"
+                fontSize="24"
+                fontWeight="900"
+                textAnchor="middle"
+                letterSpacing="3"
+                stroke="#070b07"
+                strokeWidth="4"
+                paintOrder="stroke fill"
+              >
                 NET (1.55m / 5ft 1in)
               </text>
             </g>
 
             {/* Dynamic Annotations & Labels */}
-            <g fill="#A0B0A0" fontSize="18" fontWeight="bold" fontFamily="sans-serif">
+            <g fill="#F0F7F0" fontSize="20" fontWeight="900" fontFamily="sans-serif" stroke="#070b07" strokeWidth="4" paintOrder="stroke fill">
               {/* Far Baseline Label */}
-              <text x="305" y="32" textAnchor="middle">BACK BASELINE (13.40m)</text>
+              <text x="305" y="38" textAnchor="middle">BACK BASELINE (13.40m)</text>
 
               {/* Doubles Long Service Line Label */}
-              <text x="305" y="98" textAnchor="middle" fill="#00E676" fontSize="15">
+              <text x="305" y="104" textAnchor="middle" fill="#00E676">
                 DOUBLES LONG SERVICE LINE
               </text>
 
               {/* Far Short Service Line Label */}
-              <text x="305" y="460" textAnchor="middle" fill="#F0F7F0" fontSize="15">
+              <text x="305" y="460" textAnchor="middle">
                 SHORT SERVICE LINE (1.98m from net)
               </text>
 
               {/* Near Short Service Line Label */}
-              <text x="305" y="895" textAnchor="middle" fill="#F0F7F0" fontSize="15">
+              <text x="305" y="895" textAnchor="middle">
                 SHORT SERVICE LINE
               </text>
 
@@ -345,10 +346,30 @@ export function CourtBoundaryVisualizer() {
                 />
                 <circle cx="434" cy="1100" r="10" fill="#00E676" />
                 <circle cx="175" cy="236" r="12" fill="#F9A825" />
-                <text x="434" y="1135" fill="#00E676" fontSize="18" fontWeight="bold" textAnchor="middle">
+                <text
+                  x="434"
+                  y="1140"
+                  fill="#00E676"
+                  fontSize="22"
+                  fontWeight="900"
+                  textAnchor="middle"
+                  stroke="#070b07"
+                  strokeWidth="4"
+                  paintOrder="stroke fill"
+                >
                   Server (Even 0, 2...)
                 </text>
-                <text x="175" y="210" fill="#F9A825" fontSize="18" fontWeight="bold" textAnchor="middle">
+                <text
+                  x="175"
+                  y="210"
+                  fill="#F9A825"
+                  fontSize="22"
+                  fontWeight="900"
+                  textAnchor="middle"
+                  stroke="#070b07"
+                  strokeWidth="4"
+                  paintOrder="stroke fill"
+                >
                   Legal Target Box
                 </text>
               </g>
@@ -356,7 +377,7 @@ export function CourtBoundaryVisualizer() {
           </svg>
 
           {/* Court Legend Pill */}
-          <div className="flex flex-wrap items-center justify-center gap-4 mt-4 text-[11px] font-bold">
+          <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 mt-3 sm:mt-4 text-[10px] sm:text-[11px] font-bold">
             <div className="flex items-center gap-1.5 text-sl-green">
               <span className="w-3 h-3 rounded bg-sl-green/30 border border-sl-green inline-block" />
               <span>In-Bounds Active Zone</span>

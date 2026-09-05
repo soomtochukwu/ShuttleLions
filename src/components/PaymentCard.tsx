@@ -1,10 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import { ShuttleButton } from '@/components/ui/ShuttleButton';
 import { formatKobo } from '@/lib/constants';
 import { audio } from '@/lib/audio';
-import { Check, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { Check, Calendar as CalendarIcon } from 'lucide-react';
 
 interface PaymentCardProps {
   type: 'registration' | 'monthly';
@@ -92,7 +91,7 @@ export function PaymentCard({
               <CalendarIcon className="w-3.5 h-3.5 text-sl-green" />
               <span>Membership Calendar ({currentYear})</span>
             </h4>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 sm:gap-2">
               {MONTHS.map((m) => {
                 const monthKey = `${currentYear}-${m.id}`;
                 const isPaid = monthlyPayments[monthKey] === true;
@@ -114,10 +113,10 @@ export function PaymentCard({
                 return (
                   <div
                     key={m.id}
-                    className={`relative p-2 rounded flex flex-col items-center justify-between text-center ${borderStyle} ${bgStyle} select-none`}
+                    className={`relative p-1.5 sm:p-2 rounded flex flex-col items-center justify-between text-center ${borderStyle} ${bgStyle} select-none`}
                     title={`${m.name} ${currentYear}: ${isPaid ? 'Paid' : isCurrent ? 'Current month due' : isFuture ? 'Upcoming' : 'Unpaid'}`}
                   >
-                    <span className="text-xs font-bold uppercase">{m.name}</span>
+                    <span className="text-[11px] sm:text-xs font-bold uppercase">{m.name}</span>
                     <span className="text-[9px] font-bold block mt-1">
                       {isPaid ? (
                         <Check className="w-3 h-3 text-white inline-block" />

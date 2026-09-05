@@ -8,7 +8,6 @@ import {
   Share,
   PlusSquare,
   X,
-  CheckCircle2,
   MoreVertical,
   Monitor,
 } from 'lucide-react';
@@ -158,7 +157,7 @@ export function PWAInstallPrompt() {
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 100, opacity: 0 }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:max-w-md z-50 pointer-events-auto"
+        className="fixed bottom-20 sm:bottom-4 left-4 right-4 md:left-auto md:right-6 md:max-w-md z-50 pointer-events-auto"
       >
         <div className="bg-[#121812] border-2 border-sl-green text-white p-4 sm:p-5 rounded-2xl shadow-2xl backdrop-blur-md relative">
           <button

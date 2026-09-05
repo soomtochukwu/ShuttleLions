@@ -46,6 +46,14 @@ const DASHBOARD_NAV = [
   { label: 'Drill Tutorials', href: '/dashboard/tutorials', icon: <BookOpen className="w-4 h-4" /> },
 ];
 
+const MOBILE_BOTTOM_NAV = [
+  { label: 'Overview', href: '/dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
+  { label: 'Games', href: '/dashboard/schedule', icon: <Calendar className="w-5 h-5" /> },
+  { label: 'Tutorials', href: '/dashboard/tutorials', icon: <BookOpen className="w-5 h-5" /> },
+  { label: 'Community', href: '/dashboard/community', icon: <Users className="w-5 h-5" /> },
+  { label: 'My ID', href: '/dashboard/profile', icon: <User className="w-5 h-5" /> },
+];
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -148,10 +156,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     '/dashboard/community',
     '/dashboard/community/executives',
     '/dashboard/schedule',
+    '/dashboard/tutorials',
   ].includes(pathname);
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex flex-col bg-sl-bg text-sl-foreground">
+    <div className="h-screen h-[100dvh] w-screen overflow-hidden flex flex-col bg-sl-bg text-sl-foreground">
       {/* Background Notification Scheduler for Pre-Game Reminders */}
       <NotificationScheduler />
 
@@ -457,16 +466,41 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           }`}
         >
           <div
-            className={`max-w-7xl mx-auto w-full ${
+            className={`w-full ${
               isFixedLayoutPage
-                ? 'h-full flex-1 flex flex-col p-3 sm:p-6 lg:p-8 min-h-0 overflow-hidden'
-                : 'p-4 sm:p-8 lg:p-12 space-y-8 sm:space-y-10'
+                ? 'h-full flex-1 flex flex-col p-2 sm:p-4 lg:p-6 pb-20 sm:pb-4 lg:pb-6 min-h-0 overflow-hidden'
+                : 'max-w-7xl mx-auto p-4 sm:p-8 lg:p-12 pb-24 sm:pb-12 lg:pb-12 space-y-6 sm:space-y-10'
             }`}
           >
             {children}
           </div>
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation Bar (Persistent, thumb-friendly app feel) */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-sl-panel/95 backdrop-blur-md border-t border-sl-border flex items-center justify-around px-2 py-1.5 safe-area-bottom select-none">
+        {MOBILE_BOTTOM_NAV.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => {
+                audio.haptic('tap');
+                audio.play('rally');
+              }}
+              className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer min-w-[56px] ${
+                isActive ? 'text-sl-green font-black' : 'text-sl-muted hover:text-sl-foreground font-bold'
+              }`}
+            >
+              <div className={`p-1 rounded-lg transition-all ${isActive ? 'bg-sl-green/15 text-sl-green' : ''}`}>
+                {item.icon}
+              </div>
+              <span className="text-[10px] tracking-tight mt-0.5">{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }
