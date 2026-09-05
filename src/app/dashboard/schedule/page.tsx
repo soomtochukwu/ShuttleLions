@@ -12,14 +12,11 @@ import {
  Calendar,
  MapPin,
  Clock,
- Trophy,
  Users,
  CheckCircle2,
  Plus,
  Trash2,
  Sparkles,
- Zap,
- Shield,
  Activity,
  Navigation,
  Copy,
@@ -62,7 +59,6 @@ export default function SchedulePage() {
     data: events,
     setData: setEvents,
     isLoading,
-    isRevalidating,
   } = useCachedQuery<EventItem[]>({
     key: 'schedule_events',
     initialFallback: [],
@@ -378,14 +374,15 @@ export default function SchedulePage() {
  message: `"${editTitle}" has been updated successfully on the court calendar.`,
  type: 'success',
  });
- } catch (err: any) {
- console.error('Update event error:', err);
- showAlert({
- title: 'Update Failed',
- message: err.message || 'Could not update schedule details. Please check your inputs.',
- type: 'error',
- });
- } finally {
+      } catch (err: unknown) {
+        console.error('Update event error:', err);
+        const errMsg = err instanceof Error ? err.message : 'Could not update schedule details. Please check your inputs.';
+        showAlert({
+          title: 'Update Failed',
+          message: errMsg,
+          type: 'error',
+        });
+      } finally {
  setIsEditSubmitting(false);
  }
  };
@@ -464,7 +461,7 @@ export default function SchedulePage() {
           type: 'success',
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('RSVP toggle error:', err);
       // Revert optimistic update
       setUserRsvps((prev) => ({ ...prev, [rsvpKey]: currentlyGoing }));
@@ -580,8 +577,8 @@ export default function SchedulePage() {
  message: `"${newTitle}" has been scheduled for ${newDate} at ${newStartTime} and added to the court calendar.`,
  type: 'success',
  });
- } catch (err: any) {
- console.error('Event creation error:', err);
+      } catch (err: unknown) {
+        console.error('Event creation error:', err);
  showAlert({
  title: 'Scheduling Error',
  message: 'Failed to create schedule. Please check your inputs.',
@@ -768,6 +765,7 @@ export default function SchedulePage() {
                   return (
                     <TiltCard
                       key={routine.id}
+                      maxTilt={3.5}
                       className="min-w-[250px] max-w-[280px] sm:max-w-[320px] md:min-w-0 md:max-w-none snap-start shrink-0 md:shrink p-3.5 sm:p-4 bg-sl-panel border border-sl-border relative overflow-hidden space-y-2"
                     >
                       <div className="flex items-center justify-between">
@@ -802,7 +800,7 @@ export default function SchedulePage() {
                           className="flex items-center gap-1.5 text-sl-foreground hover:text-sl-green transition-colors cursor-pointer group truncate mr-2"
                           title="Click to view court GPS coordinates & directions"
                         >
-                          <MapPin className="w-3.5 h-3.5 text-sl-green group-hover:scale-110 transition-transform shrink-0" />
+                          <MapPin className="w-3.5 h-3.5 text-sl-green shrink-0" />
                           <span className="underline decoration-dotted group-hover:text-sl-green truncate max-w-[130px]">
                             {routine.location}
                           </span>
@@ -905,7 +903,7 @@ export default function SchedulePage() {
             const attendeeCount = attendeeCounts[rsvpKey] || 0;
 
             return (
-              <TiltCard key={`${ev.id}-${sessionDate}`} className="p-4 sm:p-6 bg-sl-panel border border-sl-border">
+              <TiltCard key={`${ev.id}-${sessionDate}`} maxTilt={3} className="p-4 sm:p-6 bg-sl-panel border border-sl-border">
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6">
                   <div className="space-y-2 flex-1 w-full min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
@@ -966,7 +964,7 @@ export default function SchedulePage() {
                         className="flex items-center gap-1.5 text-sl-muted hover:text-sl-green transition-colors cursor-pointer group text-[11px] sm:text-xs"
                         title="Click to view court GPS coordinates & directions"
                       >
-                        <MapPin className="w-3.5 h-3.5 text-sl-green group-hover:scale-110 transition-transform shrink-0" />
+                        <MapPin className="w-3.5 h-3.5 text-sl-green shrink-0" />
                         <span className="underline decoration-dotted group-hover:text-sl-green truncate max-w-[180px]">
                           {ev.location || 'UNN Badminton Court'}
                         </span>
@@ -1296,7 +1294,9 @@ export default function SchedulePage() {
  </label>
  <select
  value={newType}
- onChange={(e: any) => setNewType(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                  setNewType(e.target.value as EventItem['event_type'])
+                }
  className="w-full p-2.5 rounded-xl bg-sl-bg border border-sl-border text-xs font-bold text-sl-foreground focus:border-sl-green outline-none"
  >
  <option value="training">Training Drill & Sparring</option>
@@ -1508,7 +1508,9 @@ export default function SchedulePage() {
  </label>
  <select
  value={editType}
- onChange={(e: any) => setEditType(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                  setEditType(e.target.value as EventItem['event_type'])
+                }
  className="w-full p-2.5 rounded-xl bg-sl-bg border border-sl-border text-xs font-bold text-sl-foreground focus:border-sl-green outline-none"
  >
  <option value="training">Training Drill & Sparring</option>

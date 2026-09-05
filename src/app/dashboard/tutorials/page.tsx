@@ -406,42 +406,42 @@ export default function TutorialsPage() {
             })}
           </div>
 
-          {/* Practice Drills Checklist (Stuck to the bottom, height fits content) */}
-          <div className="shrink-0 mt-auto border-t border-sl-border/40 p-2.5 bg-sl-green/5 flex flex-col space-y-1.5">
-            <div className="flex items-center justify-between pb-1.5 border-b border-sl-border/30">
-              <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-sl-green flex items-center gap-1.5 font-mono">
-                <Dumbbell className="w-4 h-4 text-sl-green" /> Practice Missions
+          {/* Practice Drills Checklist (Stuck to bottom, strictly content height) */}
+          <div className="shrink-0 mt-auto border-t border-sl-border/40 p-2 bg-sl-green/5 space-y-1">
+            <div className="flex items-center justify-between pb-1 border-b border-sl-border/30">
+              <span className="text-xs font-black uppercase tracking-wider text-sl-green flex items-center gap-1.5 font-mono">
+                <Dumbbell className="w-3.5 h-3.5 text-sl-green" /> Practice Missions
               </span>
-              <span className="text-xs font-mono text-sl-muted">
+              <span className="text-[11px] font-mono text-sl-muted">
                 {activeTutorial?.coaching_drills.filter((d) => completedDrills[d]).length} /{' '}
                 {activeTutorial?.coaching_drills.length || 0} Done
               </span>
             </div>
 
-            <div className="max-h-52 overflow-y-auto py-1 space-y-1.5">
+            <div className="space-y-1 py-0.5">
               {activeTutorial?.coaching_drills.map((drill, idx) => {
                 const isChecked = !!completedDrills[drill];
                 return (
                   <div
                     key={idx}
                     onClick={() => toggleDrill(drill)}
-                    className={`p-2 rounded-xl border transition-all cursor-pointer flex items-start gap-2.5 ${
+                    className={`p-1.5 rounded-lg border transition-all cursor-pointer flex items-start gap-2 ${
                       isChecked
                         ? 'bg-sl-green/20 border-sl-green/60 text-sl-foreground'
                         : 'bg-sl-panel border-sl-border/70 hover:border-sl-green/40'
                     }`}
                   >
                     <div
-                      className={`w-4.5 h-4.5 rounded-md border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                      className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
                         isChecked
                           ? 'bg-sl-green border-sl-green text-white'
                           : 'border-sl-border bg-sl-bg'
                       }`}
                     >
-                      {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                      {isChecked && <Check className="w-2.5 h-2.5 stroke-[3]" />}
                     </div>
                     <p
-                      className={`text-xs sm:text-sm leading-normal font-medium select-none ${
+                      className={`text-xs leading-tight font-medium select-none ${
                         isChecked ? 'line-through text-sl-muted' : 'text-sl-foreground'
                       }`}
                     >
@@ -453,9 +453,9 @@ export default function TutorialsPage() {
             </div>
 
             {/* Varsity Badge */}
-            <div className="pt-1.5 border-t border-sl-border/30 flex items-center justify-between text-xs font-mono text-sl-muted">
+            <div className="pt-1 border-t border-sl-border/30 flex items-center justify-between text-[10px] font-mono text-sl-muted">
               <span className="flex items-center gap-1 text-sl-green font-bold">
-                <Shield className="w-3.5 h-3.5 text-sl-green" /> UNN Verified
+                <Shield className="w-3 h-3 text-sl-green" /> UNN Verified
               </span>
               <span>BWF Standard</span>
             </div>

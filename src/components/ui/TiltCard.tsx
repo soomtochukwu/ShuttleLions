@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform, type HTMLMotionProps } from 'framer-motion';
 
-interface TiltCardProps extends React.HTMLAttributes<HTMLDivElement> {
+interface TiltCardProps extends HTMLMotionProps<'div'> {
  children: React.ReactNode;
  className?: string;
  maxTilt?: number;
@@ -13,7 +13,7 @@ interface TiltCardProps extends React.HTMLAttributes<HTMLDivElement> {
 export function TiltCard({
  children,
  className = '',
- maxTilt = 12,
+ maxTilt = 6,
  glowEffect = true,
  ...props
 }: TiltCardProps) {
@@ -24,8 +24,8 @@ export function TiltCard({
  const mouseX = useMotionValue(0);
  const mouseY = useMotionValue(0);
 
- // Smooth spring physics for rotation
- const springConfig = { damping: 20, stiffness: 220 };
+ // Smooth spring physics for rotation (damping: 25, stiffness: 180 prevents shake/jitter)
+ const springConfig = { damping: 25, stiffness: 180 };
  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [maxTilt, -maxTilt]), springConfig);
  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-maxTilt, maxTilt]), springConfig);
 
@@ -65,7 +65,7 @@ export function TiltCard({
  className={`shuttle-panel relative overflow-hidden transition-shadow duration-300 ${
  isHovered ? 'shadow-[0_20px_50px_rgba(0,200,83,0.15)] border-sl-green/40' : ''
  } ${className}`}
- {...(props as any)}
+ {...props}
  >
  {/* Dynamic Light Sheen Overlay */}
  {glowEffect && isHovered && (
@@ -77,7 +77,7 @@ export function TiltCard({
  />
  )}
 
- <div className="relative z-10" style={{ transform: 'translateZ(20px)' }}>
+ <div className="relative z-10" style={{ transform: 'translateZ(10px)' }}>
  {children}
  </div>
  </motion.div>

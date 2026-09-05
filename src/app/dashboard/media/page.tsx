@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { supabase, type MediaUpload, type CustomRole } from '@/lib/supabase';
 import { useAuth } from '@/components/AuthContext';
 import { TiltCard } from '@/components/ui/TiltCard';
@@ -16,18 +16,14 @@ import {
  Plus,
  Play,
  Sparkles,
- Shield,
  Upload,
- Image as ImageIcon,
  Link as LinkIcon,
  Film,
  X,
  Maximize2,
  Trash2,
- AlertCircle,
  ExternalLink,
  Layers,
- CheckCircle2,
  Loader2,
  CheckSquare,
  Square,
@@ -85,7 +81,7 @@ export default function MediaGalleryPage() {
         .from('media_likes')
         .select('media_id')
         .eq('profile_id', user.id);
-      return likesData ? likesData.map((l: any) => l.media_id) : [];
+      return likesData ? (likesData as Array<{ media_id: string }>).map((l) => l.media_id) : [];
     },
   });
 
@@ -204,8 +200,8 @@ export default function MediaGalleryPage() {
  message: `Successfully removed ${toDelete.length} media item${toDelete.length === 1 ? '' : 's'} from the club gallery.`,
  type: 'info',
  });
- } catch (err: any) {
- console.error('Batch delete error:', err);
+      } catch (err: unknown) {
+        console.error('Batch delete error:', err);
  showAlert({
  title: 'Batch Delete Failed',
  message: 'An error occurred while deleting selected clips. Please try again.',
@@ -378,8 +374,8 @@ export default function MediaGalleryPage() {
  message: `"${mediaItem.title}" has been removed from the court feed.`,
  type: 'info',
  });
- } catch (err: any) {
- console.error('Delete error:', err);
+      } catch (err: unknown) {
+        console.error('Delete error:', err);
  showAlert({
  title: 'Deletion Failed',
  message: 'Failed to delete media clip. Please check your connection and permissions.',
@@ -715,8 +711,8 @@ export default function MediaGalleryPage() {
 
       {/* Scrollable Content Only */}
       <div className="flex-1 overflow-y-auto min-h-0 pr-1 pb-6 pt-1">
-        {/* Media Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        {/* Media Grid (3 Columns on Desktop) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
  {filteredMedia.map((m) => {
  const parsed = parseMediaSource(m.media_url, m.thumbnail_url);
  const isOwnerOrAdmin = canUploadMedia || m.uploader_id === user?.id;
@@ -1180,7 +1176,9 @@ export default function MediaGalleryPage() {
  </label>
  <select
  value={newCategory}
- onChange={(e: any) => setNewCategory(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                  setNewCategory(e.target.value as 'training' | 'highlights' | 'competition' | 'social')
+                }
  className="w-full p-2.5 rounded-xl bg-sl-bg border border-sl-border text-xs font-bold text-sl-foreground focus:border-sl-green outline-none"
  >
  <option value="training">Training Drills</option>
