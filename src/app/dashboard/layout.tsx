@@ -468,7 +468,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div
             className={`w-full ${
               isFixedLayoutPage
-                ? 'h-full flex-1 flex flex-col p-2 sm:p-4 lg:p-6 pb-20 sm:pb-4 lg:pb-6 min-h-0 overflow-hidden'
+                ? 'h-full flex-1 flex flex-col p-2 sm:p-3 lg:p-4 pb-20 sm:pb-3 lg:pb-4 min-h-0 overflow-hidden'
                 : 'max-w-7xl mx-auto p-4 sm:p-8 lg:p-12 pb-24 sm:pb-12 lg:pb-12 space-y-6 sm:space-y-10'
             }`}
           >

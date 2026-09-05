@@ -99,9 +99,9 @@ export function ShotTrajectoryVisualizer() {
   };
 
   return (
-    <div className="shuttle-panel p-5 sm:p-7 bg-sl-panel border border-sl-border space-y-6">
+    <div className="p-3 sm:p-4 bg-sl-panel border border-sl-border rounded-2xl space-y-3">
       {/* Header & Shot Buttons */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-sl-border/40 pb-5">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 border-b border-sl-border/40 pb-3">
         <div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-black uppercase text-sl-green bg-sl-green/15 border border-sl-green/30 px-2.5 py-0.5 rounded-full font-mono">
@@ -143,8 +143,8 @@ export function ShotTrajectoryVisualizer() {
       </div>
 
       {/* Trajectory Side-Profile SVG Graphic */}
-      <div className="bg-[#080d08] p-3 sm:p-6 rounded-2xl border-2 border-sl-border shadow-inner relative overflow-hidden">
-        <svg viewBox="0 0 1000 420" className="w-full h-auto max-h-[360px] drop-shadow-lg">
+      <div className="bg-[#080d08] p-2.5 sm:p-4 rounded-xl border border-sl-border shadow-inner relative overflow-hidden">
+        <svg viewBox="0 0 1000 420" className="w-full h-auto max-h-[280px] sm:max-h-[320px] drop-shadow-lg">
           <defs>
             <linearGradient id="floorGrad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#1B2E1B" />

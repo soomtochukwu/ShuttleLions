@@ -65,9 +65,9 @@ export function CourtBoundaryVisualizer() {
   };
 
   return (
-    <div className="shuttle-panel p-5 sm:p-7 bg-sl-panel border border-sl-border space-y-6">
+    <div className="p-3 sm:p-4 bg-sl-panel border border-sl-border rounded-2xl space-y-3">
       {/* Header & Mode Switcher */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-sl-border/40 pb-5">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 border-b border-sl-border/40 pb-3">
         <div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-black uppercase text-sl-green bg-sl-green/15 border border-sl-green/30 px-2.5 py-0.5 rounded-full font-mono">
@@ -143,12 +143,12 @@ export function CourtBoundaryVisualizer() {
       </div>
 
       {/* Main Diagram Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-stretch">
         {/* SVG Top-Down Court Graphic */}
-        <div className="lg:col-span-7 bg-[#070b07] p-3 sm:p-6 rounded-2xl border-2 border-sl-border relative overflow-hidden shadow-inner flex flex-col items-center">
+        <div className="lg:col-span-7 bg-[#070b07] p-2.5 sm:p-4 rounded-xl border border-sl-border relative overflow-hidden shadow-inner flex flex-col items-center justify-center">
           <svg
             viewBox="0 0 610 1340"
-            className="w-full max-h-[380px] sm:max-h-[480px] md:max-h-[520px] object-contain drop-shadow-[0_0_15px_rgba(0,0,0,0.8)]"
+            className="w-full max-h-[340px] sm:max-h-[440px] md:max-h-[480px] object-contain drop-shadow-[0_0_15px_rgba(0,0,0,0.8)]"
           >
             <defs>
               {/* Active Zone Glow Pattern */}

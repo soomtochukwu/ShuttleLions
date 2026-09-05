@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import Image from 'next/image';
 import { supabase, type Tutorial } from '@/lib/supabase';
 import { useCachedQuery } from '@/lib/client-cache';
 import { BADMINTON_TUTORIALS, type BadmintonTutorial } from '@/data/badminton-tutorials-data';
@@ -24,9 +25,12 @@ import {
   ArrowRight,
   X,
   ListFilter,
+  Eye,
+  Check,
 } from 'lucide-react';
 
-type StudioViewMode = 'lesson' | 'court_boundaries' | 'shot_trajectories';
+type StageDisplayMode = 'photo' | 'court' | 'trajectory';
+type MobileTabMode = 'visual' | 'steps' | 'drills';
 
 export default function TutorialsPage() {
   // 1. Dual-layer SWR query with instant fallback to comprehensive local curriculum
@@ -47,7 +51,6 @@ export default function TutorialsPage() {
     if (!dbTutorials || dbTutorials.length === 0) {
       return BADMINTON_TUTORIALS;
     }
-    const dbIds = new Set(dbTutorials.map((t) => t.id));
     const merged: BadmintonTutorial[] = dbTutorials.map((d) => {
       const match = BADMINTON_TUTORIALS.find((b) => b.id === d.id || b.title === d.title);
       return {
@@ -69,42 +72,42 @@ export default function TutorialsPage() {
         sections: match?.sections || [
           {
             heading: 'Technical Breakdown',
-            content: d.content_md,
+            content: d.summary,
+            bullet_points: ['Maintain active ready stance.', 'Follow through towards target.'],
+            coach_tip: 'Keep your wrist relaxed before contact.',
           },
         ],
       };
     });
 
-    BADMINTON_TUTORIALS.forEach((item) => {
-      if (!dbIds.has(item.id)) {
-        merged.push(item);
-      }
-    });
-
-    return merged;
+    const existingIds = new Set(merged.map((m) => m.id));
+    const extraLocals = BADMINTON_TUTORIALS.filter((b) => !existingIds.has(b.id));
+    return [...merged, ...extraLocals];
   }, [dbTutorials]);
 
+  // State Management
   const [activeTutorialId, setActiveTutorialId] = useState<string>(BADMINTON_TUTORIALS[0].id);
+  const [stageMode, setStageMode] = useState<StageDisplayMode>('photo');
+  const [mobileTab, setMobileTab] = useState<MobileTabMode>('visual');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [studioView, setStudioView] = useState<StudioViewMode>('lesson');
+  const [searchQuery, setSearchQuery] = useState('');
   const [isMobileCurriculumOpen, setIsMobileCurriculumOpen] = useState(false);
+  
+  // Local drill completion tracking for player satisfaction
+  const [completedDrills, setCompletedDrills] = useState<Record<string, boolean>>({});
 
-  // Filtered tutorials list
+  // Filtered Tutorials
   const filteredTutorials = useMemo(() => {
-    return allTutorials.filter((tut) => {
-      const matchesCategory =
-        selectedCategory === 'all' ? true : tut.category === selectedCategory;
-
+    return allTutorials.filter((t) => {
+      const matchesCat = selectedCategory === 'all' || t.category === selectedCategory;
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||
-        tut.title.toLowerCase().includes(q) ||
-        tut.subtitle.toLowerCase().includes(q) ||
-        tut.summary.toLowerCase().includes(q) ||
-        tut.key_takeaways.some((k) => k.toLowerCase().includes(q));
-
-      return matchesCategory && matchesSearch;
+        t.title.toLowerCase().includes(q) ||
+        t.subtitle.toLowerCase().includes(q) ||
+        t.category.toLowerCase().includes(q) ||
+        t.summary.toLowerCase().includes(q);
+      return matchesCat && matchesSearch;
     });
   }, [allTutorials, selectedCategory, searchQuery]);
 
@@ -127,65 +130,76 @@ export default function TutorialsPage() {
     audio.haptic('tap');
     audio.play('rally');
     setActiveTutorialId(tut.id);
-    setStudioView('lesson');
+    setStageMode('photo');
     setIsMobileCurriculumOpen(false);
   };
 
-  const handleSwitchStudioView = (view: StudioViewMode) => {
+  const handleSwitchStage = (mode: StageDisplayMode) => {
     audio.haptic('tap');
-    if (view === 'court_boundaries') audio.play('courtSqueak');
-    else if (view === 'shot_trajectories') audio.play('smash');
+    if (mode === 'court') audio.play('courtSqueak');
+    else if (mode === 'trajectory') audio.play('smash');
     else audio.play('rally');
-    setStudioView(view);
+    setStageMode(mode);
+  };
+
+  const toggleDrill = (drillText: string) => {
+    audio.haptic('tap');
+    audio.play('rally');
+    setCompletedDrills((prev) => ({
+      ...prev,
+      [drillText]: !prev[drillText],
+    }));
   };
 
   return (
-    <div className="h-full flex flex-col min-h-0 space-y-2.5 sm:space-y-3.5">
-      {/* 1. Sleek Studio Header Bar */}
-      <div className="shrink-0 flex flex-col md:flex-row md:items-center justify-between pb-2.5 border-b border-sl-border/40 gap-2.5 select-none">
-        <div className="flex items-center gap-2 sm:gap-3">
+    <div className="h-full flex flex-col min-h-0 space-y-2 select-none">
+      {/* ===================================================================== */}
+      {/* 1. TOP BRAND & COMMAND BAR                                            */}
+      {/* ===================================================================== */}
+      <header className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-sl-border/40 gap-2">
+        <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-sl-green/20 text-sl-green border border-sl-green/30 flex items-center justify-center shrink-0">
             <BookOpen className="w-4 h-4" />
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-black uppercase text-sl-green font-mono tracking-wider">
-                UNN Badminton Studio
+                UNN Varsity Studio
               </span>
-              <span className="text-[10px] text-sl-muted font-mono hidden sm:inline">• BWF Curriculum</span>
+              <span className="text-[10px] text-sl-muted font-mono hidden sm:inline">• BWF Masterclass</span>
             </div>
             <h1
-              className="text-base sm:text-xl font-black uppercase text-sl-foreground leading-tight"
+              className="text-sm sm:text-base font-black uppercase text-sl-foreground truncate"
               style={{ fontFamily: 'var(--font-title)' }}
             >
-              Badminton Masterclass & Tactical Training Studio
+              Badminton Tactical & Biomechanical Cockpit
             </h1>
           </div>
         </div>
 
-        {/* View Mode Switcher + Mobile Curriculum Toggle */}
-        <div className="flex items-center gap-1.5 sm:gap-2 self-stretch sm:self-auto">
-          {/* Studio View Switcher Tabs */}
-          <div className="flex items-center bg-sl-panel p-1 rounded-xl border border-sl-border flex-1 sm:flex-initial">
+        {/* Desktop View Switcher Pills + Mobile Curriculum Button */}
+        <div className="flex items-center gap-1.5 self-stretch sm:self-auto">
+          {/* Stage View Toggles (Visible on all sizes) */}
+          <div className="flex items-center bg-sl-panel p-0.5 rounded-xl border border-sl-border flex-1 sm:flex-initial">
             <button
               type="button"
-              onClick={() => handleSwitchStudioView('lesson')}
-              className={`px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${
-                studioView === 'lesson'
-                  ? 'bg-sl-green text-white shadow-sm'
+              onClick={() => handleSwitchStage('photo')}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${
+                stageMode === 'photo'
+                  ? 'bg-sl-green text-white shadow-xs'
                   : 'text-sl-muted hover:text-sl-foreground'
               }`}
             >
-              <BookOpen className="w-3.5 h-3.5" />
-              <span>Lesson</span>
+              <Eye className="w-3.5 h-3.5" />
+              <span>Demonstration</span>
             </button>
 
             <button
               type="button"
-              onClick={() => handleSwitchStudioView('court_boundaries')}
-              className={`px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${
-                studioView === 'court_boundaries'
-                  ? 'bg-sl-green text-white shadow-sm'
+              onClick={() => handleSwitchStage('court')}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${
+                stageMode === 'court'
+                  ? 'bg-sl-green text-white shadow-xs'
                   : 'text-sl-muted hover:text-sl-foreground'
               }`}
             >
@@ -195,15 +209,15 @@ export default function TutorialsPage() {
 
             <button
               type="button"
-              onClick={() => handleSwitchStudioView('shot_trajectories')}
-              className={`px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${
-                studioView === 'shot_trajectories'
-                  ? 'bg-sl-green text-white shadow-sm'
+              onClick={() => handleSwitchStage('trajectory')}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${
+                stageMode === 'trajectory'
+                  ? 'bg-sl-green text-white shadow-xs'
                   : 'text-sl-muted hover:text-sl-foreground'
               }`}
             >
               <Activity className="w-3.5 h-3.5" />
-              <span>Trajectory Simulator</span>
+              <span>Flight Simulator</span>
             </button>
           </div>
 
@@ -214,23 +228,81 @@ export default function TutorialsPage() {
               audio.haptic('tap');
               setIsMobileCurriculumOpen(true);
             }}
-            className="lg:hidden px-3 py-1.5 rounded-xl border border-sl-border bg-sl-bg hover:bg-sl-panel text-sl-foreground text-xs font-black uppercase flex items-center gap-1.5 cursor-pointer shrink-0"
+            className="lg:hidden px-2.5 py-1 rounded-xl border border-sl-border bg-sl-panel hover:bg-sl-bg text-sl-foreground text-xs font-black uppercase flex items-center gap-1.5 cursor-pointer shrink-0"
           >
             <ListFilter className="w-3.5 h-3.5 text-sl-green" />
             <span>Modules ({filteredTutorials.length})</span>
           </button>
         </div>
+      </header>
+
+      {/* ===================================================================== */}
+      {/* MOBILE SEGMENTED CONTROL (< 1280px / Tablet / Phone)                  */}
+      {/* ===================================================================== */}
+      <div className="xl:hidden shrink-0 flex items-center bg-sl-panel p-1 rounded-xl border border-sl-border gap-1">
+        <button
+          type="button"
+          onClick={() => {
+            audio.haptic('tap');
+            setMobileTab('visual');
+          }}
+          className={`flex-1 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            mobileTab === 'visual'
+              ? 'bg-sl-green text-white shadow-xs'
+              : 'text-sl-muted hover:text-sl-foreground'
+          }`}
+        >
+          <Eye className="w-3.5 h-3.5" />
+          <span>1. Visual Arena</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            audio.haptic('tap');
+            setMobileTab('steps');
+          }}
+          className={`flex-1 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            mobileTab === 'steps'
+              ? 'bg-sl-green text-white shadow-xs'
+              : 'text-sl-muted hover:text-sl-foreground'
+          }`}
+        >
+          <Zap className="w-3.5 h-3.5" />
+          <span>2. Technical Steps</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            audio.haptic('tap');
+            setMobileTab('drills');
+          }}
+          className={`flex-1 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            mobileTab === 'drills'
+              ? 'bg-sl-green text-white shadow-xs'
+              : 'text-sl-muted hover:text-sl-foreground'
+          }`}
+        >
+          <Dumbbell className="w-3.5 h-3.5" />
+          <span>3. Modules & Drills</span>
+        </button>
       </div>
 
-      {/* 2. Main Studio Body: Full-Bleed 2-Panel Master-Detail Layout */}
-      <div className="flex-1 min-h-0 flex flex-row gap-3 sm:gap-4 overflow-hidden">
-        {/* ===================================================================== */}
-        {/* LEFT COLUMN: Sleek Curriculum Navigation Rail (Desktop)              */}
-        {/* ===================================================================== */}
-        <aside className="w-72 xl:w-80 shrink-0 h-full hidden lg:flex flex-col bg-sl-panel border border-sl-border rounded-2xl overflow-hidden select-none">
+      {/* ===================================================================== */}
+      {/* 2. THREE-COLUMN ZERO-SCROLL PANORAMIC COCKPIT (Desktop xl: & Up)     */}
+      {/* ===================================================================== */}
+      <div className="flex-1 min-h-0 flex flex-row gap-2.5 sm:gap-3 overflow-hidden">
+        {/* ------------------------------------------------------------------- */}
+        {/* COLUMN 1: CURRICULUM & PRACTICE MISSION (Left ~24% on xl)          */}
+        {/* ------------------------------------------------------------------- */}
+        <aside
+          className={`w-72 xl:w-80 shrink-0 h-full flex-col bg-sl-panel border border-sl-border rounded-2xl overflow-hidden ${
+            mobileTab === 'drills' ? 'flex flex-1 xl:flex-none' : 'hidden lg:flex'
+          }`}
+        >
           {/* Rail Header: Search & Category Chips */}
-          <div className="p-3 border-b border-sl-border/40 space-y-2.5 bg-sl-bg/50">
-            {/* Search Input */}
+          <div className="p-2.5 border-b border-sl-border/40 space-y-2 bg-sl-bg/40 shrink-0">
             <div className="relative">
               <Search className="w-3.5 h-3.5 text-sl-muted absolute left-2.5 top-1/2 -translate-y-1/2" />
               <input
@@ -281,30 +353,25 @@ export default function TutorialsPage() {
                 );
               })}
             </div>
-
-            <div className="flex items-center justify-between text-[10px] font-mono text-sl-muted px-0.5">
-              <span>{filteredTutorials.length} Modules Available</span>
-              <span className="text-sl-green font-bold">UNN Official</span>
-            </div>
           </div>
 
-          {/* Rail Curriculum Items List */}
-          <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
+          {/* Module Selector List (Top Half of Left Rail) */}
+          <div className="h-44 xl:h-52 overflow-y-auto p-2 space-y-1 border-b border-sl-border/40 shrink-0">
             {filteredTutorials.map((tut, idx) => {
-              const isActive = activeTutorial?.id === tut.id && studioView === 'lesson';
+              const isActive = activeTutorial?.id === tut.id;
               return (
                 <div
                   key={tut.id}
                   onClick={() => handleSelectTutorial(tut)}
-                  className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2.5 select-none ${
+                  className={`p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 ${
                     isActive
                       ? 'bg-sl-green/15 border-sl-green shadow-xs'
                       : 'bg-sl-bg/40 border-sl-border/60 hover:bg-sl-bg hover:border-sl-border'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
                     <span
-                      className={`w-6 h-6 rounded-lg font-mono text-[10px] font-black flex items-center justify-center shrink-0 border ${
+                      className={`w-5 h-5 rounded-md font-mono text-[9px] font-black flex items-center justify-center shrink-0 border ${
                         isActive
                           ? 'bg-sl-green text-white border-sl-green'
                           : 'bg-sl-panel text-sl-muted border-sl-border'
@@ -315,13 +382,13 @@ export default function TutorialsPage() {
 
                     <div className="min-w-0">
                       <h4
-                        className={`text-xs font-black truncate ${
+                        className={`text-[11px] font-black truncate leading-tight ${
                           isActive ? 'text-sl-green' : 'text-sl-foreground'
                         }`}
                       >
                         {tut.title}
                       </h4>
-                      <div className="flex items-center gap-1.5 text-[10px] text-sl-muted font-mono mt-0.5">
+                      <div className="flex items-center gap-1.5 text-[9px] text-sl-muted font-mono mt-0.5">
                         <span className="capitalize">{tut.category}</span>
                         <span>•</span>
                         <span>{tut.read_time_min}m</span>
@@ -337,361 +404,368 @@ export default function TutorialsPage() {
                 </div>
               );
             })}
+          </div>
 
-            {filteredTutorials.length === 0 && (
-              <div className="p-6 text-center text-xs text-sl-muted space-y-1.5">
-                <Search className="w-5 h-5 mx-auto text-sl-muted" />
-                <p>No modules match your query.</p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setSelectedCategory('all');
-                  }}
-                  className="text-sl-green text-[11px] font-bold hover:underline cursor-pointer"
-                >
-                  Reset filters
-                </button>
-              </div>
-            )}
+          {/* Practice Drills Checklist (Bottom Half of Left Rail - 100% Space Utilization!) */}
+          <div className="flex-1 min-h-0 flex flex-col p-2.5 bg-sl-green/5 overflow-hidden">
+            <div className="flex items-center justify-between pb-1.5 border-b border-sl-border/30 shrink-0">
+              <span className="text-[10px] font-black uppercase tracking-wider text-sl-green flex items-center gap-1.5 font-mono">
+                <Dumbbell className="w-3.5 h-3.5 text-sl-green" /> Practice Missions
+              </span>
+              <span className="text-[9px] font-mono text-sl-muted">
+                {activeTutorial?.coaching_drills.filter((d) => completedDrills[d]).length} /{' '}
+                {activeTutorial?.coaching_drills.length || 0} Done
+              </span>
+            </div>
+
+            <div className="flex-1 overflow-y-auto py-2 space-y-1.5">
+              {activeTutorial?.coaching_drills.map((drill, idx) => {
+                const isChecked = !!completedDrills[drill];
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => toggleDrill(drill)}
+                    className={`p-2 rounded-xl border transition-all cursor-pointer flex items-start gap-2 ${
+                      isChecked
+                        ? 'bg-sl-green/20 border-sl-green/60 text-sl-foreground'
+                        : 'bg-sl-panel border-sl-border/70 hover:border-sl-green/40'
+                    }`}
+                  >
+                    <div
+                      className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                        isChecked
+                          ? 'bg-sl-green border-sl-green text-white'
+                          : 'border-sl-border bg-sl-bg'
+                      }`}
+                    >
+                      {isChecked && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                    </div>
+                    <p
+                      className={`text-[11px] leading-snug font-medium select-none ${
+                        isChecked ? 'line-through text-sl-muted' : 'text-sl-foreground'
+                      }`}
+                    >
+                      {drill}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Varsity Badge */}
+            <div className="pt-2 border-t border-sl-border/30 shrink-0 flex items-center justify-between text-[9px] font-mono text-sl-muted">
+              <span className="flex items-center gap-1 text-sl-green font-bold">
+                <Shield className="w-3 h-3 text-sl-green" /> UNN Verified
+              </span>
+              <span>BWF Standard</span>
+            </div>
           </div>
         </aside>
 
-        {/* ===================================================================== */}
-        {/* RIGHT COLUMN: Master Workspace (80% Full-Bleed Width)                */}
-        {/* ===================================================================== */}
-        <main className="flex-1 h-full min-w-0 flex flex-col bg-sl-panel border border-sl-border rounded-2xl overflow-hidden shadow-sm">
-          {/* VIEW 1: ACTIVE LESSON GUIDE */}
-          {studioView === 'lesson' && activeTutorial && (
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-7 space-y-6">
-              {/* SECTION A: Zero-Scroll Hero & Tactical Dock (Side-by-Side on XL) */}
-              <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-stretch">
-                {/* Left Side: Athlete Demonstration Visual */}
-                <div className="xl:col-span-6 flex flex-col space-y-2.5">
-                  <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden border-2 border-sl-border bg-black shadow-md shrink-0">
-                    <img
-                      src={activeTutorial.hero_image || '/images/parallax/player-server.png'}
-                      alt={activeTutorial.title}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute bottom-2.5 left-2.5 bg-black/80 backdrop-blur-md px-3 py-1 rounded-lg border border-white/20 text-[10px] font-black uppercase text-sl-green-glow flex items-center gap-1.5">
-                      <Shield className="w-3 h-3 text-sl-green" />
-                      <span>ShuttleLions Varsity Demonstration</span>
-                    </div>
+        {/* ------------------------------------------------------------------- */}
+        {/* COLUMN 2: CENTER DEMONSTRATION ARENA (Visual Focus ~46% on xl)     */}
+        {/* ------------------------------------------------------------------- */}
+        <main
+          className={`flex-1 h-full min-w-0 flex-col bg-sl-panel border border-sl-border rounded-2xl overflow-hidden shadow-xs ${
+            mobileTab === 'visual' ? 'flex' : 'hidden xl:flex'
+          }`}
+        >
+          {activeTutorial && (
+            <div className="flex-1 flex flex-col min-h-0 p-2.5 sm:p-3 space-y-2.5 overflow-hidden">
+              {/* Module Header Bar */}
+              <div className="shrink-0 flex items-center justify-between gap-2 border-b border-sl-border/40 pb-2">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-[9px] font-black uppercase bg-sl-green/20 text-sl-green px-2 py-0.5 rounded-full border border-sl-green/30 font-mono">
+                      {activeTutorial.category} • {activeTutorial.difficulty}
+                    </span>
+                    <span className="text-[10px] text-sl-muted font-mono flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-sl-green" /> {activeTutorial.read_time_min}m read
+                    </span>
                   </div>
-
-                  {/* Fast Simulator Shortcuts */}
-                  <div className="grid grid-cols-2 gap-2 mt-auto">
-                    <button
-                      type="button"
-                      onClick={() => handleSwitchStudioView('court_boundaries')}
-                      className="p-2 rounded-xl border border-sl-border bg-sl-bg hover:bg-sl-green/10 hover:border-sl-green/40 text-[11px] font-black uppercase text-sl-muted hover:text-sl-foreground transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                    >
-                      <Maximize2 className="w-3.5 h-3.5 text-sl-green" />
-                      <span>Court Simulator</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleSwitchStudioView('shot_trajectories')}
-                      className="p-2 rounded-xl border border-sl-border bg-sl-bg hover:bg-sl-green/10 hover:border-sl-green/40 text-[11px] font-black uppercase text-sl-muted hover:text-sl-foreground transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                    >
-                      <Activity className="w-3.5 h-3.5 text-sl-green" />
-                      <span>Flight Simulator</span>
-                    </button>
-                  </div>
+                  <h2
+                    className="text-sm sm:text-base font-black uppercase text-sl-foreground truncate"
+                    style={{ fontFamily: 'var(--font-title)' }}
+                  >
+                    {activeTutorial.title}
+                  </h2>
                 </div>
 
-                {/* Right Side: Header Info & Tactical Takeaways Card */}
-                <div className="xl:col-span-6 flex flex-col justify-between space-y-3.5">
-                  {/* Module Header */}
-                  <div className="space-y-2 border-b border-sl-border/40 pb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black uppercase bg-sl-green/20 text-sl-green px-2.5 py-0.5 rounded-full border border-sl-green/30 font-mono">
-                        {activeTutorial.category} • {activeTutorial.difficulty}
-                      </span>
-                      <span className="text-xs text-sl-muted font-mono flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-sl-green" /> {activeTutorial.read_time_min} min read
-                      </span>
-                    </div>
-
-                    <h2
-                      className="text-xl sm:text-2xl font-black uppercase text-sl-foreground leading-tight"
-                      style={{ fontFamily: 'var(--font-title)' }}
-                    >
-                      {activeTutorial.title}
-                    </h2>
-                    <p className="text-xs sm:text-sm text-sl-muted font-medium leading-relaxed">
-                      {activeTutorial.subtitle}
-                    </p>
-                  </div>
-
-                  {/* Tactical Rules & Takeaways Panel */}
-                  <div className="p-4 rounded-2xl bg-sl-green/10 border border-sl-green/30 space-y-2 flex-1 flex flex-col justify-center">
-                    <h4 className="text-xs font-black uppercase text-sl-green flex items-center gap-2 tracking-wide">
-                      <Target className="w-4 h-4 text-sl-green" /> Core Tactical Rules & Takeaways
-                    </h4>
-                    <ul className="space-y-1.5 text-xs text-sl-foreground font-medium">
-                      {activeTutorial.key_takeaways.map((point, idx) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-sl-green shrink-0 mt-0.5" />
-                          <span className="leading-relaxed">{point}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              {/* SECTION B: 2-Column Responsive Technical Step Breakdown */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between px-1">
-                  <h3 className="text-xs font-black uppercase tracking-wider text-sl-muted flex items-center gap-1.5">
-                    <Zap className="w-3.5 h-3.5 text-sl-green" /> Step-by-Step Biomechanical Breakdown
-                  </h3>
-                  <span className="text-[10px] font-mono text-sl-muted">
-                    {activeTutorial.sections.length} Technical Steps
+                {/* Subtitle / Key Focus */}
+                <div className="hidden md:flex items-center gap-1.5 text-right shrink-0">
+                  <span className="text-[10px] font-black uppercase text-sl-muted font-mono">Focus:</span>
+                  <span className="text-[11px] font-bold text-sl-foreground max-w-[200px] truncate">
+                    {activeTutorial.subtitle}
                   </span>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {activeTutorial.sections.map((section, idx) => (
-                    <div
-                      key={idx}
-                      className="p-4 sm:p-5 rounded-2xl bg-sl-bg border border-sl-border space-y-2.5 flex flex-col justify-between shadow-xs"
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <span className="w-6 h-6 rounded-lg bg-sl-green/20 text-sl-green font-mono text-xs font-black flex items-center justify-center shrink-0">
-                            {idx + 1}
-                          </span>
-                          <h4 className="text-sm font-black uppercase text-sl-foreground">
-                            {section.heading}
-                          </h4>
-                        </div>
-
-                        <p className="text-xs text-sl-muted font-medium leading-relaxed">
-                          {section.content}
-                        </p>
-
-                        {section.bullet_points && (
-                          <ul className="space-y-1.5 pt-1.5 border-t border-sl-border/40 text-xs text-sl-foreground/90 font-medium">
-                            {section.bullet_points.map((bullet, bIdx) => (
-                              <li key={bIdx} className="flex items-start gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-sl-green shrink-0 mt-1.5" />
-                                <span className="leading-relaxed">{bullet}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-
-                      {section.coach_tip && (
-                        <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2 text-xs text-amber-300 mt-2">
-                          <Lightbulb className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                          <div>
-                            <strong className="uppercase font-mono text-[10px] text-amber-400 block">
-                              Coach Cue:
-                            </strong>
-                            <span className="text-[11px] leading-snug">{section.coach_tip}</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
               </div>
 
-              {/* SECTION C: Supplemental Biomechanics & Drills (2-Column Grid) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
-                {/* Secondary Athlete Visual if available */}
-                {activeTutorial.secondary_image ? (
-                  <div className="relative aspect-[16/10] md:aspect-auto w-full rounded-2xl overflow-hidden border-2 border-sl-border bg-black shadow-md min-h-[180px]">
-                    <img
-                      src={activeTutorial.secondary_image}
-                      alt="Supplemental Biomechanics"
-                      className="w-full h-full object-cover"
+              {/* Central Stage Canvas (Edge-to-Edge Dynamic View) */}
+              <div className="flex-1 min-h-0 relative rounded-xl border border-sl-border bg-sl-bg overflow-hidden flex flex-col">
+                {/* STAGE MODE 1: ATHLETE PHOTO DEMONSTRATION */}
+                {stageMode === 'photo' && (
+                  <div className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden group">
+                    <Image
+                      src={activeTutorial.hero_image || '/images/parallax/player-server.png'}
+                      alt={activeTutorial.title}
+                      fill
+                      unoptimized
+                      className="object-cover sm:object-contain transition-transform duration-500 group-hover:scale-105"
                     />
-                    <div className="absolute bottom-2.5 left-2.5 bg-black/80 backdrop-blur-md px-3 py-1 rounded-lg border border-white/20 text-[10px] font-black uppercase text-sl-green-glow flex items-center gap-1.5">
+
+                    {/* Gradient Overlay for Legibility */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
+
+                    {/* Athlete Cue Tag */}
+                    <div className="absolute bottom-2.5 left-2.5 bg-black/85 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/20 text-[10px] font-black uppercase text-sl-green-glow flex items-center gap-1.5">
                       <Shield className="w-3 h-3 text-sl-green" />
-                      <span>Ready Stance & Reaction Dynamics</span>
+                      <span>ShuttleLions Varsity Execution</span>
                     </div>
-                  </div>
-                ) : (
-                  <div className="p-5 rounded-2xl bg-sl-bg border border-sl-border space-y-2 flex flex-col justify-center">
-                    <span className="text-[10px] font-black uppercase text-sl-green font-mono">
-                      UNN Varsity Training Standard
-                    </span>
-                    <h4 className="text-sm font-black uppercase text-sl-foreground">
-                      Repeatable Muscle Memory
-                    </h4>
-                    <p className="text-xs text-sl-muted leading-relaxed font-medium">
-                      Badminton movements rely on explosive tendon recoil and split-step anticipation. Practice the recovery pattern until returning to center becomes instinctive.
-                    </p>
+
+                    {/* Quick Jump Shortcuts */}
+                    <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleSwitchStage('court')}
+                        className="px-2 py-1 rounded-lg bg-black/80 backdrop-blur-md border border-white/20 hover:border-sl-green text-[10px] font-black uppercase text-white hover:text-sl-green-glow flex items-center gap-1 cursor-pointer transition-all"
+                      >
+                        <Maximize2 className="w-3 h-3 text-sl-green" />
+                        <span>Court Lines</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSwitchStage('trajectory')}
+                        className="px-2 py-1 rounded-lg bg-black/80 backdrop-blur-md border border-white/20 hover:border-sl-green text-[10px] font-black uppercase text-white hover:text-sl-green-glow flex items-center gap-1 cursor-pointer transition-all"
+                      >
+                        <Activity className="w-3 h-3 text-sl-green" />
+                        <span>Flight Arc</span>
+                      </button>
+                    </div>
                   </div>
                 )}
 
-                {/* Recommended Practice Drills */}
-                {activeTutorial.coaching_drills && activeTutorial.coaching_drills.length > 0 && (
-                  <div className="p-4 sm:p-5 rounded-2xl bg-sl-panel border border-sl-border space-y-3 flex flex-col justify-between">
-                    <h4 className="text-xs font-black uppercase text-sl-foreground flex items-center gap-2">
-                      <Dumbbell className="w-4 h-4 text-sl-green" /> Court Practice Drills
-                    </h4>
-                    <div className="space-y-2">
-                      {activeTutorial.coaching_drills.map((drill, dIdx) => (
-                        <div
-                          key={dIdx}
-                          className="p-2.5 rounded-xl bg-sl-bg border border-sl-border/60 flex items-start gap-2.5 text-xs text-sl-muted font-medium"
-                        >
-                          <span className="w-5 h-5 rounded-md bg-sl-green/20 text-sl-green flex items-center justify-center shrink-0 font-bold text-[10px] mt-0.5">
-                            {dIdx + 1}
-                          </span>
-                          <span className="leading-relaxed">{drill}</span>
-                        </div>
-                      ))}
-                    </div>
+                {/* STAGE MODE 2: INTERACTIVE COURT BOUNDARY VISUALIZER */}
+                {stageMode === 'court' && (
+                  <div className="w-full h-full p-1 sm:p-2 overflow-y-auto">
+                    <CourtBoundaryVisualizer />
+                  </div>
+                )}
+
+                {/* STAGE MODE 3: INTERACTIVE SHOT TRAJECTORY VISUALIZER */}
+                {stageMode === 'trajectory' && (
+                  <div className="w-full h-full p-1 sm:p-2 overflow-y-auto">
+                    <ShotTrajectoryVisualizer />
                   </div>
                 )}
               </div>
 
-              {/* SECTION D: Sequential Lesson Navigation Stepper */}
-              <div className="pt-4 border-t border-sl-border/40 flex flex-col sm:flex-row items-center justify-between gap-3">
-                {prevTutorial ? (
-                  <button
-                    type="button"
-                    onClick={() => handleSelectTutorial(prevTutorial)}
-                    className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-sl-border bg-sl-bg hover:bg-sl-panel text-xs font-black uppercase text-sl-foreground flex items-center justify-center gap-2 cursor-pointer transition-all"
-                  >
-                    <ArrowLeft className="w-4 h-4 text-sl-green" />
-                    <span className="truncate">Prev: {prevTutorial.title}</span>
-                  </button>
-                ) : (
-                  <div className="hidden sm:block" />
-                )}
-
-                {nextTutorial ? (
-                  <button
-                    type="button"
-                    onClick={() => handleSelectTutorial(nextTutorial)}
-                    className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-sl-green hover:bg-sl-green-glow text-white hover:text-black text-xs font-black uppercase flex items-center justify-center gap-2 cursor-pointer transition-all shadow-md ml-auto"
-                  >
-                    <span className="truncate">Next: {nextTutorial.title}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <div className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-sl-green/40 bg-sl-green/10 text-sl-green text-xs font-black uppercase flex items-center justify-center gap-2 ml-auto">
-                    <span>Curriculum Completed</span>
-                    <CheckCircle2 className="w-4 h-4 text-sl-green" />
-                  </div>
-                )}
+              {/* Docked Core Tactical Rules & Takeaways Panel */}
+              <div className="shrink-0 p-2.5 rounded-xl bg-sl-green/10 border border-sl-green/30 space-y-1">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-[10px] font-black uppercase text-sl-green flex items-center gap-1.5 tracking-wider font-mono">
+                    <Target className="w-3.5 h-3.5 text-sl-green" /> Core Tactical Rules & Laws
+                  </h4>
+                  <span className="text-[9px] font-mono text-sl-muted hidden sm:inline">Essential Match Keys</span>
+                </div>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs text-sl-foreground font-medium">
+                  {activeTutorial.key_takeaways.slice(0, 4).map((point, idx) => (
+                    <li key={idx} className="flex items-start gap-1.5 text-[11px] leading-tight">
+                      <CheckCircle2 className="w-3 h-3 text-sl-green shrink-0 mt-0.5" />
+                      <span className="line-clamp-2">{point}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </div>
-          )}
 
-          {/* VIEW 2: FULL-BLEED COURT BOUNDARY SIMULATOR */}
-          {studioView === 'court_boundaries' && (
-            <div className="flex-1 overflow-y-auto p-3 sm:p-5">
-              <CourtBoundaryVisualizer />
-            </div>
-          )}
+              {/* Lesson Stepper Navigation Footer */}
+              <div className="shrink-0 flex items-center justify-between pt-1 border-t border-sl-border/40 gap-2">
+                <button
+                  type="button"
+                  disabled={!prevTutorial}
+                  onClick={() => prevTutorial && handleSelectTutorial(prevTutorial)}
+                  className={`px-2.5 py-1.5 rounded-xl border text-xs font-black uppercase flex items-center gap-1.5 transition-all ${
+                    prevTutorial
+                      ? 'bg-sl-bg border-sl-border text-sl-foreground hover:bg-sl-panel cursor-pointer'
+                      : 'opacity-40 border-sl-border/40 text-sl-muted cursor-not-allowed'
+                  }`}
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Prev Lesson</span>
+                  <span className="sm:hidden">Prev</span>
+                </button>
 
-          {/* VIEW 3: FULL-BLEED SHOT TRAJECTORY SIMULATOR */}
-          {studioView === 'shot_trajectories' && (
-            <div className="flex-1 overflow-y-auto p-3 sm:p-5">
-              <ShotTrajectoryVisualizer />
+                <div className="text-[10px] font-mono text-sl-muted">
+                  Lesson {currentIndex + 1} of {filteredTutorials.length}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={!nextTutorial}
+                  onClick={() => nextTutorial && handleSelectTutorial(nextTutorial)}
+                  className={`px-2.5 py-1.5 rounded-xl border text-xs font-black uppercase flex items-center gap-1.5 transition-all ${
+                    nextTutorial
+                      ? 'bg-sl-green text-white border-sl-green hover:brightness-110 shadow-xs cursor-pointer'
+                      : 'opacity-40 border-sl-border/40 text-sl-muted cursor-not-allowed'
+                  }`}
+                >
+                  <span className="hidden sm:inline">Next Lesson</span>
+                  <span className="sm:hidden">Next</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           )}
         </main>
+
+        {/* ------------------------------------------------------------------- */}
+        {/* COLUMN 3: BIOMECHANICAL PLAYBOOK (Right ~30% on xl)                */}
+        {/* ------------------------------------------------------------------- */}
+        <section
+          className={`w-80 xl:w-96 shrink-0 h-full flex-col bg-sl-panel border border-sl-border rounded-2xl overflow-hidden ${
+            mobileTab === 'steps' ? 'flex flex-1 xl:flex-none' : 'hidden xl:flex'
+          }`}
+        >
+          {/* Column Header */}
+          <div className="p-2.5 border-b border-sl-border/40 bg-sl-bg/40 flex items-center justify-between shrink-0">
+            <span className="text-[10px] font-black uppercase tracking-wider text-sl-foreground flex items-center gap-1.5 font-mono">
+              <Zap className="w-3.5 h-3.5 text-sl-green" /> Biomechanical Steps
+            </span>
+            <span className="text-[9px] font-mono text-sl-muted bg-sl-panel px-2 py-0.5 rounded-full border border-sl-border">
+              {activeTutorial?.sections.length || 0} Phases
+            </span>
+          </div>
+
+          {/* Vertical Step Breakdown Cards (Independent Sleek Scroll) */}
+          <div className="flex-1 overflow-y-auto p-2.5 space-y-2.5">
+            {activeTutorial?.sections.map((section, sIdx) => (
+              <div
+                key={sIdx}
+                className="p-3 rounded-xl bg-sl-bg/60 border border-sl-border space-y-2 hover:border-sl-green/40 transition-colors"
+              >
+                {/* Phase Number & Title */}
+                <div className="flex items-start gap-2">
+                  <span className="w-5 h-5 rounded-md bg-sl-green/20 text-sl-green text-[10px] font-black font-mono flex items-center justify-center shrink-0 mt-0.5">
+                    {String(sIdx + 1).padStart(2, '0')}
+                  </span>
+                  <div>
+                    <h3 className="text-xs font-black text-sl-foreground leading-snug">
+                      {section.heading}
+                    </h3>
+                  </div>
+                </div>
+
+                {/* Content Paragraph */}
+                <p className="text-[11px] text-sl-muted leading-relaxed font-normal">
+                  {section.content}
+                </p>
+
+                {/* Bullet Points */}
+                {section.bullet_points && section.bullet_points.length > 0 && (
+                  <ul className="space-y-1 pt-1 border-t border-sl-border/40">
+                    {section.bullet_points.map((pt, pIdx) => (
+                      <li key={pIdx} className="text-[10px] text-sl-foreground flex items-start gap-1.5 leading-snug">
+                        <span className="w-1.5 h-1.5 rounded-full bg-sl-green shrink-0 mt-1" />
+                        <span>{pt}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {/* Coach Pro Tip */}
+                {section.coach_tip && (
+                  <div className="p-2 rounded-lg bg-sl-panel border border-sl-green/30 flex items-start gap-2">
+                    <Lightbulb className="w-3 h-3 text-sl-green shrink-0 mt-0.5" />
+                    <div className="text-[10px] leading-snug">
+                      <span className="font-bold text-sl-green uppercase font-mono">Coach Cue: </span>
+                      <span className="text-sl-foreground">{section.coach_tip}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Bottom Card Summary */}
+          <div className="p-2 border-t border-sl-border/40 bg-sl-bg/40 shrink-0 text-center">
+            <span className="text-[10px] font-mono text-sl-muted">
+              Execute each phase with smooth kinetic chain deceleration.
+            </span>
+          </div>
+        </section>
       </div>
 
-      {/* 3. Mobile Curriculum Slide-Over Drawer (Accessible on small screens) */}
+      {/* ===================================================================== */}
+      {/* 3. MOBILE SLIDE-OVER CURRICULUM DRAWER                                */}
+      {/* ===================================================================== */}
       {isMobileCurriculumOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
             onClick={() => setIsMobileCurriculumOpen(false)}
+            className="fixed inset-0 bg-black/70 backdrop-blur-xs cursor-pointer"
           />
-          <div className="relative w-80 max-w-[85vw] bg-sl-panel border-r border-sl-border h-full p-4 space-y-4 flex flex-col justify-between overflow-y-auto z-50 shadow-2xl">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between border-b border-sl-border/40 pb-3">
-                <div className="flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-sl-green" />
-                  <h3 className="text-xs font-black uppercase text-sl-foreground">
-                    Curriculum Modules
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsMobileCurriculumOpen(false)}
-                  className="p-1 rounded-lg border border-sl-border text-sl-muted hover:text-sl-foreground"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
 
-              {/* Mobile Search */}
-              <div className="relative">
-                <Search className="w-3.5 h-3.5 text-sl-muted absolute left-2.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search modules..."
-                  className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-sl-bg border border-sl-border text-xs text-sl-foreground placeholder:text-sl-muted focus:outline-none focus:border-sl-green"
-                />
+          {/* Drawer Container */}
+          <div className="relative w-full max-w-xs bg-sl-panel border-r border-sl-border h-full flex flex-col z-10 shadow-2xl">
+            <div className="p-3 border-b border-sl-border flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-sl-green" />
+                <span className="text-xs font-black uppercase text-sl-foreground font-mono">
+                  Masterclass Modules ({filteredTutorials.length})
+                </span>
               </div>
-
-              {/* Mobile Modules List */}
-              <div className="space-y-2 pt-1">
-                {filteredTutorials.map((tut, idx) => {
-                  const isActive = activeTutorial?.id === tut.id && studioView === 'lesson';
-                  return (
-                    <div
-                      key={tut.id}
-                      onClick={() => handleSelectTutorial(tut)}
-                      className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2.5 ${
-                        isActive
-                          ? 'bg-sl-green/15 border-sl-green'
-                          : 'bg-sl-bg/60 border-sl-border hover:border-sl-green/40'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span
-                          className={`w-6 h-6 rounded-lg font-mono text-[10px] font-black flex items-center justify-center shrink-0 border ${
-                            isActive
-                              ? 'bg-sl-green text-white border-sl-green'
-                              : 'bg-sl-panel text-sl-muted border-sl-border'
-                          }`}
-                        >
-                          {String(idx + 1).padStart(2, '0')}
-                        </span>
-                        <div className="min-w-0">
-                          <h4
-                            className={`text-xs font-black truncate ${
-                              isActive ? 'text-sl-green' : 'text-sl-foreground'
-                            }`}
-                          >
-                            {tut.title}
-                          </h4>
-                          <span className="text-[10px] text-sl-muted font-mono capitalize">
-                            {tut.category} • {tut.read_time_min}m read
-                          </span>
-                        </div>
-                      </div>
-                      <ChevronRight className="w-3.5 h-3.5 text-sl-green shrink-0" />
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-sl-border/40">
               <button
                 type="button"
                 onClick={() => setIsMobileCurriculumOpen(false)}
-                className="w-full py-2 bg-sl-bg border border-sl-border text-xs font-bold text-sl-foreground rounded-xl"
+                className="p-1 rounded-lg border border-sl-border text-sl-muted hover:text-sl-foreground cursor-pointer"
               >
-                Close Curriculum
+                <X className="w-4 h-4" />
               </button>
+            </div>
+
+            {/* Drawer Content */}
+            <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
+              {filteredTutorials.map((tut, idx) => {
+                const isActive = activeTutorial?.id === tut.id;
+                return (
+                  <div
+                    key={tut.id}
+                    onClick={() => handleSelectTutorial(tut)}
+                    className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 ${
+                      isActive
+                        ? 'bg-sl-green/15 border-sl-green shadow-xs'
+                        : 'bg-sl-bg/40 border-sl-border/60 hover:bg-sl-bg'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        className={`w-5 h-5 rounded-md font-mono text-[10px] font-black flex items-center justify-center shrink-0 border ${
+                          isActive
+                            ? 'bg-sl-green text-white border-sl-green'
+                            : 'bg-sl-panel text-sl-muted border-sl-border'
+                        }`}
+                      >
+                        {String(idx + 1).padStart(2, '0')}
+                      </span>
+                      <div className="min-w-0">
+                        <h4
+                          className={`text-xs font-black truncate ${
+                            isActive ? 'text-sl-green' : 'text-sl-foreground'
+                          }`}
+                        >
+                          {tut.title}
+                        </h4>
+                        <div className="flex items-center gap-1.5 text-[9px] text-sl-muted font-mono mt-0.5">
+                          <span className="capitalize">{tut.category}</span>
+                          <span>•</span>
+                          <span>{tut.read_time_min}m</span>
+                        </div>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 text-sl-muted shrink-0" />
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
