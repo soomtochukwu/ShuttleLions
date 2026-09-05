@@ -310,7 +310,7 @@ export function CourtBoundaryVisualizer() {
             </g>
 
             {/* Dynamic Annotations & Labels */}
-            <g fill="#F0F7F0" fontSize="20" fontWeight="900" fontFamily="sans-serif" stroke="#070b07" strokeWidth="4" paintOrder="stroke fill">
+            <g fill="#F0F7F0" fontSize="20" fontWeight="900" fontFamily="'Google Sans', sans-serif" stroke="#070b07" strokeWidth="4" paintOrder="stroke fill">
               {/* Far Baseline Label */}
               <text x="305" y="38" textAnchor="middle">BACK BASELINE (13.40m)</text>
 

@@ -121,7 +121,7 @@ export function PhotoCarousel() {
             <div className="w-16 h-16 mb-4 rounded-2xl bg-sl-green/10 border-2 border-sl-green/30 flex items-center justify-center text-sl-green">
               <ImageIcon className="w-8 h-8 animate-pulse" />
             </div>
- <h4 className="text-lg font-extrabold uppercase tracking-wide text-sl-green" style={{ fontFamily: 'Bangers, cursive' }}>
+ <h4 className="text-lg font-extrabold uppercase tracking-wide text-sl-green" style={{ fontFamily: 'var(--font-title)' }}>
  {CAROUSEL_IMAGES[index].title}
  </h4>
  <p className="text-xs text-sl-muted font-bold max-w-xs mt-1">

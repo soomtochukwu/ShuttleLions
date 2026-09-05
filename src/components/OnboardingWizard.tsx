@@ -122,8 +122,8 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
  return (
  <div className="shuttle-panel p-6 sm:p-8 max-w-lg w-full mx-auto my-8">
  <h2
- className="text-2xl sm:text-3xl text-center mb-6 text-stroke text-sl-green"
- style={{ fontFamily: 'Bangers, cursive', textShadow: '2px 2px 0 var(--sl-border)' }}
+ className="text-2xl sm:text-3xl text-center mb-6 text-stroke text-sl-green uppercase tracking-wider font-extrabold"
+ style={{ fontFamily: 'var(--font-title)', textShadow: '2px 2px 0 var(--sl-border)' }}
  >
  LION ONBOARDING 
  </h2>

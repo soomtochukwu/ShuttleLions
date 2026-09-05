@@ -43,7 +43,7 @@ export function RacketTracker({ orders, onOrderRacket }: RacketTrackerProps) {
  <div className="flex justify-between items-center mb-6">
  <h3
  className="text-xl sm:text-2xl font-bold uppercase tracking-wider text-stroke text-sl-foreground"
- style={{ fontFamily: 'Bangers, cursive' }}
+ style={{ fontFamily: 'var(--font-title)' }}
  >
  Racket Orders & Status
  </h3>

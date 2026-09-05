@@ -18,10 +18,11 @@
   --sl-error: #D32F2F;
   --sl-warning: #EF6C00;
   --sl-glass-bg: rgba(255, 255, 255, 0.45);
+  --font-sans: "Google Sans", sans-serif;
   --font-google-sans: "Google Sans", sans-serif;
-  --font-title: "Google Sans", "Outfit", sans-serif;
-  --font-sub: "Google Sans", "Space Grotesk", sans-serif;
-  --font-body: "Google Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-title: "Google Sans", sans-serif;
+  --font-sub: "Google Sans", sans-serif;
+  --font-body: "Google Sans", sans-serif;
 }
 
 [data-theme="dark"] {
@@ -53,13 +54,45 @@
   --color-sl-shadow: var(--sl-shadow);
   --color-sl-error: var(--sl-error);
   --color-sl-warning: var(--sl-warning);
+  --font-sans: var(--font-google-sans);
   --font-google-sans: var(--font-google-sans);
-  --font-title: var(--font-title);
-  --font-sub: var(--font-sub);
-  --font-body: var(--font-body);
+  --font-title: var(--font-google-sans);
+  --font-sub: var(--font-google-sans);
+  --font-body: var(--font-google-sans);
 }
 
-/* ---- Ambient Grid Background & Global Google Sans Typography ---- */
+/* ---- Universal Global Google Sans Typography ---- */
+*,
+*::before,
+*::after {
+  font-family: "Google Sans", sans-serif;
+  font-optical-sizing: auto;
+  font-variation-settings: "GRAD" 0;
+}
+
+html,
+body,
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: "Google Sans", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+  font-variation-settings: "GRAD" 0;
+}
+
+code,
+kbd,
+samp,
+pre,
+.font-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace !important;
+  font-variation-settings: normal;
+}
+
+/* ---- Ambient Grid Background ---- */
 body {
   background-color: var(--sl-bg);
   background-image: 
@@ -67,10 +100,6 @@ body {
     linear-gradient(90deg, rgba(0, 200, 83, 0.03) 1px, transparent 1px);
   background-size: 32px 32px;
   color: var(--sl-foreground);
-  font-family: var(--font-body);
-  font-optical-sizing: auto;
-  font-style: normal;
-  font-variation-settings: "GRAD" 0;
   min-height: 100vh;
   overflow-x: hidden;
   transition: background-color 0.3s ease, color 0.3s ease;
@@ -80,7 +109,7 @@ body {
 .font-google-sans,
 [class*="google-sans-"],
 .google-sans {
-  font-family: "Google Sans", sans-serif;
+  font-family: "Google Sans", sans-serif !important;
   font-optical-sizing: auto;
   font-style: normal;
   font-variation-settings: "GRAD" 0;

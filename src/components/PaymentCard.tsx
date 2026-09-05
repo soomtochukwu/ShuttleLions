@@ -52,7 +52,7 @@ export function PaymentCard({
         <div className="flex justify-between items-start mb-4">
           <h3
             className="text-xl sm:text-2xl font-bold uppercase tracking-wider text-stroke text-sl-foreground"
-            style={{ fontFamily: 'Bangers, cursive' }}
+            style={{ fontFamily: 'var(--font-title)' }}
           >
             {type === 'registration' ? 'Registration Fee' : 'Monthly Club Dues'}
           </h3>

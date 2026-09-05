@@ -191,7 +191,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           >
             <span
               className="text-xl sm:text-2xl font-extrabold uppercase tracking-wider text-stroke text-sl-foreground hover:text-sl-green transition-colors"
-              style={{ fontFamily: 'Bangers, cursive' }}
+              style={{ fontFamily: 'var(--font-title)' }}
             >
               SHUTTLE<span className="text-sl-green">LIONS</span>
             </span>
