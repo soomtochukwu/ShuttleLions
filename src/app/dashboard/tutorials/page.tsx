@@ -163,13 +163,13 @@ export default function TutorialsPage() {
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-xs sm:text-sm font-black uppercase text-sl-green font-mono tracking-wider">
+              <span className="text-xs font-black uppercase text-sl-green font-mono tracking-wider">
                 UNN Varsity Studio
               </span>
-              <span className="text-xs sm:text-sm text-sl-muted font-mono hidden sm:inline">• BWF Masterclass</span>
+              <span className="text-xs text-sl-muted font-mono hidden sm:inline">• BWF Masterclass</span>
             </div>
             <h1
-              className="text-lg sm:text-xl lg:text-2xl font-black uppercase text-sl-foreground truncate"
+              className="text-base sm:text-lg lg:text-xl font-black uppercase text-sl-foreground truncate"
               style={{ fontFamily: 'var(--font-title)' }}
             >
               Badminton Tactical & Biomechanical Cockpit
@@ -184,7 +184,7 @@ export default function TutorialsPage() {
             <button
               type="button"
               onClick={() => handleSwitchStage('photo')}
-              className={`px-3 py-1.5 rounded-lg text-sm sm:text-base font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${
+              className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${
                 stageMode === 'photo'
                   ? 'bg-sl-green text-white shadow-xs'
                   : 'text-sl-muted hover:text-sl-foreground'
@@ -197,7 +197,7 @@ export default function TutorialsPage() {
             <button
               type="button"
               onClick={() => handleSwitchStage('court')}
-              className={`px-3 py-1.5 rounded-lg text-sm sm:text-base font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${
+              className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${
                 stageMode === 'court'
                   ? 'bg-sl-green text-white shadow-xs'
                   : 'text-sl-muted hover:text-sl-foreground'
@@ -210,7 +210,7 @@ export default function TutorialsPage() {
             <button
               type="button"
               onClick={() => handleSwitchStage('trajectory')}
-              className={`px-3 py-1.5 rounded-lg text-sm sm:text-base font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${
+              className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${
                 stageMode === 'trajectory'
                   ? 'bg-sl-green text-white shadow-xs'
                   : 'text-sl-muted hover:text-sl-foreground'
@@ -228,7 +228,7 @@ export default function TutorialsPage() {
               audio.haptic('tap');
               setIsMobileCurriculumOpen(true);
             }}
-            className="lg:hidden px-3 py-1.5 rounded-xl border border-sl-border bg-sl-panel hover:bg-sl-bg text-sl-foreground text-sm sm:text-base font-black uppercase flex items-center gap-1.5 cursor-pointer shrink-0"
+            className="lg:hidden px-3 py-1.5 rounded-xl border border-sl-border bg-sl-panel hover:bg-sl-bg text-sl-foreground text-xs sm:text-sm font-black uppercase flex items-center gap-1.5 cursor-pointer shrink-0"
           >
             <ListFilter className="w-4 h-4 text-sl-green" />
             <span>Modules ({filteredTutorials.length})</span>
@@ -246,7 +246,7 @@ export default function TutorialsPage() {
             audio.haptic('tap');
             setMobileTab('visual');
           }}
-          className={`flex-1 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm md:text-base font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+          className={`flex-1 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
             mobileTab === 'visual'
               ? 'bg-sl-green text-white shadow-xs'
               : 'text-sl-muted hover:text-sl-foreground'
@@ -262,7 +262,7 @@ export default function TutorialsPage() {
             audio.haptic('tap');
             setMobileTab('steps');
           }}
-          className={`flex-1 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm md:text-base font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+          className={`flex-1 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
             mobileTab === 'steps'
               ? 'bg-sl-green text-white shadow-xs'
               : 'text-sl-muted hover:text-sl-foreground'
@@ -278,7 +278,7 @@ export default function TutorialsPage() {
             audio.haptic('tap');
             setMobileTab('drills');
           }}
-          className={`flex-1 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm md:text-base font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+          className={`flex-1 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
             mobileTab === 'drills'
               ? 'bg-sl-green text-white shadow-xs'
               : 'text-sl-muted hover:text-sl-foreground'
@@ -310,7 +310,7 @@ export default function TutorialsPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search rules, smashes..."
-                className="w-full pl-8 pr-7 py-2 rounded-lg bg-sl-panel border border-sl-border text-sm sm:text-base text-sl-foreground placeholder:text-sl-muted focus:outline-none focus:border-sl-green"
+                className="w-full pl-8 pr-7 py-2 rounded-lg bg-sl-panel border border-sl-border text-xs sm:text-sm text-sl-foreground placeholder:text-sl-muted focus:outline-none focus:border-sl-green"
               />
               {searchQuery && (
                 <button
@@ -342,7 +342,7 @@ export default function TutorialsPage() {
                       audio.haptic('tap');
                       setSelectedCategory(cat.id);
                     }}
-                    className={`px-2.5 py-1 rounded-md text-xs sm:text-sm font-black uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
+                    className={`px-2.5 py-1 rounded-md text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
                       isSelected
                         ? 'bg-sl-green text-white shadow-xs'
                         : 'bg-sl-panel border border-sl-border/70 text-sl-muted hover:text-sl-foreground'
@@ -371,7 +371,7 @@ export default function TutorialsPage() {
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span
-                      className={`w-6 h-6 rounded-md font-mono text-xs sm:text-sm font-black flex items-center justify-center shrink-0 border ${
+                      className={`w-6 h-6 rounded-md font-mono text-xs font-black flex items-center justify-center shrink-0 border ${
                         isActive
                           ? 'bg-sl-green text-white border-sl-green'
                           : 'bg-sl-panel text-sl-muted border-sl-border'
@@ -382,13 +382,13 @@ export default function TutorialsPage() {
 
                     <div className="min-w-0">
                       <h4
-                        className={`text-sm sm:text-base font-bold truncate leading-tight ${
+                        className={`text-xs sm:text-sm font-bold truncate leading-tight ${
                           isActive ? 'text-sl-green' : 'text-sl-foreground'
                         }`}
                       >
                         {tut.title}
                       </h4>
-                      <div className="flex items-center gap-1.5 text-xs sm:text-sm text-sl-muted font-mono mt-0.5">
+                      <div className="flex items-center gap-1.5 text-xs text-sl-muted font-mono mt-0.5">
                         <span className="capitalize">{tut.category}</span>
                         <span>•</span>
                         <span>{tut.read_time_min}m</span>
@@ -409,7 +409,7 @@ export default function TutorialsPage() {
           {/* Practice Drills Checklist (Stuck to bottom, strictly content height) */}
           <div className="h-fit shrink-0 mt-auto border-t border-sl-border/40 p-2 bg-sl-green/5 space-y-1.5">
             <div className="flex items-center justify-between pb-1 border-b border-sl-border/30">
-              <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-sl-green flex items-center gap-1.5 font-mono">
+              <span className="text-xs font-black uppercase tracking-wider text-sl-green flex items-center gap-1.5 font-mono">
                 <Dumbbell className="w-3.5 h-3.5 text-sl-green" /> Practice Missions
               </span>
               <span className="text-xs font-mono text-sl-muted">
@@ -441,7 +441,7 @@ export default function TutorialsPage() {
                       {isChecked && <Check className="w-2.5 h-2.5 stroke-[3]" />}
                     </div>
                     <p
-                      className={`text-xs sm:text-sm leading-tight font-medium select-none ${
+                      className={`text-xs leading-tight font-medium select-none ${
                         isChecked ? 'line-through text-sl-muted' : 'text-sl-foreground'
                       }`}
                     >
@@ -468,7 +468,7 @@ export default function TutorialsPage() {
               <div className="shrink-0 flex items-center justify-between gap-2 border-b border-sl-border/40 pb-2">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-xs sm:text-sm font-black uppercase bg-sl-green/20 text-sl-green px-2.5 py-0.5 rounded-full border border-sl-green/30 font-mono">
+                    <span className="text-xs font-black uppercase bg-sl-green/20 text-sl-green px-2.5 py-0.5 rounded-full border border-sl-green/30 font-mono">
                       {activeTutorial.category} • {activeTutorial.difficulty}
                     </span>
                     <span className="text-xs sm:text-sm text-sl-muted font-mono flex items-center gap-1">
@@ -476,7 +476,7 @@ export default function TutorialsPage() {
                     </span>
                   </div>
                   <h2
-                    className="text-lg sm:text-xl lg:text-2xl font-black uppercase text-sl-foreground truncate"
+                    className="text-base sm:text-lg lg:text-xl font-black uppercase text-sl-foreground truncate"
                     style={{ fontFamily: 'var(--font-title)' }}
                   >
                     {activeTutorial.title}
@@ -485,8 +485,8 @@ export default function TutorialsPage() {
 
                 {/* Subtitle / Key Focus */}
                 <div className="hidden md:flex items-center gap-1.5 text-right shrink-0">
-                  <span className="text-xs sm:text-sm font-bold uppercase text-sl-muted font-mono">Focus:</span>
-                  <span className="text-xs sm:text-sm md:text-base font-bold text-sl-foreground max-w-[280px] truncate">
+                  <span className="text-xs font-bold uppercase text-sl-muted font-mono">Focus:</span>
+                  <span className="text-xs sm:text-sm font-bold text-sl-foreground max-w-[240px] truncate">
                     {activeTutorial.subtitle}
                   </span>
                 </div>
@@ -509,7 +509,7 @@ export default function TutorialsPage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
 
                     {/* Athlete Cue Tag */}
-                    <div className="absolute bottom-2.5 left-2.5 bg-black/85 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 text-xs sm:text-sm font-black uppercase text-sl-green-glow flex items-center gap-1.5">
+                    <div className="absolute bottom-2.5 left-2.5 bg-black/85 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 text-xs font-black uppercase text-sl-green-glow flex items-center gap-1.5">
                       <Shield className="w-3.5 h-3.5 text-sl-green" />
                       <span>ShuttleLions Varsity Execution</span>
                     </div>
@@ -519,7 +519,7 @@ export default function TutorialsPage() {
                       <button
                         type="button"
                         onClick={() => handleSwitchStage('court')}
-                        className="px-2.5 py-1.5 rounded-lg bg-black/80 backdrop-blur-md border border-white/20 hover:border-sl-green text-xs sm:text-sm font-black uppercase text-white hover:text-sl-green-glow flex items-center gap-1 cursor-pointer transition-all"
+                        className="px-2.5 py-1.5 rounded-lg bg-black/80 backdrop-blur-md border border-white/20 hover:border-sl-green text-xs font-black uppercase text-white hover:text-sl-green-glow flex items-center gap-1 cursor-pointer transition-all"
                       >
                         <Maximize2 className="w-3.5 h-3.5 text-sl-green" />
                         <span>Court Lines</span>
@@ -527,7 +527,7 @@ export default function TutorialsPage() {
                       <button
                         type="button"
                         onClick={() => handleSwitchStage('trajectory')}
-                        className="px-2.5 py-1.5 rounded-lg bg-black/80 backdrop-blur-md border border-white/20 hover:border-sl-green text-xs sm:text-sm font-black uppercase text-white hover:text-sl-green-glow flex items-center gap-1 cursor-pointer transition-all"
+                        className="px-2.5 py-1.5 rounded-lg bg-black/80 backdrop-blur-md border border-white/20 hover:border-sl-green text-xs font-black uppercase text-white hover:text-sl-green-glow flex items-center gap-1 cursor-pointer transition-all"
                       >
                         <Activity className="w-3.5 h-3.5 text-sl-green" />
                         <span>Flight Arc</span>
@@ -554,15 +554,15 @@ export default function TutorialsPage() {
               {/* Docked Core Tactical Rules & Takeaways Panel */}
               <div className="shrink-0 p-2.5 sm:p-3 rounded-xl bg-sl-green/10 border border-sl-green/30 space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-sm sm:text-base font-black uppercase text-sl-green flex items-center gap-1.5 tracking-wider font-mono">
+                  <h4 className="text-xs sm:text-sm font-black uppercase text-sl-green flex items-center gap-1.5 tracking-wider font-mono">
                     <Target className="w-4 h-4 text-sl-green" /> Core Tactical Rules & Laws
                   </h4>
-                  <span className="text-xs sm:text-sm font-mono text-sl-muted hidden sm:inline">Essential Match Keys</span>
+                  <span className="text-xs font-mono text-sl-muted hidden sm:inline">Essential Match Keys</span>
                 </div>
                 <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 text-sl-foreground font-medium">
                   {activeTutorial.key_takeaways.slice(0, 4).map((point, idx) => (
-                    <li key={idx} className="flex items-start gap-1.5 text-xs sm:text-sm md:text-base leading-relaxed">
-                      <CheckCircle2 className="w-4 h-4 text-sl-green shrink-0 mt-0.5" />
+                    <li key={idx} className="flex items-start gap-1.5 text-xs sm:text-sm leading-normal">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-sl-green shrink-0 mt-0.5" />
                       <span className="line-clamp-2">{point}</span>
                     </li>
                   ))}
@@ -575,7 +575,7 @@ export default function TutorialsPage() {
                   type="button"
                   disabled={!prevTutorial}
                   onClick={() => prevTutorial && handleSelectTutorial(prevTutorial)}
-                  className={`px-3 py-2 rounded-xl border text-xs sm:text-sm md:text-base font-black uppercase flex items-center gap-1.5 transition-all ${
+                  className={`px-3 py-2 rounded-xl border text-xs sm:text-sm font-black uppercase flex items-center gap-1.5 transition-all ${
                     prevTutorial
                       ? 'bg-sl-bg border-sl-border text-sl-foreground hover:bg-sl-panel cursor-pointer'
                       : 'opacity-40 border-sl-border/40 text-sl-muted cursor-not-allowed'
@@ -586,7 +586,7 @@ export default function TutorialsPage() {
                   <span className="sm:hidden">Prev</span>
                 </button>
 
-                <div className="text-xs sm:text-sm font-mono text-sl-muted">
+                <div className="text-xs font-mono text-sl-muted">
                   Lesson {currentIndex + 1} of {filteredTutorials.length}
                 </div>
 
@@ -594,7 +594,7 @@ export default function TutorialsPage() {
                   type="button"
                   disabled={!nextTutorial}
                   onClick={() => nextTutorial && handleSelectTutorial(nextTutorial)}
-                  className={`px-3 py-2 rounded-xl border text-xs sm:text-sm md:text-base font-black uppercase flex items-center gap-1.5 transition-all ${
+                  className={`px-3 py-2 rounded-xl border text-xs sm:text-sm font-black uppercase flex items-center gap-1.5 transition-all ${
                     nextTutorial
                       ? 'bg-sl-green text-white border-sl-green hover:brightness-110 shadow-xs cursor-pointer'
                       : 'opacity-40 border-sl-border/40 text-sl-muted cursor-not-allowed'
@@ -619,10 +619,10 @@ export default function TutorialsPage() {
         >
           {/* Column Header */}
           <div className="p-2.5 border-b border-sl-border/40 bg-sl-bg/40 flex items-center justify-between shrink-0">
-            <span className="text-sm sm:text-base lg:text-lg font-black uppercase tracking-wider text-sl-foreground flex items-center gap-1.5 font-mono">
+            <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-sl-foreground flex items-center gap-1.5 font-mono">
               <Zap className="w-4 h-4 text-sl-green" /> Biomechanical Steps
             </span>
-            <span className="text-xs sm:text-sm font-mono text-sl-muted bg-sl-panel px-2.5 py-0.5 rounded-full border border-sl-border">
+            <span className="text-xs font-mono text-sl-muted bg-sl-panel px-2.5 py-0.5 rounded-full border border-sl-border">
               {activeTutorial?.sections.length || 0} Phases
             </span>
           </div>
@@ -636,18 +636,18 @@ export default function TutorialsPage() {
               >
                 {/* Phase Number & Title */}
                 <div className="flex items-start gap-2.5">
-                  <span className="w-6 h-6 rounded-md bg-sl-green/20 text-sl-green text-xs sm:text-sm font-black font-mono flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="w-6 h-6 rounded-md bg-sl-green/20 text-sl-green text-xs font-black font-mono flex items-center justify-center shrink-0 mt-0.5">
                     {String(sIdx + 1).padStart(2, '0')}
                   </span>
                   <div>
-                    <h3 className="text-base sm:text-lg font-black text-sl-foreground leading-snug">
+                    <h3 className="text-sm sm:text-base font-black text-sl-foreground leading-snug">
                       {section.heading}
                     </h3>
                   </div>
                 </div>
 
                 {/* Content Paragraph */}
-                <p className="text-sm sm:text-base text-sl-muted leading-relaxed font-normal">
+                <p className="text-xs sm:text-sm text-sl-muted leading-relaxed font-normal">
                   {section.content}
                 </p>
 
@@ -655,8 +655,8 @@ export default function TutorialsPage() {
                 {section.bullet_points && section.bullet_points.length > 0 && (
                   <ul className="space-y-1.5 pt-1.5 border-t border-sl-border/40">
                     {section.bullet_points.map((pt, pIdx) => (
-                      <li key={pIdx} className="text-sm sm:text-base text-sl-foreground flex items-start gap-2 leading-relaxed">
-                        <span className="w-1.5 h-1.5 rounded-full bg-sl-green shrink-0 mt-2" />
+                      <li key={pIdx} className="text-xs sm:text-sm text-sl-foreground flex items-start gap-2 leading-normal">
+                        <span className="w-1.5 h-1.5 rounded-full bg-sl-green shrink-0 mt-1.5" />
                         <span>{pt}</span>
                       </li>
                     ))}
@@ -667,7 +667,7 @@ export default function TutorialsPage() {
                 {section.coach_tip && (
                   <div className="p-2.5 sm:p-3 rounded-lg bg-sl-panel border border-sl-green/30 flex items-start gap-2.5">
                     <Lightbulb className="w-4 h-4 text-sl-green shrink-0 mt-0.5" />
-                    <div className="text-sm sm:text-base leading-snug">
+                    <div className="text-xs sm:text-sm leading-snug">
                       <span className="font-bold text-sl-green uppercase font-mono">Coach Cue: </span>
                       <span className="text-sl-foreground">{section.coach_tip}</span>
                     </div>
@@ -679,7 +679,7 @@ export default function TutorialsPage() {
 
           {/* Bottom Card Summary */}
           <div className="p-2.5 border-t border-sl-border/40 bg-sl-bg/40 shrink-0 text-center">
-            <span className="text-xs sm:text-sm font-mono text-sl-muted">
+            <span className="text-xs font-mono text-sl-muted">
               Execute each phase with smooth kinetic chain deceleration.
             </span>
           </div>
@@ -702,7 +702,7 @@ export default function TutorialsPage() {
             <div className="p-3.5 border-b border-sl-border flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <BookOpen className="w-4.5 h-4.5 text-sl-green" />
-                <span className="text-base sm:text-lg font-black uppercase text-sl-foreground font-mono">
+                <span className="text-sm font-black uppercase text-sl-foreground font-mono">
                   Masterclass Modules ({filteredTutorials.length})
                 </span>
               </div>
@@ -731,7 +731,7 @@ export default function TutorialsPage() {
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <span
-                        className={`w-6 h-6 rounded-md font-mono text-xs sm:text-sm font-black flex items-center justify-center shrink-0 border ${
+                        className={`w-6 h-6 rounded-md font-mono text-xs font-black flex items-center justify-center shrink-0 border ${
                           isActive
                             ? 'bg-sl-green text-white border-sl-green'
                             : 'bg-sl-panel text-sl-muted border-sl-border'
@@ -741,13 +741,13 @@ export default function TutorialsPage() {
                       </span>
                       <div className="min-w-0">
                         <h4
-                          className={`text-sm sm:text-base font-bold truncate ${
+                          className={`text-sm font-bold truncate ${
                             isActive ? 'text-sl-green' : 'text-sl-foreground'
                           }`}
                         >
                           {tut.title}
                         </h4>
-                        <div className="flex items-center gap-1.5 text-xs sm:text-sm text-sl-muted font-mono mt-0.5">
+                        <div className="flex items-center gap-1.5 text-xs text-sl-muted font-mono mt-0.5">
                           <span className="capitalize">{tut.category}</span>
                           <span>•</span>
                           <span>{tut.read_time_min}m</span>

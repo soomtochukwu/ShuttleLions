@@ -104,18 +104,18 @@ export function ShotTrajectoryVisualizer() {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 border-b border-sl-border/40 pb-3">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs sm:text-sm font-black uppercase text-sl-green bg-sl-green/15 border border-sl-green/30 px-2.5 py-0.5 rounded-full font-mono">
+            <span className="text-xs font-black uppercase text-sl-green bg-sl-green/15 border border-sl-green/30 px-2.5 py-0.5 rounded-full font-mono">
               Biomechanics Simulator
             </span>
-            <span className="text-xs sm:text-sm font-mono text-sl-muted">Side Elevation View</span>
+            <span className="text-xs font-mono text-sl-muted">Side Elevation View</span>
           </div>
           <h2
-            className="text-xl sm:text-2xl font-black uppercase text-sl-foreground mt-1"
+            className="text-base sm:text-lg font-black uppercase text-sl-foreground mt-1"
             style={{ fontFamily: 'var(--font-title)' }}
           >
             Interactive Shot Trajectory Simulator
           </h2>
-          <p className="text-sm sm:text-base text-sl-muted font-medium">
+          <p className="text-xs sm:text-sm text-sl-muted font-medium">
             Explore flight arcs, release velocity, and contact height for all 6 core badminton strokes.
           </p>
         </div>
@@ -129,7 +129,7 @@ export function ShotTrajectoryVisualizer() {
                 key={shot}
                 type="button"
                 onClick={() => handleSelectShot(shot)}
-                className={`px-3 py-2 rounded-lg text-sm sm:text-base font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                   isSelected
                     ? 'bg-sl-green text-white shadow-md'
                     : 'text-sl-muted hover:text-sl-foreground hover:bg-sl-panel'
@@ -335,35 +335,35 @@ export function ShotTrajectoryVisualizer() {
       {/* Trajectory Technical Diagnostics Cards (Mobile 2-Column Balanced Grid) */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4">
         <div className="p-3.5 sm:p-4 rounded-xl bg-sl-bg border border-sl-border space-y-1 col-span-1">
-          <span className="text-xs sm:text-sm font-black uppercase text-sl-muted flex items-center gap-1.5">
+          <span className="text-xs font-black uppercase text-sl-muted flex items-center gap-1.5">
             <Zap className="w-4 h-4 text-sl-green" /> Velocity
           </span>
-          <p className="text-base sm:text-xl font-black text-sl-foreground font-mono">{details.speedKmH}</p>
-          <p className="text-xs sm:text-sm text-sl-muted">Feather shuttle launch</p>
+          <p className="text-base sm:text-lg font-black text-sl-foreground font-mono">{details.speedKmH}</p>
+          <p className="text-xs text-sl-muted">Feather shuttle launch</p>
         </div>
 
         <div className="p-3.5 sm:p-4 rounded-xl bg-sl-bg border border-sl-border space-y-1 col-span-1">
-          <span className="text-xs sm:text-sm font-black uppercase text-sl-muted flex items-center gap-1.5">
+          <span className="text-xs font-black uppercase text-sl-muted flex items-center gap-1.5">
             <Target className="w-4 h-4 text-sl-green" /> Contact Point
           </span>
           <p className="text-sm sm:text-base font-black text-sl-foreground leading-snug">{details.contactHeight}</p>
-          <p className="text-xs sm:text-sm text-sl-muted">Extension apex</p>
+          <p className="text-xs text-sl-muted">Extension apex</p>
         </div>
 
         <div className="p-3.5 sm:p-4 rounded-xl bg-sl-bg border border-sl-border space-y-1 col-span-2 sm:col-span-1">
-          <span className="text-xs sm:text-sm font-black uppercase text-sl-muted flex items-center gap-1.5">
+          <span className="text-xs font-black uppercase text-sl-muted flex items-center gap-1.5">
             <Shield className="w-4 h-4 text-sl-green" /> Tactical Intent
           </span>
-          <p className="text-xs sm:text-base text-sl-foreground font-medium leading-relaxed">{details.purpose}</p>
+          <p className="text-xs sm:text-sm text-sl-foreground font-medium leading-relaxed">{details.purpose}</p>
         </div>
       </div>
 
       {/* Coaching Cue Advice */}
-      <div className="p-3.5 sm:p-4 rounded-xl bg-sl-green/10 border border-sl-green/30 flex items-center gap-3">
+      <div className="p-3.5 rounded-xl bg-sl-green/10 border border-sl-green/30 flex items-center gap-3">
         <div className="w-8 h-8 rounded-lg bg-sl-green/20 text-sl-green flex items-center justify-center shrink-0">
           <CheckCircle2 className="w-4 h-4" />
         </div>
-        <div className="text-sm sm:text-base leading-snug">
+        <div className="text-xs sm:text-sm leading-snug">
           <span className="font-bold text-sl-green uppercase tracking-wide">Varsity Coach Cue: </span>
           <span className="text-sl-foreground font-medium">{details.keyCoachingCue}</span>
         </div>

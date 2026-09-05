@@ -70,18 +70,18 @@ export function CourtBoundaryVisualizer() {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 border-b border-sl-border/40 pb-3">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs sm:text-sm font-black uppercase text-sl-green bg-sl-green/15 border border-sl-green/30 px-2.5 py-0.5 rounded-full font-mono">
+            <span className="text-xs font-black uppercase text-sl-green bg-sl-green/15 border border-sl-green/30 px-2.5 py-0.5 rounded-full font-mono">
               BWF Standard Court
             </span>
-            <span className="text-xs sm:text-sm font-mono text-sl-muted">13.40m × 6.10m</span>
+            <span className="text-xs font-mono text-sl-muted">13.40m × 6.10m</span>
           </div>
           <h2
-            className="text-xl sm:text-2xl font-black uppercase text-sl-foreground mt-1"
+            className="text-base sm:text-lg font-black uppercase text-sl-foreground mt-1"
             style={{ fontFamily: 'var(--font-title)' }}
           >
             Interactive Court Boundary Visualizer
           </h2>
-          <p className="text-sm sm:text-base text-sl-muted font-medium">
+          <p className="text-xs sm:text-sm text-sl-muted font-medium">
             Toggle between singles and doubles to visualize legal service boxes versus rally boundaries.
           </p>
         </div>
@@ -91,7 +91,7 @@ export function CourtBoundaryVisualizer() {
           <button
             type="button"
             onClick={() => handleSelectMode('singles_serve')}
-            className={`px-3 py-2 rounded-lg text-sm sm:text-base font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
               mode === 'singles_serve'
                 ? 'bg-sl-green text-white shadow-md'
                 : 'text-sl-muted hover:text-sl-foreground hover:bg-sl-panel'
@@ -104,7 +104,7 @@ export function CourtBoundaryVisualizer() {
           <button
             type="button"
             onClick={() => handleSelectMode('singles_rally')}
-            className={`px-3 py-2 rounded-lg text-sm sm:text-base font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
               mode === 'singles_rally'
                 ? 'bg-sl-green text-white shadow-md'
                 : 'text-sl-muted hover:text-sl-foreground hover:bg-sl-panel'
@@ -117,7 +117,7 @@ export function CourtBoundaryVisualizer() {
           <button
             type="button"
             onClick={() => handleSelectMode('doubles_serve')}
-            className={`px-3 py-2 rounded-lg text-sm sm:text-base font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
               mode === 'doubles_serve'
                 ? 'bg-sl-green text-white shadow-md'
                 : 'text-sl-muted hover:text-sl-foreground hover:bg-sl-panel'
@@ -130,7 +130,7 @@ export function CourtBoundaryVisualizer() {
           <button
             type="button"
             onClick={() => handleSelectMode('doubles_rally')}
-            className={`px-3 py-2 rounded-lg text-sm sm:text-base font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
               mode === 'doubles_rally'
                 ? 'bg-sl-green text-white shadow-md'
                 : 'text-sl-muted hover:text-sl-foreground hover:bg-sl-panel'
@@ -398,46 +398,46 @@ export function CourtBoundaryVisualizer() {
           <div className="p-4 sm:p-5 rounded-2xl bg-sl-bg border border-sl-border space-y-3">
             <div className="flex items-center gap-2 text-sl-green">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <h3 className="text-base sm:text-lg font-black uppercase">{config.title}</h3>
+              <h3 className="text-sm sm:text-base font-black uppercase">{config.title}</h3>
             </div>
-            <p className="text-sm sm:text-base text-sl-muted leading-relaxed font-medium">
+            <p className="text-xs sm:text-sm text-sl-muted leading-relaxed font-medium">
               {config.ruleSummary}
             </p>
           </div>
 
           {/* Key Rule Breakdown Points */}
           <div className="space-y-2.5">
-            <div className="p-3.5 rounded-xl bg-sl-panel border border-sl-border/60 flex items-start gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-sl-green/15 text-sl-green flex items-center justify-center shrink-0 mt-0.5 font-mono text-sm sm:text-base font-black">
+            <div className="p-3 rounded-xl bg-sl-panel border border-sl-border/60 flex items-start gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-sl-green/15 text-sl-green flex items-center justify-center shrink-0 mt-0.5 font-mono text-xs sm:text-sm font-black">
                 1
               </div>
-              <div className="text-sm sm:text-base space-y-0.5">
+              <div className="text-xs sm:text-sm space-y-0.5">
                 <span className="font-bold text-sl-foreground">The 1.15-Meter Service Rule:</span>
-                <p className="text-sl-muted leading-relaxed text-sm sm:text-base">
+                <p className="text-sl-muted leading-relaxed text-xs sm:text-sm">
                   Under BWF Law 9.1.6, the entire shuttlecock must be below 1.15 meters from the court floor surface at the exact instant of impact.
                 </p>
               </div>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-sl-panel border border-sl-border/60 flex items-start gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-sl-green/15 text-sl-green flex items-center justify-center shrink-0 mt-0.5 font-mono text-sm sm:text-base font-black">
+            <div className="p-3 rounded-xl bg-sl-panel border border-sl-border/60 flex items-start gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-sl-green/15 text-sl-green flex items-center justify-center shrink-0 mt-0.5 font-mono text-xs sm:text-sm font-black">
                 2
               </div>
-              <div className="text-sm sm:text-base space-y-0.5">
+              <div className="text-xs sm:text-sm space-y-0.5">
                 <span className="font-bold text-sl-foreground">Stationary Feet Rule:</span>
-                <p className="text-sl-muted leading-relaxed text-sm sm:text-base">
+                <p className="text-sl-muted leading-relaxed text-xs sm:text-sm">
                   Both server and receiver must remain motionless within their respective service boxes until the racket contacts the shuttlecock. Touching boundary lines is a fault.
                 </p>
               </div>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-sl-panel border border-sl-border/60 flex items-start gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-sl-green/15 text-sl-green flex items-center justify-center shrink-0 mt-0.5 font-mono text-sm sm:text-base font-black">
+            <div className="p-3 rounded-xl bg-sl-panel border border-sl-border/60 flex items-start gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-sl-green/15 text-sl-green flex items-center justify-center shrink-0 mt-0.5 font-mono text-xs sm:text-sm font-black">
                 3
               </div>
-              <div className="text-sm sm:text-base space-y-0.5">
+              <div className="text-xs sm:text-sm space-y-0.5">
                 <span className="font-bold text-sl-foreground">Even / Odd Serving Sides:</span>
-                <p className="text-sl-muted leading-relaxed text-sm sm:text-base">
+                <p className="text-sl-muted leading-relaxed text-xs sm:text-sm">
                   When the server has an even score (0, 2, 4, 6...), serve from the <strong>Right Service Box</strong>. When odd (1, 3, 5, 7...), serve from the <strong>Left Service Box</strong>.
                 </p>
               </div>
@@ -445,7 +445,7 @@ export function CourtBoundaryVisualizer() {
           </div>
 
           {/* Quick Tip Pill */}
-          <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center gap-2.5 text-sm sm:text-base text-amber-300">
+          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center gap-2.5 text-xs sm:text-sm text-amber-300">
             <Info className="w-4 h-4 shrink-0 text-amber-400" />
             <span>
               <strong>Memory Trick:</strong> Singles serve is <em>&quot;Long & Narrow&quot;</em>. Doubles serve is <em>&quot;Short & Wide&quot;</em>.
