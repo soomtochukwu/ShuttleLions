@@ -167,7 +167,7 @@ export function MainNav({ onOpenAuth }: MainNavProps) {
  </Link>
  )}
 
- {isAuthenticated && (user?.role === 'admin' || user?.role === 'captain') && (
+ {isAuthenticated && user?.role === 'admin' && (
  <Link
  href="/dashboard/admin"
  onClick={() => audio.play('serve')}

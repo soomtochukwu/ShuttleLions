@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/components/AuthContext';
 import { supabase, type Profile, type Payment, type ShopOrder, type EventItem } from '@/lib/supabase';
 import { PARALLAX_ASSETS_CONFIG, useParallaxConfig } from '@/config/parallax-assets';
@@ -13,6 +15,7 @@ import { formatKobo } from '@/lib/constants';
 import { createIsoWAT } from '@/lib/date-utils';
 import {
   Shield,
+  ShieldAlert,
   Users,
   CreditCard,
   Package,
@@ -32,6 +35,7 @@ import {
   Radio,
   Check,
   Megaphone,
+  ArrowLeft,
 } from 'lucide-react';
 import { audio } from '@/lib/audio';
 import { useFeedback } from '@/components/ui/FeedbackModal';
@@ -39,17 +43,27 @@ import { useFeedback } from '@/components/ui/FeedbackModal';
 type Tab = 'members' | 'payments' | 'orders' | 'events' | 'broadcast' | 'parallax';
 
 export default function AdminCommandRoom() {
-  const { user } = useAuth();
+  const router = useRouter();
+  const { user, isLoading: isAuthLoading, isAuthenticated } = useAuth();
+  const isAdmin = isAuthenticated && user?.role === 'admin';
   const { showAlert } = useFeedback();
   const [activeTab, setActiveTab] = useState<Tab>('members');
+
+  // Automatic security eviction: redirect non-admin accounts to athlete dashboard
+  useEffect(() => {
+    if (!isAuthLoading && !isAdmin) {
+      router.replace('/dashboard');
+    }
+  }, [isAuthLoading, isAdmin, router]);
 
   // Parallax live config from database with SWR cache
   const { config: parallaxConfig, setConfig: setParallaxConfig } = useParallaxConfig();
 
-  // Cached Queries for Admin Data
+  // Cached Queries for Admin Data - strictly enabled ONLY for verified administrators
   const { data: profiles, setData: setProfiles } = useCachedQuery<Profile[]>({
     key: 'admin_profiles',
     initialFallback: [],
+    enabled: isAdmin,
     fetcher: async () => {
       const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
       return data || [];
@@ -59,6 +73,7 @@ export default function AdminCommandRoom() {
   const { data: customRoles, setData: setCustomRoles } = useCachedQuery<any[]>({
     key: 'admin_custom_roles',
     initialFallback: [],
+    enabled: isAdmin,
     fetcher: async () => {
       const { data } = await supabase.from('custom_roles').select('*');
       return data || [];
@@ -68,6 +83,7 @@ export default function AdminCommandRoom() {
   const { data: payments } = useCachedQuery<Payment[]>({
     key: 'admin_payments',
     initialFallback: [],
+    enabled: isAdmin,
     fetcher: async () => {
       const { data } = await supabase.from('payments').select('*').order('created_at', { ascending: false });
       return data || [];
@@ -77,6 +93,7 @@ export default function AdminCommandRoom() {
   const { data: orders } = useCachedQuery<ShopOrder[]>({
     key: 'admin_orders',
     initialFallback: [],
+    enabled: isAdmin,
     fetcher: async () => {
       const { data } = await supabase.from('shop_orders').select('*').order('created_at', { ascending: false });
       return data || [];
@@ -86,6 +103,7 @@ export default function AdminCommandRoom() {
   const { data: events, setData: setEvents } = useCachedQuery<EventItem[]>({
     key: 'admin_events',
     initialFallback: [],
+    enabled: isAdmin,
     fetcher: async () => {
       const { data } = await supabase.from('events').select('*');
       return data || [];
@@ -150,120 +168,145 @@ export default function AdminCommandRoom() {
     }
   }, [events, newEvLat, newEvLng]);
 
- const handleRoleChange = async (profId: string, role: string) => {
- audio.play('serve');
- await supabase.from('profiles').update({ role }).eq('id', profId);
- setProfiles((prev) => prev.map((p) => (p.id === profId ? { ...p, role } : p)));
- showAlert({
- title: 'Role Updated',
- message: `Member role has been successfully changed to "${role}".`,
- type: 'success',
- });
- };
+  const handleRoleChange = async (profId: string, role: string) => {
+    if (!isAdmin) {
+      showAlert({
+        title: 'Unauthorized Action',
+        message: 'Only users with the admin role can modify athlete permissions.',
+        type: 'error',
+      });
+      return;
+    }
+    audio.play('serve');
+    await supabase.from('profiles').update({ role }).eq('id', profId);
+    setProfiles((prev) => prev.map((p) => (p.id === profId ? { ...p, role } : p)));
+    showAlert({
+      title: 'Role Updated',
+      message: `Member role has been successfully changed to "${role}".`,
+      type: 'success',
+    });
+  };
 
- const handleUseCurrentLocationAdmin = () => {
- if (typeof window === 'undefined' ||!navigator.geolocation) {
- showAlert({
- title: 'Geolocation Unsupported',
- message: 'Your browser or device does not support GPS geolocation.',
- type: 'warning',
- });
- return;
- }
+  const handleUseCurrentLocationAdmin = () => {
+    if (!isAdmin) return;
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      showAlert({
+        title: 'Geolocation Unsupported',
+        message: 'Your browser or device does not support GPS geolocation.',
+        type: 'warning',
+      });
+      return;
+    }
 
- setIsDetectingAdminGps(true);
- audio.play('rally');
+    setIsDetectingAdminGps(true);
+    audio.play('rally');
 
- navigator.geolocation.getCurrentPosition(
- (pos) => {
- const { latitude, longitude } = pos.coords;
- setNewEvLat(latitude.toFixed(6));
- setNewEvLng(longitude.toFixed(6));
- setAdminGpsSource('device');
- setIsDetectingAdminGps(false);
- audio.play('smash');
- showAlert({
- title: 'Current GPS Acquired! ',
- message: `Live coordinates captured: ${latitude.toFixed(6)}° N, ${longitude.toFixed(6)}° E`,
- type: 'success',
- });
- },
- (err) => {
- setIsDetectingAdminGps(false);
- let errorMsg = 'Could not retrieve your physical location.';
- if (err.code === 1) {
- errorMsg = 'Location permission was denied. Please allow location access in your browser.';
- } else if (err.code === 2) {
- errorMsg = 'Position unavailable. Please check your device GPS sensor.';
- } else if (err.code === 3) {
- errorMsg = 'GPS detection request timed out. Please try again.';
- }
- showAlert({
- title: 'GPS Detection Failed',
- message: errorMsg,
- type: 'error',
- });
- },
- { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
- );
- };
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setNewEvLat(latitude.toFixed(6));
+        setNewEvLng(longitude.toFixed(6));
+        setAdminGpsSource('device');
+        setIsDetectingAdminGps(false);
+        audio.play('smash');
+        showAlert({
+          title: 'Current GPS Acquired',
+          message: `Live coordinates captured: ${latitude.toFixed(6)}° N, ${longitude.toFixed(6)}° E`,
+          type: 'success',
+        });
+      },
+      (err) => {
+        setIsDetectingAdminGps(false);
+        let errorMsg = 'Could not retrieve your physical location.';
+        if (err.code === 1) {
+          errorMsg = 'Location permission was denied. Please allow location access in your browser.';
+        } else if (err.code === 2) {
+          errorMsg = 'Position unavailable. Please check your device GPS sensor.';
+        } else if (err.code === 3) {
+          errorMsg = 'GPS detection request timed out. Please try again.';
+        }
+        showAlert({
+          title: 'GPS Detection Failed',
+          message: errorMsg,
+          type: 'error',
+        });
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
 
- const handleCreateEvent = async (e: React.FormEvent) => {
- e.preventDefault();
- if (!newEvTitle.trim() ||!user?.id) return;
- audio.play('whistle');
+  const handleCreateEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isAdmin) {
+      showAlert({
+        title: 'Unauthorized Action',
+        message: 'Only users with the admin role can schedule events.',
+        type: 'error',
+      });
+      return;
+    }
+    if (!newEvTitle.trim() || !user?.id) return;
+    audio.play('whistle');
 
- const startDateTime = createIsoWAT(newEvDate, newEvStartTime);
- const endDateTime = createIsoWAT(newEvDate, newEvEndTime);
+    const startDateTime = createIsoWAT(newEvDate, newEvStartTime);
+    const endDateTime = createIsoWAT(newEvDate, newEvEndTime);
 
- const parsedLat = newEvLat.trim() ? parseFloat(newEvLat.trim()) : null;
- const parsedLng = newEvLng.trim() ? parseFloat(newEvLng.trim()) : null;
- const parsedMapUrl =
- parsedLat!= null && parsedLng!= null
- ? `https://www.google.com/maps/search/?api=1&query=${parsedLat},${parsedLng}`
- : null;
+    const parsedLat = newEvLat.trim() ? parseFloat(newEvLat.trim()) : null;
+    const parsedLng = newEvLng.trim() ? parseFloat(newEvLng.trim()) : null;
+    const parsedMapUrl =
+      parsedLat != null && parsedLng != null
+        ? `https://www.google.com/maps/search/?api=1&query=${parsedLat},${parsedLng}`
+        : null;
 
- const newEvRecord = {
- title: newEvTitle.trim(),
- description: newEvDesc.trim() || 'Scheduled via Admin Command Room',
- event_type: newEvType,
- location: newEvLoc.trim() || 'UNN Badminton Court',
- start_at: startDateTime,
- end_at: endDateTime,
- is_recurring: false,
- recurrence_rule: null,
- latitude: parsedLat,
- longitude: parsedLng,
- map_url: parsedMapUrl,
- created_by: user.id,
- status: 'upcoming',
- created_at: new Date().toISOString(),
- updated_at: new Date().toISOString(),
- };
+    const newEvRecord = {
+      title: newEvTitle.trim(),
+      description: newEvDesc.trim() || 'Scheduled via Admin Command Room',
+      event_type: newEvType,
+      location: newEvLoc.trim() || 'UNN Badminton Court',
+      start_at: startDateTime,
+      end_at: endDateTime,
+      is_recurring: false,
+      recurrence_rule: null,
+      latitude: parsedLat,
+      longitude: parsedLng,
+      map_url: parsedMapUrl,
+      created_by: user.id,
+      status: 'upcoming',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
 
- try {
- const { data: inserted, error } = await supabase.from('events').insert(newEvRecord).select().single();
- if (!error && inserted) {
- setEvents((prev) => [...prev, inserted as EventItem]);
- } else {
- setEvents((prev) => [...prev, { id: `ev-${Date.now()}`, ...newEvRecord } as EventItem]);
- }
+    try {
+      const { data: inserted, error } = await supabase.from('events').insert(newEvRecord).select().single();
+      if (!error && inserted) {
+        setEvents((prev) => [...prev, inserted as EventItem]);
+      } else {
+        setEvents((prev) => [...prev, { id: `ev-${Date.now()}`, ...newEvRecord } as EventItem]);
+      }
 
- setNewEvTitle('');
- setNewEvDesc('');
- setNewEvLat('');
- setNewEvLng('');
- showAlert({
- title: 'Event Scheduled! ',
- message: `"${newEvRecord.title}" has been published to the ShuttleLions calendar for ${newEvDate} at ${newEvStartTime}.`,
- type: 'success',
- });
-} catch (err) {
- console.error('Error creating event:', err);
- }
- };
+      setNewEvTitle('');
+      setNewEvDesc('');
+      setNewEvLat('');
+      setNewEvLng('');
+      showAlert({
+        title: 'Event Scheduled',
+        message: `"${newEvRecord.title}" has been published to the ShuttleLions calendar for ${newEvDate} at ${newEvStartTime}.`,
+        type: 'success',
+      });
+    } catch (err) {
+      console.error('Error creating event:', err);
+    }
+  };
 
   const handleSaveParallaxStudio = async () => {
+    if (!isAdmin) {
+      showAlert({
+        title: 'Unauthorized Action',
+        message: 'Only users with the admin role can update parallax assets.',
+        type: 'error',
+      });
+      return;
+    }
     audio.play('smash');
     setIsSavingParallax(true);
 
@@ -295,10 +338,17 @@ export default function AdminCommandRoom() {
       // 1. Dispatch via Server API to bypass client auth signal aborts
       let saveSuccessful = false;
       try {
+        const { data: { session } } = await supabase.auth.getSession();
         const res = await fetch('/api/admin/site-assets', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ updates }),
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+          body: JSON.stringify({
+            updates,
+            auth_user_id: user?.auth_user_id || user?.id,
+          }),
         });
 
         if (res.ok) {
@@ -356,6 +406,14 @@ export default function AdminCommandRoom() {
 
   const handleSendBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdmin) {
+      showAlert({
+        title: 'Unauthorized Action',
+        message: 'Only users with the admin role can dispatch broadcasts.',
+        type: 'error',
+      });
+      return;
+    }
     if (!broadcastTitle.trim() || !broadcastMessage.trim()) {
       showAlert({
         title: 'Missing Fields',
@@ -434,9 +492,13 @@ export default function AdminCommandRoom() {
       if (broadcastSendEmail) channels.push('email');
       if (broadcastSendDevice) channels.push('device');
 
+      const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch('/api/notifications/send', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({
           recipient_ids: recipientIds,
           title: broadcastTitle.trim(),
@@ -444,6 +506,7 @@ export default function AdminCommandRoom() {
           type: 'admin_broadcast',
           channels,
           event_details: eventDetails,
+          sender_id: user?.auth_user_id || user?.id,
         }),
       });
 
@@ -472,6 +535,49 @@ export default function AdminCommandRoom() {
       setIsBroadcasting(false);
     }
   };
+
+  // 1. Loading Authentication State Gate
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-sl-foreground space-y-4">
+        <div className="w-12 h-12 rounded-2xl bg-sl-green flex items-center justify-center shadow-[0_0_20px_rgba(0,200,83,0.5)] animate-bounce" />
+        <p className="text-xs font-black uppercase text-sl-green tracking-widest font-mono">
+          Verifying Administrative Clearance...
+        </p>
+      </div>
+    );
+  }
+
+  // 2. Strict Access Control Gate: Non-admin users cannot open, visit, or interact
+  if (!isAdmin) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
+        <div className="shuttle-panel p-8 bg-sl-panel max-w-md w-full text-center space-y-5 border border-rose-500/40 shadow-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-500 flex items-center justify-center mx-auto shadow-inner">
+            <ShieldAlert className="w-8 h-8 text-rose-500" />
+          </div>
+          <div className="space-y-2">
+            <h2
+              className="text-lg font-black uppercase text-sl-foreground tracking-wider"
+              style={{ fontFamily: 'var(--font-title)' }}
+            >
+              Access Restricted
+            </h2>
+            <p className="text-xs text-sl-muted leading-relaxed">
+              The Admin Command Room requires verified Administrator credentials. Your account (<span className="text-sl-foreground font-mono">{user?.email || 'Guest'}</span>) with role <span className="text-sl-warning font-black uppercase font-mono">{user?.role || 'None'}</span> is not authorized to access or interact with administrative operations.
+            </p>
+          </div>
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center justify-center gap-2 w-full py-3 bg-sl-green text-white text-xs font-black rounded-xl uppercase tracking-wider hover:brightness-110 shadow-lg cursor-pointer transition-all"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Return to Athlete Dashboard</span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

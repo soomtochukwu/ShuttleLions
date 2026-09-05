@@ -201,7 +201,7 @@ export function MobileDrawer({ isOpen, onClose, onOpenAuth }: MobileDrawerProps)
  <BookOpen className="w-4 h-4 text-sl-green" /> Drill Tutorials
  </Link>
 
- {isAuthenticated && (user?.role === 'admin' || user?.role === 'captain') && (
+ {isAuthenticated && user?.role === 'admin' && (
  <Link
  href="/dashboard/admin"
  onClick={handleLinkClick('/dashboard/admin')}

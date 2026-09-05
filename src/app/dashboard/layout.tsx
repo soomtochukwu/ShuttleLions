@@ -321,8 +321,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 );
               })}
 
-              {/* Admin Command Room Link */}
-              {isAuthenticated && (user?.role === 'admin' || user?.role === 'captain') && (
+              {/* Admin Command Room Link - strictly admin only */}
+              {isAuthenticated && user?.role === 'admin' && (
                 <div className="pt-2 border-t border-sl-border/40">
                   <Link
                     href="/dashboard/admin"

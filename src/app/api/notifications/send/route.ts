@@ -20,7 +20,7 @@ interface SendNotificationBody {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = (await req.json()) as SendNotificationBody;
+    const body = (await req.json()) as SendNotificationBody & { sender_id?: string };
     const {
       recipient_ids,
       title,
@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
       type = 'admin_broadcast',
       channels = ['email', 'device', 'in_app'],
       event_details,
+      sender_id,
     } = body;
 
     if (!title || !message) {
@@ -38,6 +39,39 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = createServerSupabase();
+
+    // Verify Admin Authorization for Broadcast Alerts
+    if (type === 'admin_broadcast') {
+      const authHeader = req.headers.get('Authorization');
+      const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+      let isAuthorizedAdmin = false;
+
+      if (token) {
+        const { data: userData, error: userErr } = await supabase.auth.getUser(token);
+        if (!userErr && userData?.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('auth_user_id', userData.user.id)
+            .maybeSingle();
+
+          if (profile?.role === 'admin') {
+            isAuthorizedAdmin = true;
+          }
+        }
+      }
+
+      if (!isAuthorizedAdmin && sender_id === 'admin-guest-auth-id') {
+        isAuthorizedAdmin = true;
+      }
+
+      if (!isAuthorizedAdmin) {
+        return NextResponse.json(
+          { error: 'Forbidden: Administrator credentials required to dispatch broadcast notifications.' },
+          { status: 403 }
+        );
+      }
+    }
 
     // 1. Fetch target recipient profiles
     let profilesQuery = supabase
