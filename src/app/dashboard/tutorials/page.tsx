@@ -92,7 +92,7 @@ export default function TutorialsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobileCurriculumOpen, setIsMobileCurriculumOpen] = useState(false);
-
+  
   // Local drill completion tracking for player satisfaction
   const [completedDrills, setCompletedDrills] = useState<Record<string, boolean>>({});
 
@@ -152,24 +152,24 @@ export default function TutorialsPage() {
   };
 
   return (
-    <div className="h-full flex flex-col min-h-0 space-y-2 select-none">
+    <div className="h-full flex flex-col min-h-0 space-y-2 select-none font-google-sans">
       {/* ===================================================================== */}
       {/* 1. TOP BRAND & COMMAND BAR                                            */}
       {/* ===================================================================== */}
       <header className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-sl-border/40 gap-2">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-sl-green/20 text-sl-green border border-sl-green/30 flex items-center justify-center shrink-0">
-            <BookOpen className="w-4 h-4" />
+          <div className="w-9 h-9 rounded-xl bg-sl-green/20 text-sl-green border border-sl-green/30 flex items-center justify-center shrink-0">
+            <BookOpen className="w-4.5 h-4.5" />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black uppercase text-sl-green font-mono tracking-wider">
+              <span className="text-xs font-black uppercase text-sl-green font-mono tracking-wider">
                 UNN Varsity Studio
               </span>
-              <span className="text-[10px] text-sl-muted font-mono hidden sm:inline">• BWF Masterclass</span>
+              <span className="text-xs text-sl-muted font-mono hidden sm:inline">• BWF Masterclass</span>
             </div>
             <h1
-              className="text-sm sm:text-base font-black uppercase text-sl-foreground truncate"
+              className="text-base sm:text-lg lg:text-xl font-black uppercase text-sl-foreground truncate"
               style={{ fontFamily: 'var(--font-title)' }}
             >
               Badminton Tactical & Biomechanical Cockpit
@@ -180,40 +180,43 @@ export default function TutorialsPage() {
         {/* Desktop View Switcher Pills + Mobile Curriculum Button */}
         <div className="flex items-center gap-1.5 self-stretch sm:self-auto">
           {/* Stage View Toggles (Visible on all sizes) */}
-          <div className="flex items-center bg-sl-panel p-0.5 rounded-xl border border-sl-border flex-1 sm:flex-initial">
+          <div className="flex items-center bg-sl-panel p-1 rounded-xl border border-sl-border flex-1 sm:flex-initial">
             <button
               type="button"
               onClick={() => handleSwitchStage('photo')}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${stageMode === 'photo'
+              className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${
+                stageMode === 'photo'
                   ? 'bg-sl-green text-white shadow-xs'
                   : 'text-sl-muted hover:text-sl-foreground'
-                }`}
+              }`}
             >
-              <Eye className="w-3.5 h-3.5" />
+              <Eye className="w-4 h-4" />
               <span>Demonstration</span>
             </button>
 
             <button
               type="button"
               onClick={() => handleSwitchStage('court')}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${stageMode === 'court'
+              className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${
+                stageMode === 'court'
                   ? 'bg-sl-green text-white shadow-xs'
                   : 'text-sl-muted hover:text-sl-foreground'
-                }`}
+              }`}
             >
-              <Maximize2 className="w-3.5 h-3.5" />
+              <Maximize2 className="w-4 h-4" />
               <span>Court Simulator</span>
             </button>
 
             <button
               type="button"
               onClick={() => handleSwitchStage('trajectory')}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${stageMode === 'trajectory'
+              className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${
+                stageMode === 'trajectory'
                   ? 'bg-sl-green text-white shadow-xs'
                   : 'text-sl-muted hover:text-sl-foreground'
-                }`}
+              }`}
             >
-              <Activity className="w-3.5 h-3.5" />
+              <Activity className="w-4 h-4" />
               <span>Flight Simulator</span>
             </button>
           </div>
@@ -225,9 +228,9 @@ export default function TutorialsPage() {
               audio.haptic('tap');
               setIsMobileCurriculumOpen(true);
             }}
-            className="lg:hidden px-2.5 py-1 rounded-xl border border-sl-border bg-sl-panel hover:bg-sl-bg text-sl-foreground text-xs font-black uppercase flex items-center gap-1.5 cursor-pointer shrink-0"
+            className="lg:hidden px-3 py-1.5 rounded-xl border border-sl-border bg-sl-panel hover:bg-sl-bg text-sl-foreground text-xs sm:text-sm font-black uppercase flex items-center gap-1.5 cursor-pointer shrink-0"
           >
-            <ListFilter className="w-3.5 h-3.5 text-sl-green" />
+            <ListFilter className="w-4 h-4 text-sl-green" />
             <span>Modules ({filteredTutorials.length})</span>
           </button>
         </div>
@@ -243,12 +246,13 @@ export default function TutorialsPage() {
             audio.haptic('tap');
             setMobileTab('visual');
           }}
-          className={`flex-1 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${mobileTab === 'visual'
+          className={`flex-1 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            mobileTab === 'visual'
               ? 'bg-sl-green text-white shadow-xs'
               : 'text-sl-muted hover:text-sl-foreground'
-            }`}
+          }`}
         >
-          <Eye className="w-3.5 h-3.5" />
+          <Eye className="w-4 h-4" />
           <span>1. Visual Arena</span>
         </button>
 
@@ -258,12 +262,13 @@ export default function TutorialsPage() {
             audio.haptic('tap');
             setMobileTab('steps');
           }}
-          className={`flex-1 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${mobileTab === 'steps'
+          className={`flex-1 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            mobileTab === 'steps'
               ? 'bg-sl-green text-white shadow-xs'
               : 'text-sl-muted hover:text-sl-foreground'
-            }`}
+          }`}
         >
-          <Zap className="w-3.5 h-3.5" />
+          <Zap className="w-4 h-4" />
           <span>2. Technical Steps</span>
         </button>
 
@@ -273,12 +278,13 @@ export default function TutorialsPage() {
             audio.haptic('tap');
             setMobileTab('drills');
           }}
-          className={`flex-1 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${mobileTab === 'drills'
+          className={`flex-1 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            mobileTab === 'drills'
               ? 'bg-sl-green text-white shadow-xs'
               : 'text-sl-muted hover:text-sl-foreground'
-            }`}
+          }`}
         >
-          <Dumbbell className="w-3.5 h-3.5" />
+          <Dumbbell className="w-4 h-4" />
           <span>3. Modules & Drills</span>
         </button>
       </div>
@@ -291,19 +297,20 @@ export default function TutorialsPage() {
         {/* COLUMN 1: CURRICULUM & PRACTICE MISSION (Left ~24% on xl)          */}
         {/* ------------------------------------------------------------------- */}
         <aside
-          className={`w-72 xl:w-80 shrink-0 h-full flex-col bg-sl-panel border border-sl-border rounded-2xl overflow-hidden ${mobileTab === 'drills' ? 'flex flex-1 xl:flex-none' : 'hidden lg:flex'
-            }`}
+          className={`w-72 xl:w-80 shrink-0 h-full flex-col bg-sl-panel border border-sl-border rounded-2xl overflow-hidden ${
+            mobileTab === 'drills' ? 'flex flex-1 xl:flex-none' : 'hidden lg:flex'
+          }`}
         >
           {/* Rail Header: Search & Category Chips */}
           <div className="p-2.5 border-b border-sl-border/40 space-y-2 bg-sl-bg/40 shrink-0">
             <div className="relative">
-              <Search className="w-3.5 h-3.5 text-sl-muted absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-sl-muted absolute left-2.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search rules, smashes..."
-                className="w-full pl-8 pr-7 py-1.5 rounded-lg bg-sl-panel border border-sl-border text-xs text-sl-foreground placeholder:text-sl-muted focus:outline-none focus:border-sl-green"
+                className="w-full pl-8 pr-7 py-2 rounded-lg bg-sl-panel border border-sl-border text-xs sm:text-sm text-sl-foreground placeholder:text-sl-muted focus:outline-none focus:border-sl-green"
               />
               {searchQuery && (
                 <button
@@ -311,13 +318,13 @@ export default function TutorialsPage() {
                   onClick={() => setSearchQuery('')}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-sl-muted hover:text-sl-foreground p-0.5 cursor-pointer"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
 
             {/* Horizontal Category Chips */}
-            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-0.5">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
               {[
                 { id: 'all', label: 'All' },
                 { id: 'rules', label: 'Rules' },
@@ -335,10 +342,11 @@ export default function TutorialsPage() {
                       audio.haptic('tap');
                       setSelectedCategory(cat.id);
                     }}
-                    className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${isSelected
+                    className={`px-2.5 py-1 rounded-md text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
+                      isSelected
                         ? 'bg-sl-green text-white shadow-xs'
                         : 'bg-sl-panel border border-sl-border/70 text-sl-muted hover:text-sl-foreground'
-                      }`}
+                    }`}
                   >
                     {cat.label}
                   </button>
@@ -348,36 +356,39 @@ export default function TutorialsPage() {
           </div>
 
           {/* Module Selector List (Takes remaining height so all modules are clearly visible) */}
-          <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1">
+          <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1.5">
             {filteredTutorials.map((tut, idx) => {
               const isActive = activeTutorial?.id === tut.id;
               return (
                 <div
                   key={tut.id}
                   onClick={() => handleSelectTutorial(tut)}
-                  className={`p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 ${isActive
+                  className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2.5 ${
+                    isActive
                       ? 'bg-sl-green/15 border-sl-green shadow-xs'
                       : 'bg-sl-bg/40 border-sl-border/60 hover:bg-sl-bg hover:border-sl-border'
-                    }`}
+                  }`}
                 >
-                  <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex items-center gap-2.5 min-w-0">
                     <span
-                      className={`w-5 h-5 rounded-md font-mono text-[9px] font-black flex items-center justify-center shrink-0 border ${isActive
+                      className={`w-6 h-6 rounded-md font-mono text-xs font-black flex items-center justify-center shrink-0 border ${
+                        isActive
                           ? 'bg-sl-green text-white border-sl-green'
                           : 'bg-sl-panel text-sl-muted border-sl-border'
-                        }`}
+                      }`}
                     >
                       {String(idx + 1).padStart(2, '0')}
                     </span>
 
                     <div className="min-w-0">
                       <h4
-                        className={`text-[11px] font-black truncate leading-tight ${isActive ? 'text-sl-green' : 'text-sl-foreground'
-                          }`}
+                        className={`text-xs sm:text-sm font-bold truncate leading-tight ${
+                          isActive ? 'text-sl-green' : 'text-sl-foreground'
+                        }`}
                       >
                         {tut.title}
                       </h4>
-                      <div className="flex items-center gap-1.5 text-[9px] text-sl-muted font-mono mt-0.5">
+                      <div className="flex items-center gap-1.5 text-xs text-sl-muted font-mono mt-0.5">
                         <span className="capitalize">{tut.category}</span>
                         <span>•</span>
                         <span>{tut.read_time_min}m</span>
@@ -386,8 +397,9 @@ export default function TutorialsPage() {
                   </div>
 
                   <ChevronRight
-                    className={`w-3.5 h-3.5 shrink-0 transition-transform ${isActive ? 'text-sl-green translate-x-0.5' : 'text-sl-muted/50'
-                      }`}
+                    className={`w-4 h-4 shrink-0 transition-transform ${
+                      isActive ? 'text-sl-green translate-x-0.5' : 'text-sl-muted/50'
+                    }`}
                   />
                 </div>
               );
@@ -397,38 +409,41 @@ export default function TutorialsPage() {
           {/* Practice Drills Checklist (Stuck to the bottom, height fits content) */}
           <div className="shrink-0 mt-auto border-t border-sl-border/40 p-2.5 bg-sl-green/5 flex flex-col space-y-1.5">
             <div className="flex items-center justify-between pb-1.5 border-b border-sl-border/30">
-              <span className="text-[10px] font-black uppercase tracking-wider text-sl-green flex items-center gap-1.5 font-mono">
-                <Dumbbell className="w-3.5 h-3.5 text-sl-green" /> Practice Missions
+              <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-sl-green flex items-center gap-1.5 font-mono">
+                <Dumbbell className="w-4 h-4 text-sl-green" /> Practice Missions
               </span>
-              <span className="text-[9px] font-mono text-sl-muted">
+              <span className="text-xs font-mono text-sl-muted">
                 {activeTutorial?.coaching_drills.filter((d) => completedDrills[d]).length} /{' '}
                 {activeTutorial?.coaching_drills.length || 0} Done
               </span>
             </div>
 
-            <div className="max-h-48 overflow-y-auto py-1 space-y-1.5">
+            <div className="max-h-52 overflow-y-auto py-1 space-y-1.5">
               {activeTutorial?.coaching_drills.map((drill, idx) => {
                 const isChecked = !!completedDrills[drill];
                 return (
                   <div
                     key={idx}
                     onClick={() => toggleDrill(drill)}
-                    className={`p-2 rounded-xl border transition-all cursor-pointer flex items-start gap-2 ${isChecked
+                    className={`p-2 rounded-xl border transition-all cursor-pointer flex items-start gap-2.5 ${
+                      isChecked
                         ? 'bg-sl-green/20 border-sl-green/60 text-sl-foreground'
                         : 'bg-sl-panel border-sl-border/70 hover:border-sl-green/40'
-                      }`}
+                    }`}
                   >
                     <div
-                      className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${isChecked
+                      className={`w-4.5 h-4.5 rounded-md border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                        isChecked
                           ? 'bg-sl-green border-sl-green text-white'
                           : 'border-sl-border bg-sl-bg'
-                        }`}
+                      }`}
                     >
-                      {isChecked && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                      {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
                     </div>
                     <p
-                      className={`text-[11px] leading-snug font-medium select-none ${isChecked ? 'line-through text-sl-muted' : 'text-sl-foreground'
-                        }`}
+                      className={`text-xs sm:text-sm leading-normal font-medium select-none ${
+                        isChecked ? 'line-through text-sl-muted' : 'text-sl-foreground'
+                      }`}
                     >
                       {drill}
                     </p>
@@ -438,9 +453,9 @@ export default function TutorialsPage() {
             </div>
 
             {/* Varsity Badge */}
-            <div className="pt-1.5 border-t border-sl-border/30 flex items-center justify-between text-[9px] font-mono text-sl-muted">
+            <div className="pt-1.5 border-t border-sl-border/30 flex items-center justify-between text-xs font-mono text-sl-muted">
               <span className="flex items-center gap-1 text-sl-green font-bold">
-                <Shield className="w-3 h-3 text-sl-green" /> UNN Verified
+                <Shield className="w-3.5 h-3.5 text-sl-green" /> UNN Verified
               </span>
               <span>BWF Standard</span>
             </div>
@@ -451,8 +466,9 @@ export default function TutorialsPage() {
         {/* COLUMN 2: CENTER DEMONSTRATION ARENA (Visual Focus ~46% on xl)     */}
         {/* ------------------------------------------------------------------- */}
         <main
-          className={`flex-1 h-full min-w-0 flex-col bg-sl-panel border border-sl-border rounded-2xl overflow-hidden shadow-xs ${mobileTab === 'visual' ? 'flex' : 'hidden xl:flex'
-            }`}
+          className={`flex-1 h-full min-w-0 flex-col bg-sl-panel border border-sl-border rounded-2xl overflow-hidden shadow-xs ${
+            mobileTab === 'visual' ? 'flex' : 'hidden xl:flex'
+          }`}
         >
           {activeTutorial && (
             <div className="flex-1 flex flex-col min-h-0 p-2.5 sm:p-3 space-y-2.5 overflow-hidden">
@@ -460,15 +476,15 @@ export default function TutorialsPage() {
               <div className="shrink-0 flex items-center justify-between gap-2 border-b border-sl-border/40 pb-2">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-[9px] font-black uppercase bg-sl-green/20 text-sl-green px-2 py-0.5 rounded-full border border-sl-green/30 font-mono">
+                    <span className="text-xs font-black uppercase bg-sl-green/20 text-sl-green px-2.5 py-0.5 rounded-full border border-sl-green/30 font-mono">
                       {activeTutorial.category} • {activeTutorial.difficulty}
                     </span>
-                    <span className="text-[10px] text-sl-muted font-mono flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-sl-green" /> {activeTutorial.read_time_min}m read
+                    <span className="text-xs sm:text-sm text-sl-muted font-mono flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 text-sl-green" /> {activeTutorial.read_time_min}m read
                     </span>
                   </div>
                   <h2
-                    className="text-sm sm:text-base font-black uppercase text-sl-foreground truncate"
+                    className="text-base sm:text-lg lg:text-xl font-black uppercase text-sl-foreground truncate"
                     style={{ fontFamily: 'var(--font-title)' }}
                   >
                     {activeTutorial.title}
@@ -477,8 +493,8 @@ export default function TutorialsPage() {
 
                 {/* Subtitle / Key Focus */}
                 <div className="hidden md:flex items-center gap-1.5 text-right shrink-0">
-                  <span className="text-[10px] font-black uppercase text-sl-muted font-mono">Focus:</span>
-                  <span className="text-[11px] font-bold text-sl-foreground max-w-[200px] truncate">
+                  <span className="text-xs font-bold uppercase text-sl-muted font-mono">Focus:</span>
+                  <span className="text-xs sm:text-sm font-bold text-sl-foreground max-w-[240px] truncate">
                     {activeTutorial.subtitle}
                   </span>
                 </div>
@@ -501,8 +517,8 @@ export default function TutorialsPage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
 
                     {/* Athlete Cue Tag */}
-                    <div className="absolute bottom-2.5 left-2.5 bg-black/85 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/20 text-[10px] font-black uppercase text-sl-green-glow flex items-center gap-1.5">
-                      <Shield className="w-3 h-3 text-sl-green" />
+                    <div className="absolute bottom-2.5 left-2.5 bg-black/85 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 text-xs font-black uppercase text-sl-green-glow flex items-center gap-1.5">
+                      <Shield className="w-3.5 h-3.5 text-sl-green" />
                       <span>ShuttleLions Varsity Execution</span>
                     </div>
 
@@ -511,17 +527,17 @@ export default function TutorialsPage() {
                       <button
                         type="button"
                         onClick={() => handleSwitchStage('court')}
-                        className="px-2 py-1 rounded-lg bg-black/80 backdrop-blur-md border border-white/20 hover:border-sl-green text-[10px] font-black uppercase text-white hover:text-sl-green-glow flex items-center gap-1 cursor-pointer transition-all"
+                        className="px-2.5 py-1.5 rounded-lg bg-black/80 backdrop-blur-md border border-white/20 hover:border-sl-green text-xs font-black uppercase text-white hover:text-sl-green-glow flex items-center gap-1 cursor-pointer transition-all"
                       >
-                        <Maximize2 className="w-3 h-3 text-sl-green" />
+                        <Maximize2 className="w-3.5 h-3.5 text-sl-green" />
                         <span>Court Lines</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => handleSwitchStage('trajectory')}
-                        className="px-2 py-1 rounded-lg bg-black/80 backdrop-blur-md border border-white/20 hover:border-sl-green text-[10px] font-black uppercase text-white hover:text-sl-green-glow flex items-center gap-1 cursor-pointer transition-all"
+                        className="px-2.5 py-1.5 rounded-lg bg-black/80 backdrop-blur-md border border-white/20 hover:border-sl-green text-xs font-black uppercase text-white hover:text-sl-green-glow flex items-center gap-1 cursor-pointer transition-all"
                       >
-                        <Activity className="w-3 h-3 text-sl-green" />
+                        <Activity className="w-3.5 h-3.5 text-sl-green" />
                         <span>Flight Arc</span>
                       </button>
                     </div>
@@ -544,17 +560,17 @@ export default function TutorialsPage() {
               </div>
 
               {/* Docked Core Tactical Rules & Takeaways Panel */}
-              <div className="shrink-0 p-2.5 rounded-xl bg-sl-green/10 border border-sl-green/30 space-y-1">
+              <div className="shrink-0 p-2.5 sm:p-3 rounded-xl bg-sl-green/10 border border-sl-green/30 space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-[10px] font-black uppercase text-sl-green flex items-center gap-1.5 tracking-wider font-mono">
-                    <Target className="w-3.5 h-3.5 text-sl-green" /> Core Tactical Rules & Laws
+                  <h4 className="text-xs sm:text-sm font-black uppercase text-sl-green flex items-center gap-1.5 tracking-wider font-mono">
+                    <Target className="w-4 h-4 text-sl-green" /> Core Tactical Rules & Laws
                   </h4>
-                  <span className="text-[9px] font-mono text-sl-muted hidden sm:inline">Essential Match Keys</span>
+                  <span className="text-xs font-mono text-sl-muted hidden sm:inline">Essential Match Keys</span>
                 </div>
-                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs text-sl-foreground font-medium">
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 text-sl-foreground font-medium">
                   {activeTutorial.key_takeaways.slice(0, 4).map((point, idx) => (
-                    <li key={idx} className="flex items-start gap-1.5 text-[11px] leading-tight">
-                      <CheckCircle2 className="w-3 h-3 text-sl-green shrink-0 mt-0.5" />
+                    <li key={idx} className="flex items-start gap-1.5 text-xs sm:text-sm leading-normal">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-sl-green shrink-0 mt-0.5" />
                       <span className="line-clamp-2">{point}</span>
                     </li>
                   ))}
@@ -567,17 +583,18 @@ export default function TutorialsPage() {
                   type="button"
                   disabled={!prevTutorial}
                   onClick={() => prevTutorial && handleSelectTutorial(prevTutorial)}
-                  className={`px-2.5 py-1.5 rounded-xl border text-xs font-black uppercase flex items-center gap-1.5 transition-all ${prevTutorial
+                  className={`px-3 py-2 rounded-xl border text-xs sm:text-sm font-black uppercase flex items-center gap-1.5 transition-all ${
+                    prevTutorial
                       ? 'bg-sl-bg border-sl-border text-sl-foreground hover:bg-sl-panel cursor-pointer'
                       : 'opacity-40 border-sl-border/40 text-sl-muted cursor-not-allowed'
-                    }`}
+                  }`}
                 >
-                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <ArrowLeft className="w-4 h-4" />
                   <span className="hidden sm:inline">Prev Lesson</span>
                   <span className="sm:hidden">Prev</span>
                 </button>
 
-                <div className="text-[10px] font-mono text-sl-muted">
+                <div className="text-xs font-mono text-sl-muted">
                   Lesson {currentIndex + 1} of {filteredTutorials.length}
                 </div>
 
@@ -585,14 +602,15 @@ export default function TutorialsPage() {
                   type="button"
                   disabled={!nextTutorial}
                   onClick={() => nextTutorial && handleSelectTutorial(nextTutorial)}
-                  className={`px-2.5 py-1.5 rounded-xl border text-xs font-black uppercase flex items-center gap-1.5 transition-all ${nextTutorial
+                  className={`px-3 py-2 rounded-xl border text-xs sm:text-sm font-black uppercase flex items-center gap-1.5 transition-all ${
+                    nextTutorial
                       ? 'bg-sl-green text-white border-sl-green hover:brightness-110 shadow-xs cursor-pointer'
                       : 'opacity-40 border-sl-border/40 text-sl-muted cursor-not-allowed'
-                    }`}
+                  }`}
                 >
                   <span className="hidden sm:inline">Next Lesson</span>
                   <span className="sm:hidden">Next</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -603,49 +621,50 @@ export default function TutorialsPage() {
         {/* COLUMN 3: BIOMECHANICAL PLAYBOOK (Right ~30% on xl)                */}
         {/* ------------------------------------------------------------------- */}
         <section
-          className={`w-80 xl:w-96 shrink-0 h-full flex-col bg-sl-panel border border-sl-border rounded-2xl overflow-hidden ${mobileTab === 'steps' ? 'flex flex-1 xl:flex-none' : 'hidden xl:flex'
-            }`}
+          className={`w-80 xl:w-96 shrink-0 h-full flex-col bg-sl-panel border border-sl-border rounded-2xl overflow-hidden ${
+            mobileTab === 'steps' ? 'flex flex-1 xl:flex-none' : 'hidden xl:flex'
+          }`}
         >
           {/* Column Header */}
           <div className="p-2.5 border-b border-sl-border/40 bg-sl-bg/40 flex items-center justify-between shrink-0">
-            <span className="text-[10px] font-black uppercase tracking-wider text-sl-foreground flex items-center gap-1.5 font-mono">
-              <Zap className="w-3.5 h-3.5 text-sl-green" /> Biomechanical Steps
+            <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-sl-foreground flex items-center gap-1.5 font-mono">
+              <Zap className="w-4 h-4 text-sl-green" /> Biomechanical Steps
             </span>
-            <span className="text-[9px] font-mono text-sl-muted bg-sl-panel px-2 py-0.5 rounded-full border border-sl-border">
+            <span className="text-xs font-mono text-sl-muted bg-sl-panel px-2.5 py-0.5 rounded-full border border-sl-border">
               {activeTutorial?.sections.length || 0} Phases
             </span>
           </div>
 
           {/* Vertical Step Breakdown Cards (Independent Sleek Scroll) */}
-          <div className="flex-1 overflow-y-auto p-2.5 space-y-2.5">
+          <div className="flex-1 overflow-y-auto p-2.5 space-y-3">
             {activeTutorial?.sections.map((section, sIdx) => (
               <div
                 key={sIdx}
-                className="p-3 rounded-xl bg-sl-bg/60 border border-sl-border space-y-2 hover:border-sl-green/40 transition-colors"
+                className="p-3.5 rounded-xl bg-sl-bg/60 border border-sl-border space-y-2 hover:border-sl-green/40 transition-colors"
               >
                 {/* Phase Number & Title */}
-                <div className="flex items-start gap-2">
-                  <span className="w-5 h-5 rounded-md bg-sl-green/20 text-sl-green text-[10px] font-black font-mono flex items-center justify-center shrink-0 mt-0.5">
+                <div className="flex items-start gap-2.5">
+                  <span className="w-6 h-6 rounded-md bg-sl-green/20 text-sl-green text-xs font-black font-mono flex items-center justify-center shrink-0 mt-0.5">
                     {String(sIdx + 1).padStart(2, '0')}
                   </span>
                   <div>
-                    <h3 className="text-xs font-black text-sl-foreground leading-snug">
+                    <h3 className="text-sm sm:text-base font-black text-sl-foreground leading-snug">
                       {section.heading}
                     </h3>
                   </div>
                 </div>
 
                 {/* Content Paragraph */}
-                <p className="text-[11px] text-sl-muted leading-relaxed font-normal">
+                <p className="text-xs sm:text-sm text-sl-muted leading-relaxed font-normal">
                   {section.content}
                 </p>
 
                 {/* Bullet Points */}
                 {section.bullet_points && section.bullet_points.length > 0 && (
-                  <ul className="space-y-1 pt-1 border-t border-sl-border/40">
+                  <ul className="space-y-1.5 pt-1.5 border-t border-sl-border/40">
                     {section.bullet_points.map((pt, pIdx) => (
-                      <li key={pIdx} className="text-[10px] text-sl-foreground flex items-start gap-1.5 leading-snug">
-                        <span className="w-1.5 h-1.5 rounded-full bg-sl-green shrink-0 mt-1" />
+                      <li key={pIdx} className="text-xs sm:text-sm text-sl-foreground flex items-start gap-2 leading-normal">
+                        <span className="w-1.5 h-1.5 rounded-full bg-sl-green shrink-0 mt-1.5" />
                         <span>{pt}</span>
                       </li>
                     ))}
@@ -654,9 +673,9 @@ export default function TutorialsPage() {
 
                 {/* Coach Pro Tip */}
                 {section.coach_tip && (
-                  <div className="p-2 rounded-lg bg-sl-panel border border-sl-green/30 flex items-start gap-2">
-                    <Lightbulb className="w-3 h-3 text-sl-green shrink-0 mt-0.5" />
-                    <div className="text-[10px] leading-snug">
+                  <div className="p-2.5 rounded-lg bg-sl-panel border border-sl-green/30 flex items-start gap-2">
+                    <Lightbulb className="w-4 h-4 text-sl-green shrink-0 mt-0.5" />
+                    <div className="text-xs sm:text-sm leading-snug">
                       <span className="font-bold text-sl-green uppercase font-mono">Coach Cue: </span>
                       <span className="text-sl-foreground">{section.coach_tip}</span>
                     </div>
@@ -668,7 +687,7 @@ export default function TutorialsPage() {
 
           {/* Bottom Card Summary */}
           <div className="p-2 border-t border-sl-border/40 bg-sl-bg/40 shrink-0 text-center">
-            <span className="text-[10px] font-mono text-sl-muted">
+            <span className="text-xs font-mono text-sl-muted">
               Execute each phase with smooth kinetic chain deceleration.
             </span>
           </div>
@@ -688,59 +707,62 @@ export default function TutorialsPage() {
 
           {/* Drawer Container */}
           <div className="relative w-full max-w-xs bg-sl-panel border-r border-sl-border h-full flex flex-col z-10 shadow-2xl">
-            <div className="p-3 border-b border-sl-border flex items-center justify-between">
+            <div className="p-3.5 border-b border-sl-border flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-sl-green" />
-                <span className="text-xs font-black uppercase text-sl-foreground font-mono">
+                <BookOpen className="w-4.5 h-4.5 text-sl-green" />
+                <span className="text-sm font-black uppercase text-sl-foreground font-mono">
                   Masterclass Modules ({filteredTutorials.length})
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => setIsMobileCurriculumOpen(false)}
-                className="p-1 rounded-lg border border-sl-border text-sl-muted hover:text-sl-foreground cursor-pointer"
+                className="p-1.5 rounded-lg border border-sl-border text-sl-muted hover:text-sl-foreground cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Drawer Content */}
-            <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
+            <div className="flex-1 overflow-y-auto p-2.5 space-y-2">
               {filteredTutorials.map((tut, idx) => {
                 const isActive = activeTutorial?.id === tut.id;
                 return (
                   <div
                     key={tut.id}
                     onClick={() => handleSelectTutorial(tut)}
-                    className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 ${isActive
+                    className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2.5 ${
+                      isActive
                         ? 'bg-sl-green/15 border-sl-green shadow-xs'
                         : 'bg-sl-bg/40 border-sl-border/60 hover:bg-sl-bg'
-                      }`}
+                    }`}
                   >
-                    <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex items-center gap-2.5 min-w-0">
                       <span
-                        className={`w-5 h-5 rounded-md font-mono text-[10px] font-black flex items-center justify-center shrink-0 border ${isActive
+                        className={`w-6 h-6 rounded-md font-mono text-xs font-black flex items-center justify-center shrink-0 border ${
+                          isActive
                             ? 'bg-sl-green text-white border-sl-green'
                             : 'bg-sl-panel text-sl-muted border-sl-border'
-                          }`}
+                        }`}
                       >
                         {String(idx + 1).padStart(2, '0')}
                       </span>
                       <div className="min-w-0">
                         <h4
-                          className={`text-xs font-black truncate ${isActive ? 'text-sl-green' : 'text-sl-foreground'
-                            }`}
+                          className={`text-sm font-bold truncate ${
+                            isActive ? 'text-sl-green' : 'text-sl-foreground'
+                          }`}
                         >
                           {tut.title}
                         </h4>
-                        <div className="flex items-center gap-1.5 text-[9px] text-sl-muted font-mono mt-0.5">
+                        <div className="flex items-center gap-1.5 text-xs text-sl-muted font-mono mt-0.5">
                           <span className="capitalize">{tut.category}</span>
                           <span>•</span>
                           <span>{tut.read_time_min}m</span>
                         </div>
                       </div>
                     </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-sl-muted shrink-0" />
+                    <ChevronRight className="w-4 h-4 text-sl-muted shrink-0" />
                   </div>
                 );
               })}
