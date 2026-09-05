@@ -92,7 +92,7 @@ export default function TutorialsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobileCurriculumOpen, setIsMobileCurriculumOpen] = useState(false);
-  
+
   // Local drill completion tracking for player satisfaction
   const [completedDrills, setCompletedDrills] = useState<Record<string, boolean>>({});
 
@@ -184,11 +184,10 @@ export default function TutorialsPage() {
             <button
               type="button"
               onClick={() => handleSwitchStage('photo')}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${
-                stageMode === 'photo'
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${stageMode === 'photo'
                   ? 'bg-sl-green text-white shadow-xs'
                   : 'text-sl-muted hover:text-sl-foreground'
-              }`}
+                }`}
             >
               <Eye className="w-3.5 h-3.5" />
               <span>Demonstration</span>
@@ -197,11 +196,10 @@ export default function TutorialsPage() {
             <button
               type="button"
               onClick={() => handleSwitchStage('court')}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${
-                stageMode === 'court'
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${stageMode === 'court'
                   ? 'bg-sl-green text-white shadow-xs'
                   : 'text-sl-muted hover:text-sl-foreground'
-              }`}
+                }`}
             >
               <Maximize2 className="w-3.5 h-3.5" />
               <span>Court Simulator</span>
@@ -210,11 +208,10 @@ export default function TutorialsPage() {
             <button
               type="button"
               onClick={() => handleSwitchStage('trajectory')}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${
-                stageMode === 'trajectory'
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-initial ${stageMode === 'trajectory'
                   ? 'bg-sl-green text-white shadow-xs'
                   : 'text-sl-muted hover:text-sl-foreground'
-              }`}
+                }`}
             >
               <Activity className="w-3.5 h-3.5" />
               <span>Flight Simulator</span>
@@ -246,11 +243,10 @@ export default function TutorialsPage() {
             audio.haptic('tap');
             setMobileTab('visual');
           }}
-          className={`flex-1 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-            mobileTab === 'visual'
+          className={`flex-1 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${mobileTab === 'visual'
               ? 'bg-sl-green text-white shadow-xs'
               : 'text-sl-muted hover:text-sl-foreground'
-          }`}
+            }`}
         >
           <Eye className="w-3.5 h-3.5" />
           <span>1. Visual Arena</span>
@@ -262,11 +258,10 @@ export default function TutorialsPage() {
             audio.haptic('tap');
             setMobileTab('steps');
           }}
-          className={`flex-1 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-            mobileTab === 'steps'
+          className={`flex-1 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${mobileTab === 'steps'
               ? 'bg-sl-green text-white shadow-xs'
               : 'text-sl-muted hover:text-sl-foreground'
-          }`}
+            }`}
         >
           <Zap className="w-3.5 h-3.5" />
           <span>2. Technical Steps</span>
@@ -278,11 +273,10 @@ export default function TutorialsPage() {
             audio.haptic('tap');
             setMobileTab('drills');
           }}
-          className={`flex-1 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-            mobileTab === 'drills'
+          className={`flex-1 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${mobileTab === 'drills'
               ? 'bg-sl-green text-white shadow-xs'
               : 'text-sl-muted hover:text-sl-foreground'
-          }`}
+            }`}
         >
           <Dumbbell className="w-3.5 h-3.5" />
           <span>3. Modules & Drills</span>
@@ -297,9 +291,8 @@ export default function TutorialsPage() {
         {/* COLUMN 1: CURRICULUM & PRACTICE MISSION (Left ~24% on xl)          */}
         {/* ------------------------------------------------------------------- */}
         <aside
-          className={`w-72 xl:w-80 shrink-0 h-full flex-col bg-sl-panel border border-sl-border rounded-2xl overflow-hidden ${
-            mobileTab === 'drills' ? 'flex flex-1 xl:flex-none' : 'hidden lg:flex'
-          }`}
+          className={`w-72 xl:w-80 shrink-0 h-full flex-col bg-sl-panel border border-sl-border rounded-2xl overflow-hidden ${mobileTab === 'drills' ? 'flex flex-1 xl:flex-none' : 'hidden lg:flex'
+            }`}
         >
           {/* Rail Header: Search & Category Chips */}
           <div className="p-2.5 border-b border-sl-border/40 space-y-2 bg-sl-bg/40 shrink-0">
@@ -342,11 +335,10 @@ export default function TutorialsPage() {
                       audio.haptic('tap');
                       setSelectedCategory(cat.id);
                     }}
-                    className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
-                      isSelected
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${isSelected
                         ? 'bg-sl-green text-white shadow-xs'
                         : 'bg-sl-panel border border-sl-border/70 text-sl-muted hover:text-sl-foreground'
-                    }`}
+                      }`}
                   >
                     {cat.label}
                   </button>
@@ -355,36 +347,33 @@ export default function TutorialsPage() {
             </div>
           </div>
 
-          {/* Module Selector List (Top Half of Left Rail) */}
-          <div className="h-44 xl:h-52 overflow-y-auto p-2 space-y-1 border-b border-sl-border/40 shrink-0">
+          {/* Module Selector List (Takes remaining height so all modules are clearly visible) */}
+          <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1">
             {filteredTutorials.map((tut, idx) => {
               const isActive = activeTutorial?.id === tut.id;
               return (
                 <div
                   key={tut.id}
                   onClick={() => handleSelectTutorial(tut)}
-                  className={`p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 ${
-                    isActive
+                  className={`p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 ${isActive
                       ? 'bg-sl-green/15 border-sl-green shadow-xs'
                       : 'bg-sl-bg/40 border-sl-border/60 hover:bg-sl-bg hover:border-sl-border'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span
-                      className={`w-5 h-5 rounded-md font-mono text-[9px] font-black flex items-center justify-center shrink-0 border ${
-                        isActive
+                      className={`w-5 h-5 rounded-md font-mono text-[9px] font-black flex items-center justify-center shrink-0 border ${isActive
                           ? 'bg-sl-green text-white border-sl-green'
                           : 'bg-sl-panel text-sl-muted border-sl-border'
-                      }`}
+                        }`}
                     >
                       {String(idx + 1).padStart(2, '0')}
                     </span>
 
                     <div className="min-w-0">
                       <h4
-                        className={`text-[11px] font-black truncate leading-tight ${
-                          isActive ? 'text-sl-green' : 'text-sl-foreground'
-                        }`}
+                        className={`text-[11px] font-black truncate leading-tight ${isActive ? 'text-sl-green' : 'text-sl-foreground'
+                          }`}
                       >
                         {tut.title}
                       </h4>
@@ -397,18 +386,17 @@ export default function TutorialsPage() {
                   </div>
 
                   <ChevronRight
-                    className={`w-3.5 h-3.5 shrink-0 transition-transform ${
-                      isActive ? 'text-sl-green translate-x-0.5' : 'text-sl-muted/50'
-                    }`}
+                    className={`w-3.5 h-3.5 shrink-0 transition-transform ${isActive ? 'text-sl-green translate-x-0.5' : 'text-sl-muted/50'
+                      }`}
                   />
                 </div>
               );
             })}
           </div>
 
-          {/* Practice Drills Checklist (Bottom Half of Left Rail - 100% Space Utilization!) */}
-          <div className="flex-1 min-h-0 flex flex-col p-2.5 bg-sl-green/5 overflow-hidden">
-            <div className="flex items-center justify-between pb-1.5 border-b border-sl-border/30 shrink-0">
+          {/* Practice Drills Checklist (Stuck to the bottom, height fits content) */}
+          <div className="shrink-0 mt-auto border-t border-sl-border/40 p-2.5 bg-sl-green/5 flex flex-col space-y-1.5">
+            <div className="flex items-center justify-between pb-1.5 border-b border-sl-border/30">
               <span className="text-[10px] font-black uppercase tracking-wider text-sl-green flex items-center gap-1.5 font-mono">
                 <Dumbbell className="w-3.5 h-3.5 text-sl-green" /> Practice Missions
               </span>
@@ -418,32 +406,29 @@ export default function TutorialsPage() {
               </span>
             </div>
 
-            <div className="flex-1 overflow-y-auto py-2 space-y-1.5">
+            <div className="max-h-48 overflow-y-auto py-1 space-y-1.5">
               {activeTutorial?.coaching_drills.map((drill, idx) => {
                 const isChecked = !!completedDrills[drill];
                 return (
                   <div
                     key={idx}
                     onClick={() => toggleDrill(drill)}
-                    className={`p-2 rounded-xl border transition-all cursor-pointer flex items-start gap-2 ${
-                      isChecked
+                    className={`p-2 rounded-xl border transition-all cursor-pointer flex items-start gap-2 ${isChecked
                         ? 'bg-sl-green/20 border-sl-green/60 text-sl-foreground'
                         : 'bg-sl-panel border-sl-border/70 hover:border-sl-green/40'
-                    }`}
+                      }`}
                   >
                     <div
-                      className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
-                        isChecked
+                      className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${isChecked
                           ? 'bg-sl-green border-sl-green text-white'
                           : 'border-sl-border bg-sl-bg'
-                      }`}
+                        }`}
                     >
                       {isChecked && <Check className="w-2.5 h-2.5 stroke-[3]" />}
                     </div>
                     <p
-                      className={`text-[11px] leading-snug font-medium select-none ${
-                        isChecked ? 'line-through text-sl-muted' : 'text-sl-foreground'
-                      }`}
+                      className={`text-[11px] leading-snug font-medium select-none ${isChecked ? 'line-through text-sl-muted' : 'text-sl-foreground'
+                        }`}
                     >
                       {drill}
                     </p>
@@ -453,7 +438,7 @@ export default function TutorialsPage() {
             </div>
 
             {/* Varsity Badge */}
-            <div className="pt-2 border-t border-sl-border/30 shrink-0 flex items-center justify-between text-[9px] font-mono text-sl-muted">
+            <div className="pt-1.5 border-t border-sl-border/30 flex items-center justify-between text-[9px] font-mono text-sl-muted">
               <span className="flex items-center gap-1 text-sl-green font-bold">
                 <Shield className="w-3 h-3 text-sl-green" /> UNN Verified
               </span>
@@ -466,9 +451,8 @@ export default function TutorialsPage() {
         {/* COLUMN 2: CENTER DEMONSTRATION ARENA (Visual Focus ~46% on xl)     */}
         {/* ------------------------------------------------------------------- */}
         <main
-          className={`flex-1 h-full min-w-0 flex-col bg-sl-panel border border-sl-border rounded-2xl overflow-hidden shadow-xs ${
-            mobileTab === 'visual' ? 'flex' : 'hidden xl:flex'
-          }`}
+          className={`flex-1 h-full min-w-0 flex-col bg-sl-panel border border-sl-border rounded-2xl overflow-hidden shadow-xs ${mobileTab === 'visual' ? 'flex' : 'hidden xl:flex'
+            }`}
         >
           {activeTutorial && (
             <div className="flex-1 flex flex-col min-h-0 p-2.5 sm:p-3 space-y-2.5 overflow-hidden">
@@ -583,11 +567,10 @@ export default function TutorialsPage() {
                   type="button"
                   disabled={!prevTutorial}
                   onClick={() => prevTutorial && handleSelectTutorial(prevTutorial)}
-                  className={`px-2.5 py-1.5 rounded-xl border text-xs font-black uppercase flex items-center gap-1.5 transition-all ${
-                    prevTutorial
+                  className={`px-2.5 py-1.5 rounded-xl border text-xs font-black uppercase flex items-center gap-1.5 transition-all ${prevTutorial
                       ? 'bg-sl-bg border-sl-border text-sl-foreground hover:bg-sl-panel cursor-pointer'
                       : 'opacity-40 border-sl-border/40 text-sl-muted cursor-not-allowed'
-                  }`}
+                    }`}
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Prev Lesson</span>
@@ -602,11 +585,10 @@ export default function TutorialsPage() {
                   type="button"
                   disabled={!nextTutorial}
                   onClick={() => nextTutorial && handleSelectTutorial(nextTutorial)}
-                  className={`px-2.5 py-1.5 rounded-xl border text-xs font-black uppercase flex items-center gap-1.5 transition-all ${
-                    nextTutorial
+                  className={`px-2.5 py-1.5 rounded-xl border text-xs font-black uppercase flex items-center gap-1.5 transition-all ${nextTutorial
                       ? 'bg-sl-green text-white border-sl-green hover:brightness-110 shadow-xs cursor-pointer'
                       : 'opacity-40 border-sl-border/40 text-sl-muted cursor-not-allowed'
-                  }`}
+                    }`}
                 >
                   <span className="hidden sm:inline">Next Lesson</span>
                   <span className="sm:hidden">Next</span>
@@ -621,9 +603,8 @@ export default function TutorialsPage() {
         {/* COLUMN 3: BIOMECHANICAL PLAYBOOK (Right ~30% on xl)                */}
         {/* ------------------------------------------------------------------- */}
         <section
-          className={`w-80 xl:w-96 shrink-0 h-full flex-col bg-sl-panel border border-sl-border rounded-2xl overflow-hidden ${
-            mobileTab === 'steps' ? 'flex flex-1 xl:flex-none' : 'hidden xl:flex'
-          }`}
+          className={`w-80 xl:w-96 shrink-0 h-full flex-col bg-sl-panel border border-sl-border rounded-2xl overflow-hidden ${mobileTab === 'steps' ? 'flex flex-1 xl:flex-none' : 'hidden xl:flex'
+            }`}
         >
           {/* Column Header */}
           <div className="p-2.5 border-b border-sl-border/40 bg-sl-bg/40 flex items-center justify-between shrink-0">
@@ -731,27 +712,24 @@ export default function TutorialsPage() {
                   <div
                     key={tut.id}
                     onClick={() => handleSelectTutorial(tut)}
-                    className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 ${
-                      isActive
+                    className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 ${isActive
                         ? 'bg-sl-green/15 border-sl-green shadow-xs'
                         : 'bg-sl-bg/40 border-sl-border/60 hover:bg-sl-bg'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <span
-                        className={`w-5 h-5 rounded-md font-mono text-[10px] font-black flex items-center justify-center shrink-0 border ${
-                          isActive
+                        className={`w-5 h-5 rounded-md font-mono text-[10px] font-black flex items-center justify-center shrink-0 border ${isActive
                             ? 'bg-sl-green text-white border-sl-green'
                             : 'bg-sl-panel text-sl-muted border-sl-border'
-                        }`}
+                          }`}
                       >
                         {String(idx + 1).padStart(2, '0')}
                       </span>
                       <div className="min-w-0">
                         <h4
-                          className={`text-xs font-black truncate ${
-                            isActive ? 'text-sl-green' : 'text-sl-foreground'
-                          }`}
+                          className={`text-xs font-black truncate ${isActive ? 'text-sl-green' : 'text-sl-foreground'
+                            }`}
                         >
                           {tut.title}
                         </h4>
