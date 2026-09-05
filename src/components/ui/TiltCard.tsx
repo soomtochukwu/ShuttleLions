@@ -8,6 +8,8 @@ interface TiltCardProps extends HTMLMotionProps<'div'> {
  className?: string;
  maxTilt?: number;
  glowEffect?: boolean;
+ translateZ?: number;
+ sheenOpacity?: number;
 }
 
 export function TiltCard({
@@ -15,6 +17,8 @@ export function TiltCard({
  className = '',
  maxTilt = 6,
  glowEffect = true,
+ translateZ = 10,
+ sheenOpacity = 0.4,
  ...props
 }: TiltCardProps) {
  const cardRef = useRef<HTMLDivElement>(null);
@@ -70,14 +74,15 @@ export function TiltCard({
  {/* Dynamic Light Sheen Overlay */}
  {glowEffect && isHovered && (
  <motion.div
- className="pointer-events-none absolute inset-0 z-20 opacity-40 mix-blend-overlay transition-opacity duration-300"
+ className="pointer-events-none absolute inset-0 z-20 mix-blend-overlay transition-opacity duration-300"
  style={{
+ opacity: sheenOpacity,
  background: `radial-gradient(circle at ${sheenX} ${sheenY}, rgba(255,255,255,0.45) 0%, transparent 60%)`,
  }}
  />
  )}
 
- <div className="relative z-10" style={{ transform: 'translateZ(10px)' }}>
+ <div className="relative z-10" style={{ transform: `translateZ(${translateZ}px)` }}>
  {children}
  </div>
  </motion.div>

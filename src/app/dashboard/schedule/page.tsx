@@ -903,7 +903,13 @@ export default function SchedulePage() {
             const attendeeCount = attendeeCounts[rsvpKey] || 0;
 
             return (
-              <TiltCard key={`${ev.id}-${sessionDate}`} maxTilt={3} className="p-4 sm:p-6 bg-sl-panel border border-sl-border">
+              <TiltCard
+                key={`${ev.id}-${sessionDate}`}
+                maxTilt={0.9}
+                translateZ={3}
+                sheenOpacity={0.12}
+                className="p-4 sm:p-6 bg-sl-panel border border-sl-border transition-all duration-200"
+              >
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6">
                   <div className="space-y-2 flex-1 w-full min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
@@ -961,7 +967,7 @@ export default function SchedulePage() {
                             ev.map_url
                           )
                         }
-                        className="flex items-center gap-1.5 text-sl-muted hover:text-sl-green transition-colors cursor-pointer group text-[11px] sm:text-xs"
+                        className="flex items-center gap-1.5 text-sl-muted hover:text-sl-green transition-colors duration-150 cursor-pointer group text-[11px] sm:text-xs"
                         title="Click to view court GPS coordinates & directions"
                       >
                         <MapPin className="w-3.5 h-3.5 text-sl-green shrink-0" />
@@ -978,7 +984,7 @@ export default function SchedulePage() {
                         <button
                           type="button"
                           onClick={() => handleOpenEditModal(ev)}
-                          className="p-2 sm:p-2.5 rounded-xl border border-sl-green/30 text-sl-green hover:bg-sl-green/10 transition-colors cursor-pointer"
+                          className="p-2 sm:p-2.5 rounded-xl border border-sl-green/30 text-sl-green hover:bg-sl-green/5 transition-colors duration-150 cursor-pointer"
                           title="Edit Schedule Details"
                         >
                           <Edit3 className="w-4 h-4" />
@@ -987,7 +993,7 @@ export default function SchedulePage() {
                         <button
                           type="button"
                           onClick={() => handleDeleteEvent(ev.id, ev.title)}
-                          className="p-2 sm:p-2.5 rounded-xl border border-rose-500/20 text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                          className="p-2 sm:p-2.5 rounded-xl border border-rose-500/20 text-rose-400 hover:bg-rose-500/5 transition-colors duration-150 cursor-pointer"
                           title="Delete Schedule"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -1000,7 +1006,7 @@ export default function SchedulePage() {
                       <button
                         type="button"
                         onClick={() => handleToggleRsvp(ev)}
-                        className="flex-1 md:flex-initial py-2 sm:py-2.5 px-4 sm:px-5 rounded-xl border border-sl-green/60 bg-sl-green/15 text-sl-green font-black text-xs flex items-center justify-center gap-2 shadow-[0_0_12px_rgba(0,200,83,0.25)] hover:bg-rose-500/15 hover:text-rose-400 hover:border-rose-500/40 transition-all cursor-pointer group"
+                        className="flex-1 md:flex-initial py-2 sm:py-2.5 px-4 sm:px-5 rounded-xl border border-sl-green/60 bg-sl-green/15 text-sl-green font-black text-xs flex items-center justify-center gap-2 shadow-[0_0_4px_rgba(0,200,83,0.08)] hover:bg-rose-500/8 hover:text-rose-400 hover:border-rose-500/30 transition-colors duration-150 cursor-pointer group"
                         title="Click to cancel your RSVP for this game"
                       >
                         <CheckCircle2 className="w-4 h-4 text-sl-green group-hover:hidden" />
@@ -1011,7 +1017,9 @@ export default function SchedulePage() {
                       <ShuttleButton
                         variant="green"
                         onClick={() => handleToggleRsvp(ev)}
-                        className="flex-1 md:flex-initial py-2 sm:py-2.5 px-4 sm:px-6 text-xs font-black shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                        whileHover={{ scale: 1.004, transition: { duration: 0.15 } }}
+                        whileTap={{ scale: 0.98, transition: { duration: 0.08 } }}
+                        className="flex-1 md:flex-initial py-2 sm:py-2.5 px-4 sm:px-6 text-xs font-black shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
                       >
                         <span>RSVP Going</span>
                       </ShuttleButton>
