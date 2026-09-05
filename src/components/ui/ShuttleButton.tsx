@@ -2,6 +2,7 @@
 
 import { motion, type HTMLMotionProps } from 'framer-motion';
 import { forwardRef, type ReactNode } from 'react';
+import { audio } from '@/lib/audio';
 
 type ButtonVariant = 'green' | 'white' | 'dark' | 'gray';
 
@@ -19,11 +20,15 @@ const variantClasses: Record<ButtonVariant, string> = {
 };
 
 export const ShuttleButton = forwardRef<HTMLButtonElement, ShuttleButtonProps>(
- ({ variant = 'green', fullWidth = false, className = '', children, ...props }, ref) => {
+ ({ variant = 'green', fullWidth = false, className = '', children, onPointerDown, ...props }, ref) => {
  return (
  <motion.button
  ref={ref}
  className={`${variantClasses[variant]} ${fullWidth ? 'w-full' : ''} ${className}`}
+ onPointerDown={(e) => {
+   audio.haptic('tap');
+   if (onPointerDown) onPointerDown(e);
+ }}
  whileTap={{
  scale: 0.96,
  transition: { duration: 0.08 },

@@ -2,14 +2,15 @@
 
 import { useRef, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { PARALLAX_ASSETS_CONFIG } from '@/config/parallax-assets';
+import { useParallaxConfig } from '@/config/parallax-assets';
 import { TiltCard } from '@/components/ui/TiltCard';
 import { Zap, Activity, ShieldCheck, Trophy } from 'lucide-react';
 
 export function ServeSequence() {
  const containerRef = useRef<HTMLDivElement>(null);
  const [imageError, setImageError] = useState(false);
- const config = PARALLAX_ASSETS_CONFIG.playerServer;
+ const { config: parallaxMap } = useParallaxConfig();
+ const config = parallaxMap.playerServer;
 
  const { scrollYProgress } = useScroll({
  target: containerRef,

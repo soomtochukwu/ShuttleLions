@@ -13,75 +13,104 @@ export type CustomRole = {
 };
 
 export type Profile = {
- id: string;
- auth_user_id: string;
- email: string;
- full_name: string;
- phone: string | null;
- faculty: string;
- department: string;
- level: string;
- reg_number: string | null;
- avatar_url: string | null;
- role: 'member' | 'admin' | 'captain' | 'media_personnel' | 'treasurer' | string;
- is_active: boolean;
- created_at: string;
- updated_at: string;
+  id: string;
+  auth_user_id: string;
+  email: string;
+  full_name: string;
+  phone: string | null;
+  faculty: string;
+  department: string;
+  level: string;
+  reg_number: string | null;
+  avatar_url: string | null;
+  role: 'member' | 'admin' | 'captain' | 'media_personnel' | 'treasurer' | string;
+  is_active: boolean;
+  notify_email?: boolean;
+  notify_device?: boolean;
+  notify_1h_before?: boolean;
+  notify_30m_before?: boolean;
+  push_subscription?: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type Payment = {
- id: string;
- profile_id: string;
- type: 'registration' | 'monthly' | 'racket';
- amount_kobo: number;
- status: 'pending' | 'success' | 'failed' | 'refunded';
- reference: string;
- provider: string;
- metadata: Record<string, unknown> | null;
- created_at: string;
- updated_at: string;
+  id: string;
+  profile_id: string;
+  type: 'registration' | 'monthly' | 'racket';
+  amount_kobo: number;
+  status: 'pending' | 'success' | 'failed' | 'refunded';
+  reference: string;
+  provider: string;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type RacketOrder = {
- id: string;
- profile_id: string;
- racket_model: string;
- quantity: number;
- unit_price_kobo: number;
- total_price_kobo: number;
- status: 'pending' | 'confirmed' | 'ordered' | 'shipped' | 'delivered' | 'cancelled';
- payment_id: string | null;
- notes: string | null;
- created_at: string;
- updated_at: string;
+  id: string;
+  profile_id: string;
+  racket_model: string;
+  quantity: number;
+  unit_price_kobo: number;
+  total_price_kobo: number;
+  status: 'pending' | 'confirmed' | 'ordered' | 'shipped' | 'delivered' | 'cancelled';
+  payment_id: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type EventItem = {
- id: string;
- title: string;
- description: string;
- event_type: 'training' | 'competition' | 'social' | 'meeting' | 'workshop';
- location: string;
- start_at: string;
- end_at: string;
- is_recurring: boolean;
- recurrence_rule: string | null;
- created_by: string | null;
- status: 'upcoming' | 'in_progress' | 'completed' | 'cancelled';
- latitude?: number | null;
- longitude?: number | null;
- map_url?: string | null;
- created_at: string;
- updated_at: string;
+  id: string;
+  title: string;
+  description: string;
+  event_type: 'training' | 'competition' | 'social' | 'meeting' | 'workshop';
+  location: string;
+  start_at: string;
+  end_at: string;
+  is_recurring: boolean;
+  recurrence_rule: string | null;
+  created_by: string | null;
+  status: 'upcoming' | 'in_progress' | 'completed' | 'cancelled';
+  latitude?: number | null;
+  longitude?: number | null;
+  map_url?: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type EventRSVP = {
- id: string;
- event_id: string;
- profile_id: string;
- status: 'going' | 'maybe' | 'not_going';
- created_at: string;
- updated_at: string;
+  id: string;
+  event_id: string;
+  profile_id: string;
+  session_date: string; // YYYY-MM-DD in WAT
+  status: 'going' | 'not_going';
+  created_at: string;
+  updated_at: string;
+};
+
+export type NotificationItem = {
+  id: string;
+  recipient_id: string | null;
+  title: string;
+  message: string;
+  type: 'game_reminder' | 'admin_broadcast' | 'rsvp_confirmation' | 'schedule_update' | 'system';
+  channels: string[];
+  metadata?: Record<string, unknown> | null;
+  is_read: boolean;
+  email_sent: boolean;
+  device_sent: boolean;
+  created_at: string;
+};
+
+export type NotificationDispatch = {
+  id: string;
+  event_id: string;
+  session_date: string;
+  profile_id: string;
+  reminder_type: '1h_before' | '30m_before' | 'admin_manual' | 'rsvp_confirm';
+  dispatched_at: string;
 };
 
 export type ChatChannel = {
@@ -207,17 +236,6 @@ export type Tutorial = {
  is_published: boolean;
  created_at: string;
  updated_at: string;
-};
-
-export type NotificationItem = {
- id: string;
- profile_id: string;
- type: 'general' | 'payment' | 'event' | 'poll' | 'order' | 'chat';
- title: string;
- body: string;
- link_url: string | null;
- is_read: boolean;
- created_at: string;
 };
 
 export type SiteAsset = {

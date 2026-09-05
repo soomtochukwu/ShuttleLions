@@ -9,9 +9,25 @@ export type SoundEffect =
 class AudioController {
  private context: AudioContext | null = null;
  private masterGain: GainNode | null = null;
+ private soundEnabled: boolean = true;
+ private hapticsEnabled: boolean = true;
+ private volume: number = 0.35; // Soft subtle level (0.0 - 1.0)
 
  constructor() {
- if (typeof window!== 'undefined') {
+ if (typeof window !== 'undefined') {
+ try {
+ const storedSound = localStorage.getItem('sl_sound_enabled');
+ if (storedSound !== null) this.soundEnabled = storedSound === 'true';
+
+ const storedVol = localStorage.getItem('sl_sound_volume');
+ if (storedVol !== null) this.volume = Math.max(0, Math.min(1, parseFloat(storedVol) || 0.35));
+
+ const storedHaptics = localStorage.getItem('sl_haptics_enabled');
+ if (storedHaptics !== null) this.hapticsEnabled = storedHaptics === 'true';
+ } catch (e) {
+ // Ignore localStorage error
+ }
+
  window.addEventListener('click', () => this.init(), { once: true });
  window.addEventListener('touchstart', () => this.init(), { once: true });
  window.addEventListener('keydown', () => this.init(), { once: true });
@@ -26,11 +42,79 @@ class AudioController {
 
  this.context = new AudioContextClass();
  this.masterGain = this.context.createGain();
- this.masterGain.gain.value = 0.3;
+ // Base gain reduced from loud 0.3 to gentle 0.08 multiplied by user volume
+ this.masterGain.gain.value = 0.08 * this.volume;
  this.masterGain.connect(this.context.destination);
  }
 
+ setVolume(newVol: number) {
+ this.volume = Math.max(0, Math.min(1, newVol));
+ if (this.masterGain) {
+ this.masterGain.gain.value = 0.08 * this.volume;
+ }
+ if (typeof window !== 'undefined') {
+ try {
+ localStorage.setItem('sl_sound_volume', String(this.volume));
+ } catch (e) {}
+ }
+ }
+
+ getVolume(): number {
+ return this.volume;
+ }
+
+ setEnabled(enabled: boolean) {
+ this.soundEnabled = enabled;
+ if (typeof window !== 'undefined') {
+ try {
+ localStorage.setItem('sl_sound_enabled', String(enabled));
+ } catch (e) {}
+ }
+ }
+
+ isEnabled(): boolean {
+ return this.soundEnabled;
+ }
+
+ setHapticsEnabled(enabled: boolean) {
+ this.hapticsEnabled = enabled;
+ if (typeof window !== 'undefined') {
+ try {
+ localStorage.setItem('sl_haptics_enabled', String(enabled));
+ } catch (e) {}
+ }
+ }
+
+ isHapticsEnabled(): boolean {
+ return this.hapticsEnabled;
+ }
+
+ haptic(type: 'tap' | 'success' | 'warning' | 'error' = 'tap') {
+ if (!this.hapticsEnabled || typeof navigator === 'undefined' || !navigator.vibrate) return;
+ try {
+ switch (type) {
+ case 'tap':
+ navigator.vibrate(15);
+ break;
+ case 'success':
+ navigator.vibrate([20, 40, 20]);
+ break;
+ case 'warning':
+ navigator.vibrate([30, 50, 40]);
+ break;
+ case 'error':
+ navigator.vibrate([50, 50, 50, 50]);
+ break;
+ }
+ } catch (e) {}
+ }
+
  play(effect: SoundEffect) {
+ // Trigger soft haptic feedback automatically alongside sounds
+ this.vibrate(effect);
+
+ if (!this.soundEnabled) return;
+
  if (!this.context ||!this.masterGain) {
  this.init();
  if (!this.context ||!this.masterGain) return;

@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { PARALLAX_ASSETS_CONFIG } from '@/config/parallax-assets';
+import { useParallaxConfig } from '@/config/parallax-assets';
 import { ShuttleButton } from '@/components/ui/ShuttleButton';
 import { audio } from '@/lib/audio';
 import { MapPin, ChevronDown, Sparkles } from 'lucide-react';
@@ -14,7 +14,8 @@ interface CourtEntranceProps {
 export function CourtEntrance({ onCtaClick }: CourtEntranceProps) {
  const containerRef = useRef<HTMLDivElement>(null);
  const [imageError, setImageError] = useState(false);
- const config = PARALLAX_ASSETS_CONFIG.courtEntrance;
+ const { config: parallaxMap } = useParallaxConfig();
+ const config = parallaxMap.courtEntrance;
 
  const { scrollYProgress } = useScroll({
  target: containerRef,

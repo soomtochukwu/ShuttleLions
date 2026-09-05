@@ -584,140 +584,145 @@ export default function MediaGalleryPage() {
  }
  };
 
- return (
- <div className="space-y-8 pb-16">
- {/* Header */}
- <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
- <div>
- <h1
- className="text-2xl sm:text-3xl font-black uppercase text-sl-foreground"
- style={{ fontFamily: 'var(--font-title)' }}
- >
- Vlogs & Match Media Gallery
- </h1>
- <p className="text-xs text-sl-muted font-medium mt-1">
- Official match highlights, tournament vlogs, and court footage curated by the Media Personnel.
- </p>
- </div>
+  return (
+    <div className="h-full flex flex-col min-h-0 space-y-3 sm:space-y-4">
+      {/* Pinned Non-Scrolling Header Section */}
+      <div className="shrink-0 space-y-3 sm:space-y-4 pb-3 sm:pb-4 border-b border-sl-border/40">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-4">
+          <div>
+            <h1
+              className="text-lg sm:text-2xl md:text-3xl font-black uppercase text-sl-foreground"
+              style={{ fontFamily: 'var(--font-title)' }}
+            >
+              Vlogs & Match Media Gallery
+            </h1>
+            <p className="text-[11px] sm:text-xs text-sl-muted font-medium mt-0.5">
+              Official match highlights, tournament vlogs, and court footage curated by the Media Personnel.
+            </p>
+          </div>
 
- {canUploadMedia ? (
- <div className="flex items-center gap-2.5">
- {/* Batch Selection Toggle Button */}
- <button
- onClick={() => {
- audio.play('rally');
- setIsSelectionMode((prev) =>!prev);
- if (isSelectionMode) {
- setSelectedMediaIds(new Set());
- }
- }}
- className={`py-2.5 px-4 rounded-xl text-xs font-black flex items-center gap-1.5 border transition-all ${
- isSelectionMode
- ? 'bg-amber-400/20 text-amber-300 border-amber-400 shadow-sm'
- : 'bg-sl-panel text-sl-foreground border-sl-border hover:border-sl-green'
- }`}
- >
- <ListChecks className="w-4 h-4" />
- <span>{isSelectionMode ? 'Exit Selection ' : 'Select Multiple '}</span>
- </button>
+          {canUploadMedia ? (
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              {/* Batch Selection Toggle Button */}
+              <button
+                onClick={() => {
+                  audio.play('rally');
+                  setIsSelectionMode((prev) => !prev);
+                  if (isSelectionMode) {
+                    setSelectedMediaIds(new Set());
+                  }
+                }}
+                className={`flex-1 sm:flex-initial py-2 sm:py-2.5 px-3 sm:px-4 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 border transition-all cursor-pointer ${
+                  isSelectionMode
+                    ? 'bg-amber-400/20 text-amber-300 border-amber-400 shadow-sm'
+                    : 'bg-sl-panel text-sl-foreground border-sl-border hover:border-sl-green'
+                }`}
+              >
+                <ListChecks className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span>{isSelectionMode ? 'Exit Selection' : 'Select Multiple'}</span>
+              </button>
 
- {/* Upload Button */}
- <ShuttleButton
- variant="green"
- onClick={() => {
- audio.play('rally');
- setIsUploadOpen(true);
- }}
- className="py-2.5 px-5 text-xs font-black flex items-center gap-1.5 shadow-md"
- >
- <Plus className="w-4 h-4" />
- <span>Upload Media / Batch </span>
- </ShuttleButton>
- </div>
- ) : (
- <div className="flex items-center gap-2 bg-sl-panel px-3 py-2 rounded-xl border border-sl-border text-xs text-sl-muted font-semibold">
- <Video className="w-4 h-4 text-cyan-400" />
- <span>Curated by Media Personnel</span>
- </div>
- )}
- </div>
+              {/* Upload Button */}
+              <ShuttleButton
+                variant="green"
+                onClick={() => {
+                  audio.play('rally');
+                  setIsUploadOpen(true);
+                }}
+                className="flex-1 sm:flex-initial py-2 sm:py-2.5 px-4 sm:px-5 text-xs font-black flex items-center justify-center gap-1.5 shadow-md"
+              >
+                <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span>Upload Media / Batch</span>
+              </ShuttleButton>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 bg-sl-panel px-3 py-1.5 sm:py-2 rounded-xl border border-sl-border text-xs text-sl-muted font-semibold">
+              <Video className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Curated by Media Personnel</span>
+            </div>
+          )}
+        </div>
 
- {/* Media Personnel Banner */}
- {!canUploadMedia && (
- <div className="p-3.5 bg-sl-panel/80 rounded-2xl border border-sl-border/80 flex items-center justify-between text-xs text-sl-muted font-medium">
- <div className="flex items-center gap-2">
- <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
- <span>
- Official video vlogs and training clips are published exclusively by the appointed <strong>ShuttleLions Media Personnel</strong>.
- </span>
- </div>
- </div>
- )}
+        {/* Media Personnel Banner */}
+        {!canUploadMedia && (
+          <div className="p-3 bg-sl-panel/80 rounded-xl border border-sl-border/80 flex items-center justify-between text-xs text-sl-muted font-medium">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
+              <span className="text-[11px] sm:text-xs">
+                Official video vlogs and training clips are published exclusively by the appointed <strong>ShuttleLions Media Personnel</strong>.
+              </span>
+            </div>
+          </div>
+        )}
 
- {/* Filter Tabs & Selection Mode Banner */}
- <div className="flex flex-wrap items-center justify-between gap-4">
- <div className="flex flex-wrap items-center gap-2 bg-sl-panel p-1 rounded-xl border border-sl-border w-fit">
- <button
- onClick={() => {
- audio.play('rally');
- setFilter('all');
- }}
- className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
- filter === 'all' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
- }`}
- >
- All Media ({mediaList.length})
- </button>
- <button
- onClick={() => {
- audio.play('rally');
- setFilter('training');
- }}
- className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
- filter === 'training' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
- }`}
- >
- Training Drills
- </button>
- <button
- onClick={() => {
- audio.play('rally');
- setFilter('highlights');
- }}
- className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
- filter === 'highlights' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
- }`}
- >
- Match Highlights
- </button>
- <button
- onClick={() => {
- audio.play('rally');
- setFilter('photos');
- }}
- className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
- filter === 'photos' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
- }`}
- >
- Photos & Stills
- </button>
- </div>
+        {/* Filter Tabs & Selection Mode Banner */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4">
+          <div className="flex items-center gap-1.5 bg-sl-panel p-1 rounded-xl border border-sl-border overflow-x-auto no-scrollbar max-w-full">
+            <button
+              onClick={() => {
+                audio.play('rally');
+                setFilter('all');
+              }}
+              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+                filter === 'all' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
+              }`}
+            >
+              All Media ({mediaList.length})
+            </button>
+            <button
+              onClick={() => {
+                audio.play('rally');
+                setFilter('training');
+              }}
+              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+                filter === 'training' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
+              }`}
+            >
+              Training Drills
+            </button>
+            <button
+              onClick={() => {
+                audio.play('rally');
+                setFilter('highlights');
+              }}
+              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+                filter === 'highlights' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
+              }`}
+            >
+              Match Highlights
+            </button>
+            <button
+              onClick={() => {
+                audio.play('rally');
+                setFilter('photos');
+              }}
+              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+                filter === 'photos' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
+              }`}
+            >
+              Photos & Stills
+            </button>
+          </div>
 
- {isSelectionMode && (
- <div className="flex items-center gap-2 text-xs font-bold text-sl-muted">
- <span>{selectedMediaIds.size} of {filteredMedia.length} selected</span>
- <button
- onClick={selectedMediaIds.size === filteredMedia.length ? deselectAll : selectAllFiltered}
- className="text-sl-green hover:underline ml-1"
- >
- {selectedMediaIds.size === filteredMedia.length ? 'Deselect All' : 'Select All'}
- </button>
- </div>
- )}
- </div>
+          {isSelectionMode && (
+            <div className="flex items-center gap-2 text-xs font-bold text-sl-muted">
+              <span>{selectedMediaIds.size} of {filteredMedia.length} selected</span>
+              <button
+                onClick={selectedMediaIds.size === filteredMedia.length ? deselectAll : selectAllFiltered}
+                className="text-sl-green hover:underline ml-1 cursor-pointer"
+              >
+                {selectedMediaIds.size === filteredMedia.length ? 'Deselect All' : 'Select All'}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
 
- {/* Media Grid */}
- <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      {/* Scrollable Content Only */}
+      <div className="flex-1 overflow-y-auto min-h-0 pr-1 pb-6 pt-1">
+        {/* Media Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
  {filteredMedia.map((m) => {
  const parsed = parseMediaSource(m.media_url, m.thumbnail_url);
  const isOwnerOrAdmin = canUploadMedia || m.uploader_id === user?.id;
@@ -896,6 +901,7 @@ export default function MediaGalleryPage() {
  </TiltCard>
  );
  })}
+ </div>
  </div>
 
  {/* Floating Batch Action Toolbar */}

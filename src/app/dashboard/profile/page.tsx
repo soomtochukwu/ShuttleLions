@@ -1,416 +1,286 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import React from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/components/AuthContext';
 import { TiltCard } from '@/components/ui/TiltCard';
-import { ShuttleButton } from '@/components/ui/ShuttleButton';
-import { ShuttleInput } from '@/components/ui/ShuttleInput';
-import { ShuttleSelect } from '@/components/ui/ShuttleSelect';
-import { useFeedback } from '@/components/ui/FeedbackModal';
-import { FACULTIES_AND_DEPARTMENTS, LEVELS } from '@/lib/constants';
-import { supabase } from '@/lib/supabase';
 import { audio } from '@/lib/audio';
 import {
- ShieldCheck,
- User,
- QrCode,
- Sparkles,
- Camera,
- Upload,
- Link as LinkIcon,
- RefreshCw,
- Image as ImageIcon,
+  ShieldCheck,
+  QrCode,
+  Settings,
+  User,
+  GraduationCap,
+  Calendar,
+  Award,
+  Phone,
+  Mail,
+  ChevronRight,
+  Sparkles,
+  Printer,
+  CheckCircle2,
 } from 'lucide-react';
 
 export default function ProfilePage() {
- const { user, refreshProfile } = useAuth();
- const { showAlert } = useFeedback();
+  const { user } = useAuth();
 
- const [fullName, setFullName] = useState(user?.full_name || '');
- const [faculty, setFaculty] = useState(user?.faculty || Object.keys(FACULTIES_AND_DEPARTMENTS)[0]);
- const [department, setDepartment] = useState(user?.department || '');
- const [level, setLevel] = useState(user?.level || '100');
- const [phone, setPhone] = useState(user?.phone || '');
- const [regNumber, setRegNumber] = useState(user?.reg_number || '');
+  const fullName = user?.full_name || 'UNN Athlete';
+  const regNumber = user?.reg_number || '2024/UNN-SL/89';
+  const faculty = user?.faculty || 'Faculty of Education';
+  const department = user?.department || 'Department pending';
+  const level = user?.level || '100';
+  const avatarUrl = user?.avatar_url || null;
+  const role = user?.role || 'Member';
 
- // Avatar customizer state
- const [avatarMode, setAvatarMode] = useState<'file' | 'url'>('file');
- const [avatarUrlInput, setAvatarUrlInput] = useState(user?.avatar_url || '');
- const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
- const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatar_url || null);
- const [isSaving, setIsSaving] = useState(false);
- const [uploadProgress, setUploadProgress] = useState<string | null>(null);
+  const handlePrintOrSave = () => {
+    audio.haptic('tap');
+    if (typeof window !== 'undefined') {
+      window.print();
+    }
+  };
 
- const fileInputRef = useRef<HTMLInputElement>(null);
+  return (
+    <div className="space-y-8 max-w-5xl mx-auto pb-12">
+      {/* Header with Title and Action to Settings */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-sl-border/40 pb-5">
+        <div>
+          <h1
+            className="text-2xl sm:text-3xl font-black uppercase text-sl-foreground"
+            style={{ fontFamily: 'var(--font-title)' }}
+          >
+            Digital Lion ID Pass
+          </h1>
+          <p className="text-xs sm:text-sm text-sl-muted font-medium mt-1">
+            Official verified athlete credential and court access pass for UNN ShuttleLions.
+          </p>
+        </div>
 
- const availableDepts = FACULTIES_AND_DEPARTMENTS[faculty] || [];
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={handlePrintOrSave}
+            className="px-3.5 py-2 rounded-xl border border-sl-border bg-sl-panel hover:bg-sl-bg text-sl-foreground text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+          >
+            <Printer className="w-3.5 h-3.5 text-sl-green" />
+            <span>Print Pass</span>
+          </button>
 
- const handleFacultyChange = (newFac: string) => {
- setFaculty(newFac);
- const depts = FACULTIES_AND_DEPARTMENTS[newFac] || [];
- setDepartment(depts[0] || '');
- };
+          <Link
+            href="/dashboard/settings"
+            onClick={() => {
+              audio.haptic('tap');
+              audio.play('rally');
+            }}
+            className="px-4 py-2 rounded-xl bg-sl-green hover:bg-sl-green-glow hover:text-black text-white text-xs font-black transition-all flex items-center gap-2 shadow-md"
+          >
+            <Settings className="w-3.5 h-3.5" />
+            <span>Edit in Settings</span>
+          </Link>
+        </div>
+      </div>
 
- const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
- const file = e.target.files?.[0];
- if (!file) return;
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* ========================================================================= */}
+        {/* LEFT / CENTER: 3D HOLOGRAPHIC LION ID PASS                                */}
+        {/* ========================================================================= */}
+        <div className="lg:col-span-6 space-y-4">
+          <TiltCard className="p-7 bg-gradient-to-br from-[#0c2616] via-[#051408] to-[#010903] text-white border-2 border-sl-green shadow-2xl relative overflow-hidden rounded-3xl">
+            {/* Ambient Holographic Accents */}
+            <div className="absolute -top-12 -right-12 w-44 h-44 bg-sl-green/25 blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-12 -left-12 w-44 h-44 bg-sl-green-glow/15 blur-3xl pointer-events-none" />
 
- if (!file.type.startsWith('image/')) {
- showAlert({
- title: 'Unsupported Image',
- message: 'Please select a valid image file (PNG, JPG, WEBP, GIF).',
- type: 'warning',
- });
- return;
- }
+            <div className="space-y-6 relative z-10">
+              {/* Pass Header */}
+              <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-sl-green/30 border border-sl-green-glow/50 flex items-center justify-center font-black text-sl-green-glow shadow-[0_0_12px_rgba(0,230,118,0.3)]">
+                    SL
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black tracking-widest text-sl-green-glow uppercase">
+                      SHUTTLELIONS
+                    </h3>
+                    <p className="text-[9px] text-white/70 tracking-wider">UNN ATHLETICS PASS</p>
+                  </div>
+                </div>
 
- if (file.size > 5 * 1024 * 1024) {
- showAlert({
- title: 'Image Too Large',
- message: 'Athlete photo must be under 5MB.',
- type: 'warning',
- });
- return;
- }
+                <span className="text-[10px] font-black uppercase bg-sl-green text-white px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm border border-sl-green-glow/40">
+                  <ShieldCheck className="w-3.5 h-3.5" /> VERIFIED ATHLETE
+                </span>
+              </div>
 
- setSelectedAvatarFile(file);
- const localPreviewUrl = URL.createObjectURL(file);
- setAvatarPreview(localPreviewUrl);
- audio.play('rally');
- };
+              {/* Lion Avatar & Info Showcase */}
+              <div className="flex items-center gap-4">
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={fullName}
+                    className="w-20 h-20 rounded-2xl object-cover border-2 border-sl-green-glow shadow-[0_0_20px_rgba(0,230,118,0.4)] shrink-0"
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-2xl bg-sl-green/30 border-2 border-sl-green-glow text-white font-black text-3xl flex items-center justify-center shadow-lg shrink-0">
+                    {fullName.charAt(0)}
+                  </div>
+                )}
 
- const handleUrlChange = (url: string) => {
- setAvatarUrlInput(url);
- setSelectedAvatarFile(null);
- setAvatarPreview(url.trim() || user?.avatar_url || null);
- };
+                <div className="space-y-1 flex-1 min-w-0">
+                  <h4 className="text-lg font-black text-white truncate leading-tight">
+                    {fullName}
+                  </h4>
+                  <p className="text-xs text-sl-green-glow font-mono font-bold">
+                    {regNumber}
+                  </p>
+                  <p className="text-xs text-white/80 truncate">
+                    {department}
+                  </p>
+                </div>
+              </div>
 
- const handleSave = async (e: React.FormEvent) => {
- e.preventDefault();
- if (!user?.id) return;
- setIsSaving(true);
- setUploadProgress('Updating profile...');
- audio.play('serve');
+              {/* Faculty & Level Specs */}
+              <div className="grid grid-cols-2 gap-2.5 bg-white/5 p-3.5 rounded-2xl border border-white/10 text-xs">
+                <div>
+                  <span className="text-[10px] text-white/50 uppercase font-bold tracking-wider">
+                    Faculty
+                  </span>
+                  <p className="font-bold text-white truncate mt-0.5">{faculty}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] text-white/50 uppercase font-bold tracking-wider">
+                    Academic Level
+                  </span>
+                  <p className="font-bold text-sl-green-glow mt-0.5">{level} Level</p>
+                </div>
+              </div>
 
- try {
- let finalAvatarUrl = avatarPreview;
+              {/* QR Code Barcode Validation */}
+              <div className="flex items-center justify-between pt-2 border-t border-white/10">
+                <div className="flex items-center gap-3">
+                  <div className="p-1.5 rounded-xl bg-white/10 border border-white/20">
+                    <QrCode className="w-8 h-8 text-white" />
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-mono text-white/60 uppercase block leading-tight">
+                      COURT ENTRY SCAN
+                    </span>
+                    <span className="text-[10px] font-mono text-sl-green-glow font-bold">
+                      SL-VERIFIED-AUTH
+                    </span>
+                  </div>
+                </div>
 
- // If a new image file was selected, upload it to Supabase Storage
- if (selectedAvatarFile) {
- setUploadProgress('Uploading athlete photo to cloud storage...');
- const fileExt = selectedAvatarFile.name.split('.').pop() || 'jpg';
- const filePath = `avatars/${user.id}-${Date.now()}.${fileExt}`;
+                <div className="text-right">
+                  <span className="text-[9px] text-white/50 uppercase block font-mono">SEASON</span>
+                  <span className="text-[11px] font-mono font-black text-white">2026/2027</span>
+                </div>
+              </div>
+            </div>
+          </TiltCard>
 
- const { error: uploadError } = await supabase.storage
- .from('media-gallery')
- .upload(filePath, selectedAvatarFile, {
- cacheControl: '3600',
- upsert: true,
- });
+          <p className="text-xs text-sl-muted text-center italic">
+            Tip: Move your mouse or tilt your phone to inspect the 3D holographic foil effect.
+          </p>
+        </div>
 
- if (uploadError) {
- console.error('Storage upload notice:', uploadError);
- // If storage upload fails, fallback to existing or data preview
- } else {
- const { data: publicData } = supabase.storage
- .from('media-gallery')
- .getPublicUrl(filePath);
- if (publicData?.publicUrl) {
- finalAvatarUrl = publicData.publicUrl;
- }
- }
- } else if (avatarMode === 'url' && avatarUrlInput.trim()) {
- finalAvatarUrl = avatarUrlInput.trim();
- }
+        {/* ========================================================================= */}
+        {/* RIGHT: ATHLETE CREDENTIALS & COURT ACCESS PROTOCOLS                      */}
+        {/* ========================================================================= */}
+        <div className="lg:col-span-6 space-y-6">
+          {/* Card 1: Official Player Profile Summary */}
+          <div className="shuttle-panel p-6 bg-sl-panel space-y-4">
+            <div className="flex items-center justify-between border-b border-sl-border/30 pb-3">
+              <h3 className="text-sm font-black text-sl-foreground uppercase flex items-center gap-2">
+                <User className="w-4 h-4 text-sl-green" /> Athlete Credentials
+              </h3>
+              <Link
+                href="/dashboard/settings"
+                onClick={() => audio.haptic('tap')}
+                className="text-xs font-bold text-sl-green hover:underline flex items-center gap-1"
+              >
+                <span>Update in Settings</span>
+                <ChevronRight className="w-3 h-3" />
+              </Link>
+            </div>
 
- setUploadProgress('Saving credentials to database...');
+            <div className="space-y-3 text-xs">
+              <div className="flex items-center justify-between py-1.5 border-b border-sl-border/20">
+                <span className="text-sl-muted font-semibold">Full Legal Name:</span>
+                <span className="font-bold text-sl-foreground">{fullName}</span>
+              </div>
 
- await supabase
- .from('profiles')
- .update({
- full_name: fullName.trim(),
- avatar_url: finalAvatarUrl,
- faculty,
- department,
- level,
- phone: phone.trim() || null,
- reg_number: regNumber.trim() || null,
- updated_at: new Date().toISOString(),
- })
- .eq('id', user.id);
+              <div className="flex items-center justify-between py-1.5 border-b border-sl-border/20">
+                <span className="text-sl-muted font-semibold">Club Designation:</span>
+                <span className="font-bold text-sl-green uppercase">{role}</span>
+              </div>
 
- await refreshProfile();
- showAlert({
- title: 'Profile Updated! ',
- message: 'Your athlete credentials and Digital Lion ID Pass have been saved successfully.',
- type: 'success',
- });
- } catch (err: any) {
- console.error(err);
- showAlert({
- title: 'Update Failed',
- message: 'Failed to update profile. Please try again.',
- type: 'error',
- });
- } finally {
- setIsSaving(false);
- setUploadProgress(null);
- }
- };
+              <div className="flex items-center justify-between py-1.5 border-b border-sl-border/20">
+                <span className="text-sl-muted font-semibold">Institution:</span>
+                <span className="font-bold text-sl-foreground">University of Nigeria, Nsukka</span>
+              </div>
 
- return (
- <div className="space-y-8">
- {/* Header */}
- <div>
- <h1
- className="text-2xl sm:text-3xl font-black uppercase text-sl-foreground"
- style={{ fontFamily: 'var(--font-title)' }}
- >
- Athlete Profile & Digital ID
- </h1>
- <p className="text-xs text-sl-muted font-medium mt-1">
- Customize your photo, manage student athlete credentials, and present your verified pass for court entry.
- </p>
- </div>
+              <div className="flex items-center justify-between py-1.5 border-b border-sl-border/20">
+                <span className="text-sl-muted font-semibold">Faculty / Department:</span>
+                <span className="font-bold text-sl-foreground text-right max-w-[200px] truncate">
+                  {department} ({faculty})
+                </span>
+              </div>
 
- <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
- {/* Left: Digital Member ID Card (3D Tilt with Live Preview) */}
- <div className="lg:col-span-5 space-y-4">
- <TiltCard className="p-6 bg-gradient-to-br from-[#0a2012] via-[#041006] to-[#010803] text-white border-2 border-sl-green shadow-2xl relative overflow-hidden">
- {/* Hologram Corner Accent */}
- <div className="absolute top-0 right-0 w-32 h-32 bg-sl-green/20 blur-3xl pointer-events-none" />
+              <div className="flex items-center justify-between py-1.5 border-b border-sl-border/20">
+                <span className="text-sl-muted font-semibold">Student Reg Number:</span>
+                <span className="font-mono font-bold text-sl-foreground">{regNumber}</span>
+              </div>
 
- <div className="space-y-6">
- {/* ID Header */}
- <div className="flex items-center justify-between border-b border-white/10 pb-4">
- <div className="flex items-center gap-2">
- <span className="text-2xl"></span>
- <div>
- <h3 className="text-sm font-black tracking-widest text-sl-green-glow uppercase">
- SHUTTLELIONS
- </h3>
- <p className="text-[9px] text-white/60 tracking-wider">UNN ATHLETICS PASS</p>
- </div>
- </div>
- <span className="text-[10px] font-black uppercase bg-sl-green text-white px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
- <ShieldCheck className="w-3 h-3" /> VERIFIED
- </span>
- </div>
+              <div className="flex items-center justify-between py-1.5">
+                <span className="text-sl-muted font-semibold">Primary Contact:</span>
+                <span className="font-bold text-sl-foreground">{user?.email || 'N/A'}</span>
+              </div>
+            </div>
+          </div>
 
- {/* Lion Avatar & Info (Live Real-Time Preview) */}
- <div className="flex items-center gap-4">
- {avatarPreview ? (
- <img
- src={avatarPreview}
- alt={fullName || 'Athlete Photo'}
- className="w-16 h-16 rounded-2xl object-cover border-2 border-sl-green-glow shadow-[0_0_15px_rgba(0,230,118,0.4)]"
- />
- ) : (
- <div className="w-16 h-16 rounded-2xl bg-sl-green/30 border-2 border-sl-green-glow text-white font-black text-3xl flex items-center justify-center shadow-lg">
- {fullName?.charAt(0) || 'L'}
- </div>
- )}
- <div className="space-y-0.5 flex-1 min-w-0">
- <h4 className="text-base font-black text-white truncate">
- {fullName || user?.full_name || 'UNN Student'}
- </h4>
- <p className="text-xs text-sl-green-glow font-mono font-bold">
- {regNumber || user?.reg_number || '2024/UNN-SL/89'}
- </p>
- <p className="text-[11px] text-white/70 truncate">
- {department || user?.department || 'Department pending'}
- </p>
- </div>
- </div>
+          {/* Card 2: Court Entry Validation Guidelines */}
+          <div className="shuttle-panel p-6 bg-sl-panel space-y-4">
+            <h3 className="text-sm font-black text-sl-foreground uppercase flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-sl-green" /> Court Check-In Rules
+            </h3>
 
- {/* Faculty & Level Specs */}
- <div className="grid grid-cols-2 gap-2 bg-white/5 p-3 rounded-xl border border-white/10 text-xs">
- <div>
- <span className="text-[10px] text-white/50 uppercase font-bold">Faculty</span>
- <p className="font-bold text-white truncate">{faculty || 'Faculty of Education'}</p>
- </div>
- <div>
- <span className="text-[10px] text-white/50 uppercase font-bold">Level</span>
- <p className="font-bold text-sl-green-glow">{level} Level</p>
- </div>
- </div>
+            <div className="space-y-3 text-xs text-sl-muted leading-relaxed">
+              <div className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-sl-green shrink-0 mt-0.5" />
+                <span>
+                  <strong>Barcode Validation:</strong> Present the Digital Lion ID Pass on your phone at the UNN indoor gymnasium entrance for authorized access.
+                </span>
+              </div>
 
- {/* QR Code Barcode Verification */}
- <div className="flex items-center justify-between pt-2 border-t border-white/10 text-xs">
- <div className="flex items-center gap-2">
- <QrCode className="w-8 h-8 text-white/80" />
- <span className="text-[9px] font-mono text-white/50 leading-tight">
- SCAN FOR COURT<br />ENTRY VALIDATION
- </span>
- </div>
- <span className="text-[10px] font-mono text-sl-green-glow font-bold">
- ACTIVE 2026/2027
- </span>
- </div>
- </div>
- </TiltCard>
+              <div className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-sl-green shrink-0 mt-0.5" />
+                <span>
+                  <strong>Footwear Protocol:</strong> Only non-marking indoor court shoes are allowed inside the main badminton courts to protect the wooden surface.
+                </span>
+              </div>
 
- <p className="text-[11px] text-sl-muted text-center italic">
- The Digital ID card reflects your live photo and details in real-time.
- </p>
- </div>
+              <div className="flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-sl-green shrink-0 mt-0.5" />
+                <span>
+                  <strong>RSVP Confirmation:</strong> Always confirm your game attendance on the Schedule page to guarantee reserved court time.
+                </span>
+              </div>
+            </div>
 
- {/* Right: Profile Edit Form */}
- <div className="lg:col-span-7 space-y-6">
- <form onSubmit={handleSave} className="shuttle-panel p-6 sm:p-8 bg-sl-panel space-y-6">
- <h3 className="text-lg font-black text-sl-foreground uppercase flex items-center gap-2">
- <User className="w-4 h-4 text-sl-green" /> Edit Information & Photo
- </h3>
-
- {/* Profile Picture Upload Section */}
- <div className="p-4 rounded-xl bg-sl-bg border border-sl-border space-y-3">
- <div className="flex items-center justify-between">
- <label className="text-xs font-black uppercase text-sl-foreground flex items-center gap-1.5">
- <Camera className="w-3.5 h-3.5 text-sl-green" /> Athlete Profile Picture
- </label>
- <div className="flex items-center gap-1 bg-sl-panel p-1 rounded-lg border border-sl-border text-[11px] font-bold">
- <button
- type="button"
- onClick={() => setAvatarMode('file')}
- className={`px-2.5 py-1 rounded transition-colors ${
- avatarMode === 'file' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
- }`}
- >
- Upload File
- </button>
- <button
- type="button"
- onClick={() => setAvatarMode('url')}
- className={`px-2.5 py-1 rounded transition-colors ${
- avatarMode === 'url' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
- }`}
- >
- Image Link
- </button>
- </div>
- </div>
-
- {avatarMode === 'file' ? (
- <div className="space-y-2">
- <input
- type="file"
- ref={fileInputRef}
- onChange={handleFileSelect}
- accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
- className="hidden"
- />
- <div
- onClick={() => fileInputRef.current?.click()}
- className="cursor-pointer border-2 border-dashed border-sl-border hover:border-sl-green rounded-xl p-4 text-center transition-all bg-sl-panel hover:bg-sl-green/5 flex flex-col items-center justify-center gap-2"
- >
- <div className="w-10 h-10 rounded-full bg-sl-green/10 text-sl-green flex items-center justify-center">
- <Upload className="w-5 h-5" />
- </div>
- <div>
- <p className="text-xs font-bold text-sl-foreground">
- {selectedAvatarFile ? selectedAvatarFile.name : 'Click to select photo from device'}
- </p>
- <p className="text-[10px] text-sl-muted mt-0.5">
- Supports JPG, PNG, WEBP up to 5MB
- </p>
- </div>
- </div>
- </div>
- ) : (
- <div className="space-y-1">
- <div className="relative">
- <ShuttleInput
- value={avatarUrlInput}
- onChange={(e) => handleUrlChange(e.target.value)}
- placeholder="Paste image link (https://...)"
- />
- </div>
- <p className="text-[10px] text-sl-muted">
- Paste any public image URL (Google Drive photo, Cloudinary, Imgur, etc.)
- </p>
- </div>
- )}
- </div>
-
- {/* General Info Fields */}
- <div className="space-y-4">
- <ShuttleInput
- label="Full Name"
- value={fullName}
- onChange={(e) => setFullName(e.target.value)}
- placeholder="e.g. Okeke Chukwudi Emmanuel"
- required
- />
-
- <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
- <ShuttleSelect
- label="Faculty"
- value={faculty}
- onChange={(e) => handleFacultyChange(e.target.value)}
- options={Object.keys(FACULTIES_AND_DEPARTMENTS).map((fac) => ({
- value: fac,
- label: fac,
- }))}
- />
-
- <ShuttleSelect
- label="Department"
- value={department}
- onChange={(e) => setDepartment(e.target.value)}
- options={availableDepts.map((dept) => ({
- value: dept,
- label: dept,
- }))}
- />
- </div>
-
- <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
- <ShuttleSelect
- label="Academic Level"
- value={level}
- onChange={(e) => setLevel(e.target.value)}
- options={LEVELS.map((lvl) => ({
- value: lvl,
- label: `${lvl} Level`,
- }))}
- />
-
- <ShuttleInput
- label="Registration Number"
- value={regNumber}
- onChange={(e) => setRegNumber(e.target.value)}
- placeholder="e.g. 2021/174932"
- />
-
- <ShuttleInput
- label="Phone Number"
- value={phone}
- onChange={(e) => setPhone(e.target.value)}
- placeholder="+234..."
- />
- </div>
- </div>
-
- <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
- {uploadProgress && (
- <span className="text-xs font-bold text-sl-green animate-pulse">
- {uploadProgress}
- </span>
- )}
- <div className="ml-auto">
- <ShuttleButton
- type="submit"
- variant="green"
- disabled={isSaving}
- className="py-3 px-8 text-xs font-black shadow-md"
- >
- {isSaving ? 'Saving Profile...' : 'Save Profile Changes '}
- </ShuttleButton>
- </div>
- </div>
- </form>
- </div>
- </div>
- </div>
- );
+            <div className="pt-2">
+              <Link
+                href="/dashboard/schedule"
+                onClick={() => {
+                  audio.haptic('tap');
+                  audio.play('rally');
+                }}
+                className="w-full py-2.5 rounded-xl border border-sl-border bg-sl-bg hover:bg-sl-green hover:text-white text-sl-foreground text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm"
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                <span>Browse Court Schedules & RSVPs</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

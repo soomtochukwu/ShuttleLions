@@ -25,12 +25,17 @@ import {
   Moon,
   Laptop,
   Home,
+  Settings,
 } from 'lucide-react';
 import { audio } from '@/lib/audio';
+import { NotificationScheduler } from '@/components/notifications/NotificationScheduler';
+import { RealtimeNotificationListener } from '@/components/notifications/RealtimeNotificationListener';
+import { PWAInstallPrompt } from '@/components/pwa/PWAInstallPrompt';
 
 const DASHBOARD_NAV = [
   { label: 'Overview', href: '/dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
-  { label: 'My Profile & ID', href: '/dashboard/profile', icon: <User className="w-4 h-4" /> },
+  { label: 'Digital Lion ID', href: '/dashboard/profile', icon: <User className="w-4 h-4" /> },
+  { label: 'Settings', href: '/dashboard/settings', icon: <Settings className="w-4 h-4" /> },
   { label: 'Executive Board', href: '/dashboard/community/executives', icon: <Crown className="w-4 h-4 text-sl-green" />, badge: 'Roles' },
   { label: 'Games & Schedules', href: '/dashboard/schedule', icon: <Calendar className="w-4 h-4" /> },
   { label: 'Member Directory', href: '/dashboard/community', icon: <Users className="w-4 h-4" />, badge: 'Paid' },
@@ -84,8 +89,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const activeNavItem = DASHBOARD_NAV.find((item) => item.href === pathname);
   const pageTitle = activeNavItem?.label || (pathname === '/dashboard/admin' ? 'Admin Command Room' : 'Dashboard');
 
+  const isFixedLayoutPage = [
+    '/dashboard/media',
+    '/dashboard/community',
+    '/dashboard/community/executives',
+    '/dashboard/schedule',
+  ].includes(pathname);
+
   return (
     <div className="h-screen w-screen overflow-hidden flex flex-col bg-sl-bg text-sl-foreground">
+      {/* Background Notification Scheduler for Pre-Game Reminders */}
+      <NotificationScheduler />
+
+      {/* Realtime Supabase Notification Listener with Sounds, Haptics & Heads-up Banner */}
+      <RealtimeNotificationListener />
+
+      {/* Mobile PWA Install Prompt */}
+      <PWAInstallPrompt />
+
       {/* 1. Sleek Dashboard Top Navigation Bar */}
       <header className="w-full h-16 shrink-0 border-b border-sl-border bg-sl-panel flex items-center justify-between px-4 sm:px-6 lg:px-8 z-30 select-none">
         <div className="flex items-center gap-3 sm:gap-4">
@@ -376,8 +397,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
 
         {/* 3. Main Page Viewport with Generous Spacing and Independent Scroll */}
-        <main className="flex-1 h-full overflow-y-auto bg-sl-bg relative focus:outline-none">
-          <div className="p-6 sm:p-8 lg:p-12 max-w-7xl mx-auto w-full space-y-10">
+        <main
+          className={`flex-1 h-full bg-sl-bg relative focus:outline-none flex flex-col ${
+            isFixedLayoutPage ? 'overflow-hidden' : 'overflow-y-auto'
+          }`}
+        >
+          <div
+            className={`max-w-7xl mx-auto w-full ${
+              isFixedLayoutPage
+                ? 'h-full flex-1 flex flex-col p-3 sm:p-6 lg:p-8 min-h-0 overflow-hidden'
+                : 'p-4 sm:p-8 lg:p-12 space-y-8 sm:space-y-10'
+            }`}
+          >
             {children}
           </div>
         </main>

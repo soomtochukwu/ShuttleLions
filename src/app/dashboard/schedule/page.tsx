@@ -29,54 +29,97 @@ import {
  AlertCircle,
  Loader2,
  Edit3,
+ ChevronDown,
+ ChevronUp,
 } from 'lucide-react';
 import { audio } from '@/lib/audio';
 
 import { useCachedQuery } from '@/lib/client-cache';
-import { formatTimeRangeWAT, formatFullDateTimeRangeWAT, createIsoWAT } from '@/lib/date-utils';
+import {
+  formatTimeRangeWAT,
+  formatFullDateTimeRangeWAT,
+  createIsoWAT,
+  getNextEventOccurrence,
+} from '@/lib/date-utils';
 
 interface MapModalData {
- title: string;
- location: string;
- latitude?: number | null;
- longitude?: number | null;
- mapUrl?: string | null;
+  title: string;
+  location: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  mapUrl?: string | null;
 }
 
 export default function SchedulePage() {
- const { user } = useAuth();
- const { showAlert, showConfirm } = useFeedback();
+  const { user } = useAuth();
+  const { showAlert, showConfirm } = useFeedback();
 
- // 1. Cached Events Query with Instant LocalStorage Hydration & Background Revalidation
- const {
- data: events,
- setData: setEvents,
- isLoading,
- isRevalidating,
- } = useCachedQuery<EventItem[]>({
- key: 'schedule_events',
- initialFallback: [],
- fetcher: async () => {
- const { data } = await supabase
- .from('events')
- .select('*')
- .order('start_at', { ascending: true });
- return data || [];
- },
- });
+  // Mobile collapsible state for Official Weekly Routines (collapsed by default on mobile)
+  const [isWeeklyMobileOpen, setIsWeeklyMobileOpen] = useState(false);
 
- // 2. Cached Custom Roles
- const { data: customRoles } = useCachedQuery<CustomRole[]>({
- key: 'custom_roles',
- initialFallback: [],
- fetcher: async () => {
- const { data } = await supabase.from('custom_roles').select('*');
- return data || [];
- },
- });
+  // 1. Cached Events Query with Instant LocalStorage Hydration & Background Revalidation
+  const {
+    data: events,
+    setData: setEvents,
+    isLoading,
+    isRevalidating,
+  } = useCachedQuery<EventItem[]>({
+    key: 'schedule_events',
+    initialFallback: [],
+    fetcher: async () => {
+      const { data } = await supabase
+        .from('events')
+        .select('*')
+        .order('start_at', { ascending: true });
+      return data || [];
+    },
+  });
 
- const [rsvps, setRsvps] = useState<Record<string, boolean>>({});
- const [filter, setFilter] = useState<'all' | 'weekly' | 'impromptu' | 'competition'>('all');
+  // 2. Cached Custom Roles
+  const { data: customRoles } = useCachedQuery<CustomRole[]>({
+    key: 'custom_roles',
+    initialFallback: [],
+    fetcher: async () => {
+      const { data } = await supabase.from('custom_roles').select('*');
+      return data || [];
+    },
+  });
+
+  // RSVP state maps (keyed by `${event_id}_${session_date}`)
+  const [userRsvps, setUserRsvps] = useState<Record<string, boolean>>({});
+  const [attendeeCounts, setAttendeeCounts] = useState<Record<string, number>>({});
+  const [filter, setFilter] = useState<'all' | 'weekly' | 'impromptu' | 'competition'>('all');
+
+  // Load RSVPs from database
+  useEffect(() => {
+    async function loadRsvps() {
+      try {
+        const { data: allRsvps } = await supabase
+          .from('event_rsvps')
+          .select('event_id, session_date, profile_id, status')
+          .eq('status', 'going');
+
+        if (allRsvps) {
+          const countMap: Record<string, number> = {};
+          const userMap: Record<string, boolean> = {};
+
+          allRsvps.forEach((r) => {
+            const key = `${r.event_id}_${r.session_date}`;
+            countMap[key] = (countMap[key] || 0) + 1;
+            if (user?.id && r.profile_id === user.id) {
+              userMap[key] = true;
+            }
+          });
+
+          setAttendeeCounts(countMap);
+          setUserRsvps(userMap);
+        }
+      } catch (err) {
+        console.error('Error loading RSVPs:', err);
+      }
+    }
+    loadRsvps();
+  }, [user?.id, events]);
 
  // Map Location Modal State
  const [activeMapModal, setActiveMapModal] = useState<MapModalData | null>(null);
@@ -349,12 +392,81 @@ export default function SchedulePage() {
  )
  );
 
- const canManageSchedule = user?.role === 'admin' || isLogistician;
+  const canManageSchedule = user?.role === 'admin' || isLogistician;
 
- const handleToggleRsvp = (eventId: string) => {
- audio.play('whistle');
- setRsvps((prev) => ({ ...prev, [eventId]:!prev[eventId] }));
- };
+  const handleToggleRsvp = async (eventItem: EventItem) => {
+    if (!user?.id) {
+      showAlert({
+        title: 'Sign In Required',
+        message: 'Please sign in to RSVP for badminton games and receive pre-game notifications.',
+        type: 'warning',
+      });
+      return;
+    }
+
+    audio.play('serve');
+    const occ = getNextEventOccurrence(eventItem);
+    const sessionDate = occ.sessionDate;
+    const rsvpKey = `${eventItem.id}_${sessionDate}`;
+    const currentlyGoing = Boolean(userRsvps[rsvpKey]);
+
+    // Optimistic UI update
+    setUserRsvps((prev) => ({ ...prev, [rsvpKey]: !currentlyGoing }));
+    setAttendeeCounts((prev) => ({
+      ...prev,
+      [rsvpKey]: Math.max(0, (prev[rsvpKey] || 0) + (currentlyGoing ? -1 : 1)),
+    }));
+
+    try {
+      if (currentlyGoing) {
+        // Remove RSVP
+        const { error } = await supabase
+          .from('event_rsvps')
+          .delete()
+          .eq('event_id', eventItem.id)
+          .eq('profile_id', user.id)
+          .eq('session_date', sessionDate);
+
+        if (error) throw error;
+        audio.play('netDrop');
+        showAlert({
+          title: 'RSVP Cancelled',
+          message: `Your RSVP for "${eventItem.title}" on ${sessionDate} has been removed.`,
+          type: 'info',
+        });
+      } else {
+        // Add RSVP
+        const { error } = await supabase.from('event_rsvps').upsert({
+          event_id: eventItem.id,
+          profile_id: user.id,
+          session_date: sessionDate,
+          status: 'going',
+          created_at: new Date().toISOString(),
+        });
+
+        if (error) throw error;
+        audio.play('smash');
+        showAlert({
+          title: 'RSVP Confirmed!',
+          message: `You're confirmed for "${eventItem.title}" on ${sessionDate}! You'll receive reminders 1 hour and 30 minutes before start.`,
+          type: 'success',
+        });
+      }
+    } catch (err: any) {
+      console.error('RSVP toggle error:', err);
+      // Revert optimistic update
+      setUserRsvps((prev) => ({ ...prev, [rsvpKey]: currentlyGoing }));
+      setAttendeeCounts((prev) => ({
+        ...prev,
+        [rsvpKey]: Math.max(0, (prev[rsvpKey] || 0) + (currentlyGoing ? 1 : -1)),
+      }));
+      showAlert({
+        title: 'RSVP Error',
+        message: 'Could not update RSVP status. Please try again.',
+        type: 'error',
+      });
+    }
+  };
 
  const handleOpenMap = (
  title: string,
@@ -491,10 +603,50 @@ export default function SchedulePage() {
  });
  };
 
- // Derive Weekly Recurring Routines Dynamically From Database Records
+ // 1. Official Core Weekly Routines (Rendered in Section 1)
  const weeklyRoutines = events.filter((e) => e.is_recurring);
 
- const filteredEvents = events.filter((ev) => {
+ // 2. Compute Next Immediate Occurrence for Each Weekly Routine
+ const recurringOccurrences = weeklyRoutines
+ .map((routine) => {
+ const occ = getNextEventOccurrence(routine);
+ return {
+ ...routine,
+ session_date: occ.sessionDate,
+ start_at: occ.startAtIso,
+ end_at: occ.endAtIso,
+ is_next_routine: true,
+ };
+ })
+ .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
+
+ // Single earliest next immediate weekly routine
+ const nextImmediateWeeklyRoutine = recurringOccurrences[0] || null;
+
+ // 3. Custom / Impromptu / Competition Sessions
+ const customEvents = events
+ .filter((e) => !e.is_recurring)
+ .map((ev) => {
+ const occ = getNextEventOccurrence(ev);
+ return {
+ ...ev,
+ session_date: occ.sessionDate,
+ start_at: occ.startAtIso,
+ end_at: occ.endAtIso,
+ is_next_routine: false,
+ is_past: occ.isPast,
+ };
+ })
+ .filter((ev) => !ev.is_past);
+
+ // 4. Combined Streamlined Upcoming Activities (1 Next Routine + All Custom/Impromptu)
+ const upcomingStreamlinedEvents = [
+ ...(nextImmediateWeeklyRoutine ? [nextImmediateWeeklyRoutine] : []),
+ ...customEvents,
+ ].sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
+
+ // 5. Filtered Streamlined Events
+ const filteredEvents = upcomingStreamlinedEvents.filter((ev) => {
  if (filter === 'all') return true;
  if (filter === 'weekly') return ev.is_recurring;
  if (filter === 'impromptu') return!ev.is_recurring;
@@ -513,304 +665,356 @@ export default function SchedulePage() {
  return formatTimeRangeWAT(ev.start_at, ev.end_at);
  };
 
- return (
- <div className="space-y-10 pb-16">
- {/* Header */}
- <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
- <div>
- <h1
- className="text-2xl sm:text-3xl font-black uppercase text-sl-foreground flex items-center gap-2.5"
- style={{ fontFamily: 'var(--font-title)' }}
- >
- Weekly Schedule & Court Activities
- </h1>
- <p className="text-xs text-sl-muted font-medium mt-1">
- Official training routines, impromptu varsity matches, and collegiate tournament dates.
- </p>
- </div>
+  return (
+    <div className="h-full flex flex-col min-h-0 space-y-3 sm:space-y-4">
+      {/* Pinned Stationary Section: Header & Official Weekly Badminton Schedule */}
+      <div className="shrink-0 space-y-3 sm:space-y-4 pb-3 sm:pb-4 border-b border-sl-border/40">
+        {/* Header Row */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-4">
+          <div>
+            <h1
+              className="text-lg sm:text-2xl md:text-3xl font-black uppercase text-sl-foreground flex items-center gap-2"
+              style={{ fontFamily: 'var(--font-title)' }}
+            >
+              Weekly Schedule & Court Activities
+            </h1>
+            <p className="text-[11px] sm:text-xs text-sl-muted font-medium mt-0.5">
+              Official training routines, impromptu varsity matches, and collegiate tournament dates.
+            </p>
+          </div>
 
- {canManageSchedule && (
- <ShuttleButton
- variant="green"
- onClick={handleOpenCreateModal}
- className="py-2.5 px-5 text-xs font-black flex items-center gap-1.5 shadow-md"
- >
- <Plus className="w-4 h-4" />
- <span>Schedule Impromptu Activity </span>
- </ShuttleButton>
- )}
- </div>
+          {canManageSchedule && (
+            <ShuttleButton
+              variant="green"
+              onClick={handleOpenCreateModal}
+              className="w-full sm:w-auto py-2 sm:py-2.5 px-4 sm:px-5 text-xs font-black flex items-center justify-center gap-1.5 shadow-md"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Schedule Impromptu Activity</span>
+            </ShuttleButton>
+          )}
+        </div>
 
- {/* 1. Official Core Weekly Routines (100% Sourced From Database) */}
- <div className="space-y-4">
- <div className="flex items-center justify-between">
- <div className="flex items-center gap-2">
- <Activity className="w-4 h-4 text-sl-green" />
- <h2 className="text-sm font-black uppercase tracking-wider text-sl-foreground">
- Official Weekly Badminton Schedule
- </h2>
- </div>
- <span className="text-[11px] font-bold text-sl-green bg-sl-green/10 px-2.5 py-0.5 rounded-full border border-sl-green/20">
- {weeklyRoutines.length} Recurring Sessions in Database
- </span>
- </div>
+        {/* 1. Official Core Weekly Routines (Collapsible by default on mobile, always open on sm/md+) */}
+        <div className="space-y-2 sm:space-y-3">
+          <button
+            type="button"
+            onClick={() => {
+              audio.play('rally');
+              setIsWeeklyMobileOpen((prev) => !prev);
+            }}
+            className="w-full flex items-center justify-between p-1.5 sm:p-0 rounded-lg hover:bg-sl-panel/60 sm:hover:bg-transparent transition-colors cursor-pointer text-left"
+          >
+            <div className="flex items-center gap-2">
+              <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sl-green shrink-0" />
+              <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-sl-foreground">
+                Official Weekly Badminton Schedule
+              </h2>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] sm:text-[11px] font-bold text-sl-green bg-sl-green/10 px-2 py-0.5 rounded-full border border-sl-green/20">
+                {weeklyRoutines.length} Recurring Sessions
+              </span>
+              {/* Mobile collapse/expand chevron */}
+              <div className="sm:hidden text-sl-muted p-0.5">
+                {isWeeklyMobileOpen ? (
+                  <ChevronUp className="w-4 h-4 text-sl-green" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-sl-muted" />
+                )}
+              </div>
+            </div>
+          </button>
 
- {isLoading ? (
- <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
- {[1, 2, 3].map((i) => (
- <div
- key={i}
- className="p-6 rounded-2xl bg-sl-panel border border-sl-border animate-pulse space-y-4"
- >
- <div className="h-4 bg-sl-border rounded w-1/3" />
- <div className="h-6 bg-sl-border rounded w-3/4" />
- <div className="h-10 bg-sl-border rounded w-full" />
- </div>
- ))}
- </div>
- ) : weeklyRoutines.length === 0 ? (
- <div className="p-6 bg-sl-panel rounded-2xl border border-sl-border text-center text-xs text-sl-muted">
- No recurring weekly routines found in the database.
- </div>
- ) : (
- <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
- {weeklyRoutines.map((routine) => {
- const dayLabel = formatEventDay(routine);
- const timeRange = formatEventTimeRange(routine);
- const isCompetition = routine.event_type === 'competition';
+          {/* Routine Cards: Collapsed by default on mobile, always visible on tablet/desktop */}
+          <div className={`${isWeeklyMobileOpen ? 'block' : 'hidden sm:block'}`}>
+            {isLoading ? (
+              <div className="flex md:grid md:grid-cols-3 gap-3 overflow-x-auto no-scrollbar pb-1 snap-x">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="min-w-[250px] max-w-[280px] md:min-w-0 md:max-w-none snap-start shrink-0 md:shrink p-3.5 sm:p-4 rounded-xl bg-sl-panel border border-sl-border animate-pulse space-y-2.5"
+                  >
+                    <div className="h-4 bg-sl-border rounded w-1/3" />
+                    <div className="h-4 bg-sl-border rounded w-3/4" />
+                    <div className="h-6 bg-sl-border rounded w-full" />
+                  </div>
+                ))}
+              </div>
+            ) : weeklyRoutines.length === 0 ? (
+              <div className="p-4 bg-sl-panel rounded-xl border border-sl-border text-center text-xs text-sl-muted">
+                No recurring weekly routines found in the database.
+              </div>
+            ) : (
+              <div className="flex md:grid md:grid-cols-3 gap-3 overflow-x-auto no-scrollbar pb-1 snap-x">
+                {weeklyRoutines.map((routine) => {
+                  const dayLabel = formatEventDay(routine);
+                  const timeRange = formatEventTimeRange(routine);
+                  const isCompetition = routine.event_type === 'competition';
 
- return (
- <TiltCard
- key={routine.id}
- className="p-5 bg-sl-panel border border-sl-border relative overflow-hidden space-y-3"
- >
- <div className="flex items-center justify-between">
- <span className="text-xs font-black uppercase text-sl-green bg-sl-green/15 px-2.5 py-1 rounded-lg border border-sl-green/30">
- {dayLabel}
- </span>
- <span className="text-[11px] font-black text-sl-foreground font-mono">
- {timeRange}
- </span>
- </div>
+                  return (
+                    <TiltCard
+                      key={routine.id}
+                      className="min-w-[250px] max-w-[280px] sm:max-w-[320px] md:min-w-0 md:max-w-none snap-start shrink-0 md:shrink p-3.5 sm:p-4 bg-sl-panel border border-sl-border relative overflow-hidden space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] sm:text-xs font-black uppercase text-sl-green bg-sl-green/15 px-2 py-0.5 rounded-lg border border-sl-green/30">
+                          {dayLabel}
+                        </span>
+                        <span className="text-[10px] sm:text-[11px] font-black text-sl-foreground font-mono">
+                          {timeRange}
+                        </span>
+                      </div>
 
- <div>
- <h3 className="text-sm font-black text-sl-foreground">{routine.title}</h3>
- <p className="text-xs text-sl-muted mt-1 leading-relaxed font-medium">
- {routine.description}
- </p>
- </div>
+                      <div>
+                        <h3 className="text-xs sm:text-sm font-black text-sl-foreground truncate">{routine.title}</h3>
+                        <p className="text-[11px] sm:text-xs text-sl-muted mt-0.5 leading-snug font-medium line-clamp-2">
+                          {routine.description}
+                        </p>
+                      </div>
 
- <div className="pt-2 border-t border-sl-border/50 flex items-center justify-between text-[11px] text-sl-muted font-bold">
- <button
- type="button"
- onClick={() =>
- handleOpenMap(
- routine.title,
- routine.location,
- routine.latitude,
- routine.longitude,
- routine.map_url
- )
- }
- className="flex items-center gap-1.5 text-sl-foreground hover:text-sl-green transition-colors cursor-pointer group"
- title="Click to view court GPS coordinates & directions"
- >
- <MapPin className="w-3.5 h-3.5 text-sl-green group-hover:scale-110 transition-transform" />
- <span className="underline decoration-dotted group-hover:text-sl-green">
- {routine.location}
- </span>
- </button>
- <span className="text-sl-green">
- {isCompetition ? 'In-House Tournament ' : 'Weekly Routine '}
- </span>
- </div>
- </TiltCard>
- );
- })}
- </div>
- )}
- </div>
+                      <div className="pt-2 border-t border-sl-border/50 flex items-center justify-between text-[10px] sm:text-[11px] text-sl-muted font-bold">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenMap(
+                              routine.title,
+                              routine.location,
+                              routine.latitude,
+                              routine.longitude,
+                              routine.map_url
+                            );
+                          }}
+                          className="flex items-center gap-1.5 text-sl-foreground hover:text-sl-green transition-colors cursor-pointer group truncate mr-2"
+                          title="Click to view court GPS coordinates & directions"
+                        >
+                          <MapPin className="w-3.5 h-3.5 text-sl-green group-hover:scale-110 transition-transform shrink-0" />
+                          <span className="underline decoration-dotted group-hover:text-sl-green truncate max-w-[130px]">
+                            {routine.location}
+                          </span>
+                        </button>
+                        <span className="text-sl-green shrink-0">
+                          {isCompetition ? 'Tournament' : 'Weekly Routine'}
+                        </span>
+                      </div>
+                    </TiltCard>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
- {/* 2. Calendar Activities & Filter */}
- <div className="space-y-5">
- <div className="flex flex-wrap items-center justify-between gap-4">
- <div className="flex items-center gap-2">
- <Calendar className="w-4 h-4 text-cyan-400" />
- <h2 className="text-sm font-black uppercase tracking-wider text-sl-foreground">
- Upcoming Activities & Events ({filteredEvents.length})
- </h2>
- </div>
+      {/* Stationary Section: Upcoming Activities Header & Filter Controls */}
+      <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 pt-1">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-cyan-400 shrink-0" />
+          <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-sl-foreground">
+            Upcoming Activities & Events ({filteredEvents.length})
+          </h2>
+        </div>
 
- {/* Filter Pills */}
- <div className="flex flex-wrap items-center gap-2 bg-sl-panel p-1 rounded-xl border border-sl-border w-fit">
- <button
- onClick={() => {
- audio.play('rally');
- setFilter('all');
- }}
- className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
- filter === 'all' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
- }`}
- >
- All Activities ({events.length})
- </button>
- <button
- onClick={() => {
- audio.play('rally');
- setFilter('weekly');
- }}
- className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
- filter === 'weekly' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
- }`}
- >
- Weekly Routines
- </button>
- <button
- onClick={() => {
- audio.play('rally');
- setFilter('impromptu');
- }}
- className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
- filter === 'impromptu' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
- }`}
- >
- Impromptu Sessions
- </button>
- <button
- onClick={() => {
- audio.play('rally');
- setFilter('competition');
- }}
- className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
- filter === 'competition' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
- }`}
- >
- Tournaments
- </button>
- </div>
- </div>
+        {/* Filter Pills */}
+        <div className="flex items-center gap-1.5 bg-sl-panel p-1 rounded-xl border border-sl-border overflow-x-auto no-scrollbar max-w-full">
+          <button
+            onClick={() => {
+              audio.play('rally');
+              setFilter('all');
+            }}
+            className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+              filter === 'all'
+                ? 'bg-sl-green text-white shadow-sm'
+                : 'text-sl-muted hover:text-sl-foreground'
+            }`}
+          >
+            All Upcoming ({upcomingStreamlinedEvents.length})
+          </button>
+          <button
+            onClick={() => {
+              audio.play('rally');
+              setFilter('weekly');
+            }}
+            className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+              filter === 'weekly'
+                ? 'bg-sl-green text-white shadow-sm'
+                : 'text-sl-muted hover:text-sl-foreground'
+            }`}
+          >
+            Next Routine
+          </button>
+          <button
+            onClick={() => {
+              audio.play('rally');
+              setFilter('impromptu');
+            }}
+            className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+              filter === 'impromptu'
+                ? 'bg-sl-green text-white shadow-sm'
+                : 'text-sl-muted hover:text-sl-foreground'
+            }`}
+          >
+            Impromptu ({customEvents.length})
+          </button>
+          <button
+            onClick={() => {
+              audio.play('rally');
+              setFilter('competition');
+            }}
+            className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+              filter === 'competition'
+                ? 'bg-sl-green text-white shadow-sm'
+                : 'text-sl-muted hover:text-sl-foreground'
+            }`}
+          >
+            Tournaments
+          </button>
+        </div>
+      </div>
 
- {/* Events List */}
- <div className="space-y-4">
- {isLoading ? (
- <div className="p-8 text-center bg-sl-panel rounded-2xl border border-sl-border flex items-center justify-center gap-2 text-sl-muted text-xs">
- <Loader2 className="w-4 h-4 animate-spin text-sl-green" />
- <span>Loading schedules from database...</span>
- </div>
- ) : filteredEvents.length === 0 ? (
- <div className="p-8 text-center bg-sl-panel rounded-2xl border border-sl-border text-sl-muted text-xs font-medium">
- No upcoming schedules found for this category filter.
- </div>
- ) : (
- filteredEvents.map((ev) => {
- const isGoing =!!rsvps[ev.id];
- const startDate = new Date(ev.start_at);
- const endDate = new Date(ev.end_at);
+      {/* Scrollable Section: Events Cards List Only */}
+      <div className="flex-1 overflow-y-auto min-h-0 pr-1 pb-6 space-y-3 sm:space-y-4 pt-1">
+        {isLoading ? (
+          <div className="p-8 text-center bg-sl-panel rounded-2xl border border-sl-border flex items-center justify-center gap-2 text-sl-muted text-xs">
+            <Loader2 className="w-4 h-4 animate-spin text-sl-green" />
+            <span>Loading schedules from database...</span>
+          </div>
+        ) : filteredEvents.length === 0 ? (
+          <div className="p-8 text-center bg-sl-panel rounded-2xl border border-sl-border text-sl-muted text-xs font-medium">
+            No upcoming schedules found for this category filter.
+          </div>
+        ) : (
+          filteredEvents.map((ev) => {
+            const sessionDate = ev.session_date || getNextEventOccurrence(ev).sessionDate;
+            const rsvpKey = `${ev.id}_${sessionDate}`;
+            const isGoing = Boolean(userRsvps[rsvpKey]);
+            const attendeeCount = attendeeCounts[rsvpKey] || 0;
 
- return (
- <TiltCard key={ev.id} className="p-6 bg-sl-panel border border-sl-border">
- <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
- <div className="space-y-2 flex-1">
- <div className="flex items-center gap-2">
- <span
- className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
- ev.event_type === 'competition'
- ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
- : ev.event_type === 'social'
- ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
- : 'bg-sl-green/20 text-sl-green border border-sl-green/30'
- }`}
- >
- {ev.event_type === 'competition'
- ? ' Tournament'
- : ev.event_type === 'social'
- ? ' Club Social'
- : ' Training Session'}
- </span>
+            return (
+              <TiltCard key={`${ev.id}-${sessionDate}`} className="p-4 sm:p-6 bg-sl-panel border border-sl-border">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6">
+                  <div className="space-y-2 flex-1 w-full min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
+                          ev.event_type === 'competition'
+                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                            : ev.event_type === 'social'
+                            ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                            : 'bg-sl-green/20 text-sl-green border border-sl-green/30'
+                        }`}
+                      >
+                        {ev.event_type === 'competition'
+                          ? 'Tournament'
+                          : ev.event_type === 'social'
+                          ? 'Club Social'
+                          : 'Training Session'}
+                      </span>
 
- {ev.is_recurring ? (
- <span className="text-[10px] font-mono font-bold text-sl-muted bg-sl-bg px-2 py-0.5 rounded border border-sl-border">
- Weekly Recurring
- </span>
- ) : (
- <span className="text-[10px] font-mono font-bold text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
- Impromptu / Custom
- </span>
- )}
- </div>
+                      {ev.is_recurring ? (
+                        <span className="text-[10px] font-mono font-bold text-sl-green bg-sl-green/10 px-2 py-0.5 rounded border border-sl-green/30">
+                          Next Up Routine
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-mono font-bold text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
+                          Impromptu / Custom
+                        </span>
+                      )}
 
- <h3 className="text-lg font-black text-sl-foreground">{ev.title}</h3>
- <p className="text-xs text-sl-muted leading-relaxed font-medium">{ev.description}</p>
+                      {/* Confirmed Attendees Counter Badge */}
+                      <span className="text-[11px] font-bold text-sl-muted flex items-center gap-1.5 pl-1 sm:pl-2 font-mono">
+                        <Users className="w-3.5 h-3.5 text-sl-green" />
+                        <span>{attendeeCount} Athlete{attendeeCount === 1 ? '' : 's'} Going</span>
+                      </span>
+                    </div>
 
- <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-sl-foreground pt-2">
- <span className="flex items-center gap-1.5 text-sl-green font-mono">
- <Clock className="w-3.5 h-3.5" />
- {formatFullDateTimeRangeWAT(ev.start_at, ev.end_at)}
- </span>
+                    <h3 className="text-base sm:text-lg font-black text-sl-foreground break-words">{ev.title}</h3>
+                    <p className="text-xs text-sl-muted leading-relaxed font-medium">{ev.description}</p>
 
- {/* Interactive Clickable Location Tag */}
- <button
- type="button"
- onClick={() =>
- handleOpenMap(
- ev.title,
- ev.location,
- ev.latitude,
- ev.longitude,
- ev.map_url
- )
- }
- className="flex items-center gap-1.5 text-sl-muted hover:text-sl-green transition-colors cursor-pointer group"
- title="Click to view court GPS coordinates & directions"
- >
- <MapPin className="w-3.5 h-3.5 text-sl-green group-hover:scale-110 transition-transform" />
- <span className="underline decoration-dotted group-hover:text-sl-green">
- {ev.location || 'UNN Badminton Court'}
- </span>
- </button>
- </div>
- </div>
+                    <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs font-semibold text-sl-foreground pt-1 sm:pt-2">
+                      <span className="flex items-center gap-1.5 text-sl-green font-mono text-[11px] sm:text-xs">
+                        <Clock className="w-3.5 h-3.5 shrink-0" />
+                        {formatFullDateTimeRangeWAT(ev.start_at, ev.end_at)}
+                      </span>
 
- <div className="shrink-0 flex items-center gap-2.5 w-full md:w-auto">
- {(canManageSchedule || ev.created_by === user?.id) &&!ev.is_recurring && (
- <div className="flex items-center gap-1.5">
- <button
- type="button"
- onClick={() => handleOpenEditModal(ev)}
- className="p-2.5 rounded-xl border border-sl-green/30 text-sl-green hover:bg-sl-green/10 transition-colors cursor-pointer"
- title="Edit Schedule Details "
- >
- <Edit3 className="w-4 h-4" />
- </button>
+                      {/* Interactive Clickable Location Tag */}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleOpenMap(
+                            ev.title,
+                            ev.location,
+                            ev.latitude,
+                            ev.longitude,
+                            ev.map_url
+                          )
+                        }
+                        className="flex items-center gap-1.5 text-sl-muted hover:text-sl-green transition-colors cursor-pointer group text-[11px] sm:text-xs"
+                        title="Click to view court GPS coordinates & directions"
+                      >
+                        <MapPin className="w-3.5 h-3.5 text-sl-green group-hover:scale-110 transition-transform shrink-0" />
+                        <span className="underline decoration-dotted group-hover:text-sl-green truncate max-w-[180px]">
+                          {ev.location || 'UNN Badminton Court'}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
 
- <button
- type="button"
- onClick={() => handleDeleteEvent(ev.id, ev.title)}
- className="p-2.5 rounded-xl border border-rose-500/20 text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
- title="Delete Schedule "
- >
- <Trash2 className="w-4 h-4" />
- </button>
- </div>
- )}
+                  <div className="shrink-0 flex items-center gap-2.5 w-full md:w-auto pt-2 md:pt-0">
+                    {(canManageSchedule || ev.created_by === user?.id) && !ev.is_recurring && (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditModal(ev)}
+                          className="p-2 sm:p-2.5 rounded-xl border border-sl-green/30 text-sl-green hover:bg-sl-green/10 transition-colors cursor-pointer"
+                          title="Edit Schedule Details"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
 
- <ShuttleButton
- variant={isGoing ? 'white' : 'green'}
- onClick={() => handleToggleRsvp(ev.id)}
- className="w-full md:w-auto py-2.5 px-6 text-xs font-black"
- >
- {isGoing ? ' RSVP Confirmed' : 'RSVP Going '}
- </ShuttleButton>
- </div>
- </div>
- </TiltCard>
- );
- })
- )}
- </div>
- </div>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteEvent(ev.id, ev.title)}
+                          className="p-2 sm:p-2.5 rounded-xl border border-rose-500/20 text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                          title="Delete Schedule"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
 
- {/* 3. Interactive Location & GPS Map Modal */}
+                    {/* Interactive RSVP Action Button */}
+                    {isGoing ? (
+                      <button
+                        type="button"
+                        onClick={() => handleToggleRsvp(ev)}
+                        className="flex-1 md:flex-initial py-2 sm:py-2.5 px-4 sm:px-5 rounded-xl border border-sl-green/60 bg-sl-green/15 text-sl-green font-black text-xs flex items-center justify-center gap-2 shadow-[0_0_12px_rgba(0,200,83,0.25)] hover:bg-rose-500/15 hover:text-rose-400 hover:border-rose-500/40 transition-all cursor-pointer group"
+                        title="Click to cancel your RSVP for this game"
+                      >
+                        <CheckCircle2 className="w-4 h-4 text-sl-green group-hover:hidden" />
+                        <span className="group-hover:hidden">RSVPed (Going)</span>
+                        <span className="hidden group-hover:inline">Cancel RSVP</span>
+                      </button>
+                    ) : (
+                      <ShuttleButton
+                        variant="green"
+                        onClick={() => handleToggleRsvp(ev)}
+                        className="flex-1 md:flex-initial py-2 sm:py-2.5 px-4 sm:px-6 text-xs font-black shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <span>RSVP Going</span>
+                      </ShuttleButton>
+                    )}
+                  </div>
+                </div>
+              </TiltCard>
+            );
+          })
+        )}
+      </div>
+
+      {/* 3. Interactive Location & GPS Map Modal */}
  {activeMapModal && (
  <ShuttleModal
  isOpen={Boolean(activeMapModal)}

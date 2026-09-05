@@ -200,72 +200,76 @@ export default function CommunityMembersPage() {
  );
  }
 
- return (
- <div className="space-y-8">
- {/* Header */}
- <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
- <div>
- <h1
- className="text-2xl sm:text-3xl font-black uppercase text-sl-foreground"
- style={{ fontFamily: 'var(--font-title)' }}
- >
- UNN Athlete Directory
- </h1>
- <p className="text-xs text-sl-muted font-medium mt-1">
- Browse registered student athletes, club executives, and appointed committee leads.
- </p>
- </div>
+  return (
+    <div className="h-full flex flex-col min-h-0 space-y-3 sm:space-y-4">
+      {/* Pinned Non-Scrolling Header & Filter Section */}
+      <div className="shrink-0 space-y-3 sm:space-y-4 pb-3 sm:pb-4 border-b border-sl-border/40">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-4">
+          <div>
+            <h1
+              className="text-lg sm:text-2xl md:text-3xl font-black uppercase text-sl-foreground"
+              style={{ fontFamily: 'var(--font-title)' }}
+            >
+              UNN Athlete Directory
+            </h1>
+            <p className="text-[11px] sm:text-xs text-sl-muted font-medium mt-0.5">
+              Browse registered student athletes, club executives, and appointed committee leads.
+            </p>
+          </div>
 
- {/* Role Filters */}
- <div className="flex items-center gap-2 bg-sl-panel p-1 rounded-xl border border-sl-border">
- <button
- onClick={() => {
- audio.play('rally');
- setRoleFilter('all');
- }}
- className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
- roleFilter === 'all' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
- }`}
- >
- All Athletes ({profiles.length})
- </button>
- <button
- onClick={() => {
- audio.play('rally');
- setRoleFilter('executives');
- }}
- className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
- roleFilter === 'executives' ? 'bg-amber-400 text-black shadow-sm font-black' : 'text-sl-muted hover:text-sl-foreground'
- }`}
- >
- Appointed Executives ({profiles.filter((p) => isExecutiveRole(p.role)).length})
- </button>
- <button
- onClick={() => {
- audio.play('rally');
- setRoleFilter('members');
- }}
- className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
- roleFilter === 'members' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
- }`}
- >
- Athletes Only
- </button>
- </div>
- </div>
+          {/* Role Filters */}
+          <div className="flex items-center gap-1.5 bg-sl-panel p-1 rounded-xl border border-sl-border overflow-x-auto no-scrollbar max-w-full">
+            <button
+              onClick={() => {
+                audio.play('rally');
+                setRoleFilter('all');
+              }}
+              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+                roleFilter === 'all' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
+              }`}
+            >
+              All Athletes ({profiles.length})
+            </button>
+            <button
+              onClick={() => {
+                audio.play('rally');
+                setRoleFilter('executives');
+              }}
+              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+                roleFilter === 'executives' ? 'bg-amber-400 text-black shadow-sm font-black' : 'text-sl-muted hover:text-sl-foreground'
+              }`}
+            >
+              Appointed Executives ({profiles.filter((p) => isExecutiveRole(p.role)).length})
+            </button>
+            <button
+              onClick={() => {
+                audio.play('rally');
+                setRoleFilter('members');
+              }}
+              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+                roleFilter === 'members' ? 'bg-sl-green text-white shadow-sm' : 'text-sl-muted hover:text-sl-foreground'
+              }`}
+            >
+              Athletes Only
+            </button>
+          </div>
+        </div>
 
- {/* Search Input */}
- <div className="max-w-md">
- <ShuttleInput
- placeholder="Search by student name, faculty, department, or role..."
- value={search}
- onChange={(e) => setSearch(e.target.value)}
- className="py-2.5 text-xs"
- />
- </div>
+        {/* Search Input */}
+        <div className="w-full sm:max-w-md">
+          <ShuttleInput
+            placeholder="Search by student name, faculty, department, or role..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="py-2 sm:py-2.5 text-xs"
+          />
+        </div>
+      </div>
 
- {/* Members Grid with 3D Tilt */}
- <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Scrollable Members Grid */}
+      <div className="flex-1 overflow-y-auto min-h-0 pr-1 pb-6 pt-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
  {filteredProfiles.map((p) => {
  const badgeInfo = getRoleBadge(p.role);
  const isExec = isExecutiveRole(p.role);
@@ -302,6 +306,7 @@ export default function CommunityMembersPage() {
  </TiltCard>
  );
  })}
+ </div>
  </div>
  </div>
  );

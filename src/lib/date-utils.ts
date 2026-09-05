@@ -94,3 +94,121 @@ export function createIsoWAT(dateStr: string, timeStr: string): string {
  const cleanTime = timeStr.trim().length === 5 ? `${timeStr.trim()}:00` : timeStr.trim();
  return `${cleanDate}T${cleanTime}+01:00`;
 }
+
+export interface EventOccurrence {
+  sessionDate: string; // YYYY-MM-DD
+  startAtIso: string;
+  endAtIso: string;
+  isToday: boolean;
+  isOngoing: boolean;
+  isPast: boolean;
+}
+
+/**
+ * Calculates the next active/upcoming occurrence for any event (recurring or one-off) in WAT.
+ */
+export function getNextEventOccurrence(ev: {
+  is_recurring: boolean;
+  recurrence_rule?: string | null;
+  start_at: string;
+  end_at: string;
+  title?: string;
+}): EventOccurrence {
+  const now = new Date();
+
+  // If not recurring, it is a one-off event:
+  if (!ev.is_recurring) {
+    const sDate = new Date(ev.start_at);
+    const eDate = new Date(ev.end_at);
+    const sessionDate = sDate.toLocaleDateString('en-CA', { timeZone: WAT_TIMEZONE });
+    const todayStr = now.toLocaleDateString('en-CA', { timeZone: WAT_TIMEZONE });
+    const isToday = sessionDate === todayStr;
+    const isOngoing = now >= sDate && now <= eDate;
+    const isPast = now > eDate;
+    return {
+      sessionDate,
+      startAtIso: ev.start_at,
+      endAtIso: ev.end_at,
+      isToday,
+      isOngoing,
+      isPast,
+    };
+  }
+
+  // If recurring, calculate the upcoming occurrence relative to now in WAT:
+  const watNowStr = now.toLocaleDateString('en-CA', { timeZone: WAT_TIMEZONE });
+  const [year, month, day] = watNowStr.split('-').map(Number);
+  const nowInWat = new Date(year, month - 1, day);
+
+  let targetDay = 2; // Default Tuesday
+  const rule = (ev.recurrence_rule || '').toUpperCase();
+  const title = (ev.title || '').toLowerCase();
+
+  if (rule.includes(':SUN') || title.includes('sunday')) targetDay = 0;
+  else if (rule.includes(':MON') || title.includes('monday')) targetDay = 1;
+  else if (rule.includes(':TUE') || title.includes('tuesday')) targetDay = 2;
+  else if (rule.includes(':WED') || title.includes('wednesday')) targetDay = 3;
+  else if (rule.includes(':THU') || title.includes('thursday')) targetDay = 4;
+  else if (rule.includes(':FRI') || title.includes('friday')) targetDay = 5;
+  else if (rule.includes(':SAT') || title.includes('saturday')) targetDay = 6;
+  else {
+    const sDate = new Date(ev.start_at);
+    targetDay = sDate.getDay();
+  }
+
+  const currentDay = nowInWat.getDay();
+  let daysUntil = (targetDay - currentDay + 7) % 7;
+
+  // Extract start and end time strings (HH:mm) from original start_at & end_at
+  const origStart = new Date(ev.start_at);
+  const origEnd = new Date(ev.end_at);
+
+  const startTimeStr = origStart.toLocaleTimeString('en-GB', {
+    timeZone: WAT_TIMEZONE,
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  const endTimeStr = origEnd.toLocaleTimeString('en-GB', {
+    timeZone: WAT_TIMEZONE,
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  // Today's occurrence candidate:
+  const candidateDate = new Date(year, month - 1, day + daysUntil);
+  const candidateDateStr = candidateDate.toLocaleDateString('en-CA');
+  const candidateStartIso = createIsoWAT(candidateDateStr, startTimeStr);
+  const candidateEndIso = createIsoWAT(candidateDateStr, endTimeStr);
+
+  const candEnd = new Date(candidateEndIso);
+
+  // If today is target day and the session has already ended, advance by 7 days
+  if (daysUntil === 0 && now > candEnd) {
+    daysUntil = 7;
+    const nextDate = new Date(year, month - 1, day + daysUntil);
+    const nextDateStr = nextDate.toLocaleDateString('en-CA');
+    const nextStartIso = createIsoWAT(nextDateStr, startTimeStr);
+    const nextEndIso = createIsoWAT(nextDateStr, endTimeStr);
+    return {
+      sessionDate: nextDateStr,
+      startAtIso: nextStartIso,
+      endAtIso: nextEndIso,
+      isToday: false,
+      isOngoing: false,
+      isPast: false,
+    };
+  }
+
+  const isToday = candidateDateStr === watNowStr;
+  const candStart = new Date(candidateStartIso);
+  const isOngoing = now >= candStart && now <= candEnd;
+
+  return {
+    sessionDate: candidateDateStr,
+    startAtIso: candidateStartIso,
+    endAtIso: candidateEndIso,
+    isToday,
+    isOngoing,
+    isPast: false,
+  };
+}

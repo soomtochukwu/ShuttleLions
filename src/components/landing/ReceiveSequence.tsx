@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { PARALLAX_ASSETS_CONFIG } from '@/config/parallax-assets';
+import { useParallaxConfig } from '@/config/parallax-assets';
 import { ShuttleButton } from '@/components/ui/ShuttleButton';
 import { useAuth } from '@/components/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -16,7 +16,8 @@ interface ReceiveSequenceProps {
 export function ReceiveSequence({ onOpenAuth }: ReceiveSequenceProps) {
  const containerRef = useRef<HTMLDivElement>(null);
  const [imageError, setImageError] = useState(false);
- const config = PARALLAX_ASSETS_CONFIG.playerReceiver;
+ const { config: parallaxMap } = useParallaxConfig();
+ const config = parallaxMap.playerReceiver;
  const { isAuthenticated } = useAuth();
  const router = useRouter();
 

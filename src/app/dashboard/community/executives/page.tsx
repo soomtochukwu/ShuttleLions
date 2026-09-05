@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase, type Profile, type CustomRole } from '@/lib/supabase';
+import { useCachedQuery } from '@/lib/client-cache';
 import { useAuth } from '@/components/AuthContext';
 import { TiltCard } from '@/components/ui/TiltCard';
 import { ShuttleButton } from '@/components/ui/ShuttleButton';
@@ -45,50 +46,55 @@ const ROLE_LABELS: Record<string, string> = {
 export default function ExecutivesBoardPage() {
  const { user } = useAuth();
  const { showAlert, showConfirm } = useFeedback();
- const [profiles, setProfiles] = useState<Profile[]>([]);
- const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
- const [isLoading, setIsLoading] = useState(true);
 
- // Modals state
- const [isAppointModalOpen, setIsAppointModalOpen] = useState(false);
- const [isCreateRoleOpen, setIsCreateRoleOpen] = useState(false);
+  // Cached queries
+  const { data: profiles, setData: setProfiles, isLoading: profilesLoading, refetch: refetchProfiles } = useCachedQuery<Profile[]>({
+    key: 'executives_profiles',
+    initialFallback: [],
+    fetcher: async () => {
+      const { data } = await supabase.from('profiles').select('*');
+      return data || [];
+    },
+  });
 
- // Appoint Form state
- const [selectedMemberId, setSelectedMemberId] = useState('');
- const [targetRoleId, setTargetRoleId] = useState('media_personnel');
+  const { data: customRoles, setData: setCustomRoles, isLoading: rolesLoading, refetch: refetchRoles } = useCachedQuery<CustomRole[]>({
+    key: 'executives_custom_roles',
+    initialFallback: [],
+    fetcher: async () => {
+      const { data } = await supabase.from('custom_roles').select('*');
+      return data || [];
+    },
+  });
 
- // Custom Role Form state
- const [newRoleTitle, setNewRoleTitle] = useState('');
- const [newRoleDesc, setNewRoleDesc] = useState('');
- const [newRoleBadgeColor, setNewRoleBadgeColor] = useState('cyan');
- const [canUploadMedia, setCanUploadMedia] = useState(false);
- const [canAuditFinances, setCanAuditFinances] = useState(false);
- const [canManageSchedule, setCanManageSchedule] = useState(false);
+  const isLoading = profilesLoading && profiles.length === 0;
 
- const isAdmin = user?.role === 'admin' || user?.role === 'captain';
+  // Modals state
+  const [isAppointModalOpen, setIsAppointModalOpen] = useState(false);
+  const [isCreateRoleOpen, setIsCreateRoleOpen] = useState(false);
 
- const loadData = async () => {
- setIsLoading(true);
- try {
- const { data: pData } = await supabase.from('profiles').select('*');
- setProfiles(pData || []);
+  // Appoint Form state
+  const [selectedMemberId, setSelectedMemberId] = useState('');
+  const [targetRoleId, setTargetRoleId] = useState('media_personnel');
 
- const { data: rData } = await supabase.from('custom_roles').select('*');
- setCustomRoles(rData || []);
+  // Custom Role Form state
+  const [newRoleTitle, setNewRoleTitle] = useState('');
+  const [newRoleDesc, setNewRoleDesc] = useState('');
+  const [newRoleBadgeColor, setNewRoleBadgeColor] = useState('cyan');
+  const [canUploadMedia, setCanUploadMedia] = useState(false);
+  const [canAuditFinances, setCanAuditFinances] = useState(false);
+  const [canManageSchedule, setCanManageSchedule] = useState(false);
 
- if (pData && pData.length > 0) {
- setSelectedMemberId(pData[0].id);
- }
- } catch (err) {
- console.error('Failed to load executives data:', err);
- } finally {
- setIsLoading(false);
- }
- };
+  const isAdmin = user?.role === 'admin' || user?.role === 'captain';
 
- useEffect(() => {
- loadData();
- }, []);
+  useEffect(() => {
+    if (profiles && profiles.length > 0 && !selectedMemberId) {
+      setSelectedMemberId(profiles[0].id);
+    }
+  }, [profiles, selectedMemberId]);
+
+  const loadData = async () => {
+    await Promise.all([refetchProfiles(), refetchRoles()]);
+  };
 
  const handleAppointRole = async (e: React.FormEvent) => {
  e.preventDefault();
@@ -198,61 +204,65 @@ export default function ExecutivesBoardPage() {
 
  const executiveProfiles = profiles.filter((p) => p.role!== 'member');
 
- return (
- <div className="space-y-8">
- {/* Header */}
- <div className="shuttle-panel p-6 sm:p-8 bg-gradient-to-r from-sl-panel via-sl-green/10 to-sl-panel border border-sl-border flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
- <div className="space-y-2">
- <div className="flex items-center gap-2">
- <span className="text-xs font-black uppercase text-sl-green bg-sl-green/15 px-3 py-1 rounded-full flex items-center gap-1.5 font-mono">
- <Crown className="w-3.5 h-3.5" /> OFFICIAL CLUB HIERARCHY
- </span>
- </div>
- <h1
- className="text-2xl sm:text-4xl font-black uppercase text-sl-foreground"
- style={{ fontFamily: 'var(--font-title)' }}
- >
- Executive Board & Roles
- </h1>
- <p className="text-xs sm:text-sm text-sl-muted font-medium max-w-xl">
- Meet the official leadership council of ShuttleLions. Appointed executives govern media publications, tournament scheduling, and club finances.
- </p>
- </div>
+  return (
+    <div className="h-full flex flex-col min-h-0 space-y-3 sm:space-y-4">
+      {/* Pinned Header Panel */}
+      <div className="shrink-0 pb-1 sm:pb-2">
+        <div className="shuttle-panel p-4 sm:p-6 bg-gradient-to-r from-sl-panel via-sl-green/10 to-sl-panel border border-sl-border flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4">
+          <div className="space-y-1 sm:space-y-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase text-sl-green bg-sl-green/15 px-2.5 py-0.5 rounded-full flex items-center gap-1.5 font-mono">
+                <Crown className="w-3 h-3" /> OFFICIAL CLUB HIERARCHY
+              </span>
+            </div>
+            <h1
+              className="text-lg sm:text-2xl md:text-3xl font-black uppercase text-sl-foreground"
+              style={{ fontFamily: 'var(--font-title)' }}
+            >
+              Executive Board & Roles
+            </h1>
+            <p className="text-[11px] sm:text-xs text-sl-muted font-medium max-w-xl">
+              Meet the official leadership council of ShuttleLions. Appointed executives govern media publications, tournament scheduling, and club finances.
+            </p>
+          </div>
 
- {isAdmin && (
- <div className="flex flex-wrap items-center gap-3">
- <ShuttleButton
- variant="green"
- onClick={() => {
- audio.play('rally');
- setIsAppointModalOpen(true);
- }}
- className="py-2.5 px-5 text-xs font-black flex items-center gap-1.5 shadow-md"
- >
- <UserCheck className="w-4 h-4" />
- <span>Appoint Executive</span>
- </ShuttleButton>
+          {isAdmin && (
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+              <ShuttleButton
+                variant="green"
+                onClick={() => {
+                  audio.play('rally');
+                  setIsAppointModalOpen(true);
+                }}
+                className="flex-1 sm:flex-initial py-2 sm:py-2.5 px-3 sm:px-4 text-xs font-black flex items-center justify-center gap-1.5 shadow-md"
+              >
+                <UserCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span>Appoint Executive</span>
+              </ShuttleButton>
 
- <ShuttleButton
- variant="white"
- onClick={() => {
- audio.play('rally');
- setIsCreateRoleOpen(true);
- }}
- className="py-2.5 px-5 text-xs font-black border-2 border-sl-border flex items-center gap-1.5"
- >
- <Plus className="w-4 h-4" />
- <span>Create Custom Role</span>
- </ShuttleButton>
- </div>
- )}
- </div>
+              <ShuttleButton
+                variant="white"
+                onClick={() => {
+                  audio.play('rally');
+                  setIsCreateRoleOpen(true);
+                }}
+                className="flex-1 sm:flex-initial py-2 sm:py-2.5 px-3 sm:px-4 text-xs font-black border-2 border-sl-border flex items-center justify-center gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span>Create Custom Role</span>
+              </ShuttleButton>
+            </div>
+          )}
+        </div>
+      </div>
 
- {/* Section 1: Executive Board Grid */}
- <div className="space-y-4">
- <h2 className="text-sm font-black text-sl-muted uppercase tracking-wider flex items-center gap-2">
- <Sparkles className="w-4 h-4 text-sl-green" /> Appointed Executive Council ({executiveProfiles.length})
- </h2>
+      {/* Scrollable Executive Sections */}
+      <div className="flex-1 overflow-y-auto min-h-0 pr-1 pb-6 space-y-6 sm:space-y-8 pt-1">
+        {/* Section 1: Executive Board Grid */}
+        <div className="space-y-3 sm:space-y-4">
+          <h2 className="text-xs sm:text-sm font-black text-sl-muted uppercase tracking-wider flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-sl-green" /> Appointed Executive Council ({executiveProfiles.length})
+          </h2>
 
  {executiveProfiles.length === 0 ? (
  <div className="shuttle-panel p-8 text-center text-sl-muted text-xs font-semibold">
@@ -361,8 +371,9 @@ export default function ExecutivesBoardPage() {
  ))}
  </div>
  </div>
+  </div>
 
- {/* Modal 1: Appoint Member Role */}
+      {/* Modal 1: Appoint Member Role */}
  <ShuttleModal
  isOpen={isAppointModalOpen}
  onClose={() => setIsAppointModalOpen(false)}

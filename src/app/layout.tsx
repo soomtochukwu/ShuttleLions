@@ -1,27 +1,39 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 
 const inter = Inter({
- variable: "--font-inter",
- subsets: ["latin"],
+  variable: "--font-inter",
+  subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  themeColor: "#00875A",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export const metadata: Metadata = {
- title: "ShuttleLions | Official UNN Badminton Community Platform",
- description:
- "Official badminton registration, community leagues, court schedules, and equipment portal for the University of Nigeria, Nsukka (UNN).",
- openGraph: {
- title: "ShuttleLions | UNN Badminton Club",
- description: "Join the ShuttleLions Badminton Club at UNN. Registration, weekly training schedules, community chat & pro gear.",
- type: "website",
- },
- twitter: {
- card: "summary_large_image",
- title: "ShuttleLions | UNN Badminton Club",
- description: "Join the ShuttleLions Badminton Club at UNN. Registration, weekly training schedules, community chat & pro gear.",
- },
+  title: "ShuttleLions | Official UNN Badminton Community Platform",
+  description:
+    "Official badminton registration, community leagues, court schedules, and equipment portal for the University of Nigeria, Nsukka (UNN).",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "ShuttleLions",
+  },
+  openGraph: {
+    title: "ShuttleLions | UNN Badminton Club",
+    description: "Join the ShuttleLions Badminton Club at UNN. Registration, weekly training schedules, community chat & pro gear.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ShuttleLions | UNN Badminton Club",
+    description: "Join the ShuttleLions Badminton Club at UNN. Registration, weekly training schedules, community chat & pro gear.",
+  },
 };
 
 export default function RootLayout({

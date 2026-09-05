@@ -101,110 +101,147 @@ async function fetchProfile(authUserId: string, authUser?: any): Promise<Profile
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
- const [user, setUser] = useState<Profile | null>(null);
- const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<Profile | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const isGuestAdmin = localStorage.getItem('shuttlelions_guest_admin') === 'true';
+      if (isGuestAdmin) {
+        return {
+          id: 'admin-guest-id',
+          auth_user_id: 'admin-guest-auth-id',
+          email: 'admin@shuttlelions.unn',
+          full_name: 'UNN Badminton Coach (Admin)',
+          phone: '+2348000000000',
+          faculty: 'Faculty of Education',
+          department: 'Health & Physical Education',
+          level: 'PG',
+          reg_number: 'ADMIN-GUEST',
+          avatar_url: null,
+          role: 'admin',
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+      }
+      const raw = localStorage.getItem('shuttlelions_cached_profile');
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return null;
+  });
 
- useEffect(() => {
- let isMounted = true;
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    try {
+      const isGuestAdmin = localStorage.getItem('shuttlelions_guest_admin') === 'true';
+      const hasCachedProfile = localStorage.getItem('shuttlelions_cached_profile') !== null;
+      return !(isGuestAdmin || hasCachedProfile);
+    } catch (e) {
+      return true;
+    }
+  });
 
- async function initAuth() {
- try {
- const isGuestAdmin = localStorage.getItem('shuttlelions_guest_admin') === 'true';
- if (isGuestAdmin) {
- const mockAdminProfile: Profile = {
- id: 'admin-guest-id',
- auth_user_id: 'admin-guest-auth-id',
- email: 'admin@shuttlelions.unn',
- full_name: 'UNN Badminton Coach (Admin)',
- phone: '+2348000000000',
- faculty: 'Faculty of Education',
- department: 'Health & Physical Education',
- level: 'PG',
- reg_number: 'ADMIN-GUEST',
- avatar_url: null,
- role: 'admin',
- is_active: true,
- created_at: new Date().toISOString(),
- updated_at: new Date().toISOString(),
- };
- setUser(mockAdminProfile);
- setIsLoading(false);
- return;
- }
+  const persistProfile = useCallback((profile: Profile | null) => {
+    setUser(profile);
+    if (typeof window !== 'undefined') {
+      try {
+        if (profile) {
+          localStorage.setItem('shuttlelions_cached_profile', JSON.stringify(profile));
+        } else {
+          localStorage.removeItem('shuttlelions_cached_profile');
+        }
+      } catch (e) {}
+    }
+  }, []);
 
- const { data: { session } } = await supabase.auth.getSession();
- if (session?.user && isMounted) {
- const meta = session.user.user_metadata || {};
- const googleName = meta.full_name || meta.name || session.user.email?.split('@')[0] || 'Lion Athlete';
- const googleAvatar = meta.avatar_url || meta.picture || null;
- const fallbackProfile: Profile = {
- id: session.user.id,
- auth_user_id: session.user.id,
- email: session.user.email || '',
- full_name: googleName,
- phone: session.user.phone || null,
- faculty: '',
- department: '',
- level: '100',
- reg_number: null,
- avatar_url: googleAvatar,
- role: 'member',
- is_active: true,
- created_at: new Date().toISOString(),
- updated_at: new Date().toISOString(),
- };
+  useEffect(() => {
+    let isMounted = true;
 
- const profile = await fetchProfile(session.user.id, session.user);
- if (isMounted) setUser(profile || fallbackProfile);
- }
- } catch (err) {
- console.error('Auth init error:', err);
- } finally {
- if (isMounted) setIsLoading(false);
- }
- }
+    async function initAuth() {
+      try {
+        const isGuestAdmin = localStorage.getItem('shuttlelions_guest_admin') === 'true';
+        if (isGuestAdmin) {
+          setIsLoading(false);
+          return;
+        }
 
- initAuth();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user && isMounted) {
+          const meta = session.user.user_metadata || {};
+          const googleName = meta.full_name || meta.name || session.user.email?.split('@')[0] || 'Lion Athlete';
+          const googleAvatar = meta.avatar_url || meta.picture || null;
+          const fallbackProfile: Profile = {
+            id: session.user.id,
+            auth_user_id: session.user.id,
+            email: session.user.email || '',
+            full_name: googleName,
+            phone: session.user.phone || null,
+            faculty: '',
+            department: '',
+            level: '100',
+            reg_number: null,
+            avatar_url: googleAvatar,
+            role: 'member',
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
 
- const { data: { subscription } } = supabase.auth.onAuthStateChange(
- async (_event, session) => {
- const isGuestAdmin = localStorage.getItem('shuttlelions_guest_admin') === 'true';
- if (isGuestAdmin) return; // ignore standard auth changes in guest admin mode
+          const profile = await fetchProfile(session.user.id, session.user);
+          if (isMounted) {
+            persistProfile(profile || fallbackProfile);
+          }
+        } else if (!session?.user && isMounted) {
+          // No active session in Supabase, clear cache if not guest admin
+          persistProfile(null);
+        }
+      } catch (err) {
+        console.error('Auth init error:', err);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
 
- if (session?.user) {
- const meta = session.user.user_metadata || {};
- const googleName = meta.full_name || meta.name || session.user.email?.split('@')[0] || 'Lion Athlete';
- const googleAvatar = meta.avatar_url || meta.picture || null;
- const fallbackProfile: Profile = {
- id: session.user.id,
- auth_user_id: session.user.id,
- email: session.user.email || '',
- full_name: googleName,
- phone: session.user.phone || null,
- faculty: '',
- department: '',
- level: '100',
- reg_number: null,
- avatar_url: googleAvatar,
- role: 'member',
- is_active: true,
- created_at: new Date().toISOString(),
- updated_at: new Date().toISOString(),
- };
+    initAuth();
 
- const profile = await fetchProfile(session.user.id, session.user);
- if (isMounted) setUser(profile || fallbackProfile);
- } else {
- if (isMounted) setUser(null);
- }
- }
- );
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        const isGuestAdmin = localStorage.getItem('shuttlelions_guest_admin') === 'true';
+        if (isGuestAdmin) return;
 
- return () => {
- isMounted = false;
- subscription.unsubscribe();
- };
- }, []);
+        if (session?.user) {
+          const meta = session.user.user_metadata || {};
+          const googleName = meta.full_name || meta.name || session.user.email?.split('@')[0] || 'Lion Athlete';
+          const googleAvatar = meta.avatar_url || meta.picture || null;
+          const fallbackProfile: Profile = {
+            id: session.user.id,
+            auth_user_id: session.user.id,
+            email: session.user.email || '',
+            full_name: googleName,
+            phone: session.user.phone || null,
+            faculty: '',
+            department: '',
+            level: '100',
+            reg_number: null,
+            avatar_url: googleAvatar,
+            role: 'member',
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+
+          const profile = await fetchProfile(session.user.id, session.user);
+          if (isMounted) persistProfile(profile || fallbackProfile);
+        } else {
+          if (isMounted) persistProfile(null);
+        }
+      }
+    );
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [persistProfile]);
 
  const loginWithGoogle = useCallback(async () => {
  try {
@@ -292,11 +329,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
  return { error: null };
  }, []);
 
- const logout = useCallback(async () => {
- localStorage.removeItem('shuttlelions_guest_admin');
- await supabase.auth.signOut();
- setUser(null);
- }, []);
+  const logout = useCallback(async () => {
+    localStorage.removeItem('shuttlelions_guest_admin');
+    localStorage.removeItem('shuttlelions_cached_profile');
+    await supabase.auth.signOut();
+    setUser(null);
+  }, []);
 
  const refreshProfile = useCallback(async () => {
  const isGuestAdmin = localStorage.getItem('shuttlelions_guest_admin') === 'true';

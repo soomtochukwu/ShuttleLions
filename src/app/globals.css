@@ -334,3 +334,12 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--sl-green);
 }
+
+/* ---- Hide Scrollbar Utility for Mobile Carousels & Horizontal Filter Pills ---- */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

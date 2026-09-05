@@ -2,24 +2,27 @@
 
 import { useState, useEffect } from 'react';
 import { supabase, type Tutorial } from '@/lib/supabase';
+import { useCachedQuery } from '@/lib/client-cache';
 import { TiltCard } from '@/components/ui/TiltCard';
 import { BookOpen, Video, Clock, CheckCircle2, Sparkles } from 'lucide-react';
 import { audio } from '@/lib/audio';
 
 export default function TutorialsPage() {
- const [tutorials, setTutorials] = useState<Tutorial[]>([]);
+ const { data: tutorials } = useCachedQuery<Tutorial[]>({
+   key: 'tutorials_list',
+   initialFallback: [],
+   fetcher: async () => {
+     const { data } = await supabase.from('tutorials').select('*').order('created_at', { ascending: true });
+     return data || [];
+   },
+ });
  const [activeTutorial, setActiveTutorial] = useState<Tutorial | null>(null);
 
  useEffect(() => {
- async function loadTutorials() {
- const { data } = await supabase.from('tutorials').select('*').order('created_at', { ascending: true });
- setTutorials(data || []);
- if (data && data.length > 0) {
- setActiveTutorial(data[0]);
- }
- }
- loadTutorials();
- }, []);
+   if (tutorials && tutorials.length > 0 && !activeTutorial) {
+     setActiveTutorial(tutorials[0]);
+   }
+ }, [tutorials, activeTutorial]);
 
  return (
  <div className="space-y-8">
