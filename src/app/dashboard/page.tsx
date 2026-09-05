@@ -22,7 +22,10 @@ import {
  ArrowRight,
  ShieldCheck,
  Zap,
+ Clock,
+ MapPin,
 } from 'lucide-react';
+import { formatFullDateTimeRangeWAT, getNextEventOccurrence } from '@/lib/date-utils';
 
 export default function DashboardOverviewPage() {
  const { user, refreshProfile } = useAuth();
@@ -47,19 +50,87 @@ export default function DashboardOverviewPage() {
   },
  });
 
- // 2. Cached Upcoming Events
- const { data: upcomingEvents } = useCachedQuery<EventItem[]>({
-  key: 'dashboard_upcoming_events',
-  initialFallback: [],
-  fetcher: async () => {
-   const { data } = await supabase
-    .from('events')
-    .select('*')
-    .order('start_at', { ascending: true })
-    .limit(3);
-   return data || [];
-  },
- });
+  // 2. Cached Schedule Events synchronized with the Schedule page
+  const { data: events, isLoading: isEventsLoading } = useCachedQuery<EventItem[]>({
+    key: 'schedule_events',
+    initialFallback: [],
+    fetcher: async () => {
+      const { data } = await supabase
+        .from('events')
+        .select('*')
+        .order('start_at', { ascending: true });
+      return data || [];
+    },
+  });
+
+  // Cached RSVPs for attendee counts and user status
+  const { data: rsvpData } = useCachedQuery<{ userRsvps: Record<string, boolean>; attendeeCounts: Record<string, number> }>({
+    key: `schedule_rsvps_${user?.id || 'guest'}`,
+    initialFallback: { userRsvps: {}, attendeeCounts: {} },
+    fetcher: async () => {
+      const { data: allRsvps } = await supabase
+        .from('event_rsvps')
+        .select('event_id, session_date, profile_id, status')
+        .eq('status', 'going');
+
+      const countMap: Record<string, number> = {};
+      const userMap: Record<string, boolean> = {};
+
+      if (allRsvps) {
+        allRsvps.forEach((r) => {
+          const key = `${r.event_id}_${r.session_date}`;
+          countMap[key] = (countMap[key] || 0) + 1;
+          if (user?.id && r.profile_id === user.id) {
+            userMap[key] = true;
+          }
+        });
+      }
+      return { userRsvps: userMap, attendeeCounts: countMap };
+    },
+  });
+
+  // Unified next upcoming activity calculation in sync with Schedule page
+  const weeklyRoutines = events.filter((e) => e.is_recurring);
+  const recurringOccurrences = weeklyRoutines
+    .map((routine) => {
+      const occ = getNextEventOccurrence(routine);
+      return {
+        ...routine,
+        session_date: occ.sessionDate,
+        start_at: occ.startAtIso,
+        end_at: occ.endAtIso,
+        is_next_routine: true,
+      };
+    })
+    .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
+
+  const nextImmediateWeeklyRoutine = recurringOccurrences[0] || null;
+
+  const customEvents = events
+    .filter((e) => !e.is_recurring)
+    .map((ev) => {
+      const occ = getNextEventOccurrence(ev);
+      return {
+        ...ev,
+        session_date: occ.sessionDate,
+        start_at: occ.startAtIso,
+        end_at: occ.endAtIso,
+        is_next_routine: false,
+        is_past: occ.isPast,
+      };
+    })
+    .filter((ev) => !ev.is_past);
+
+  const upcomingStreamlinedEvents = [
+    ...(nextImmediateWeeklyRoutine ? [nextImmediateWeeklyRoutine] : []),
+    ...customEvents,
+  ].sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
+
+  const nextUpcomingGame = upcomingStreamlinedEvents[0] || null;
+  const sessionDate = nextUpcomingGame?.session_date || (nextUpcomingGame ? getNextEventOccurrence(nextUpcomingGame).sessionDate : '');
+  const rsvpKey = nextUpcomingGame ? `${nextUpcomingGame.id}_${sessionDate}` : '';
+  const isGoing = Boolean(rsvpData.userRsvps[rsvpKey]);
+  const attendeeCount = rsvpData.attendeeCounts[rsvpKey] || 0;
 
  // 3. Cached Active Polls
  const { data: activePolls } = useCachedQuery<Poll[]>({
@@ -209,33 +280,88 @@ export default function DashboardOverviewPage() {
 
  {/* 3-Column Community Quick Access Grid */}
  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
- {/* Next Training Session */}
- <TiltCard className="p-6 bg-sl-panel flex flex-col justify-between space-y-4">
- <div className="space-y-3">
- <div className="p-2.5 rounded-xl bg-sl-bg w-fit text-sl-green border border-sl-border">
- <Calendar className="w-5 h-5" />
- </div>
- <h3 className="text-sm font-black text-sl-foreground uppercase">
- Upcoming Training
- </h3>
- {upcomingEvents.length > 0 ? (
- <div className="space-y-1">
- <p className="text-xs font-bold text-sl-green">{upcomingEvents[0].title}</p>
- <p className="text-[11px] text-sl-muted">{upcomingEvents[0].location}</p>
- </div>
- ) : (
- <p className="text-xs text-sl-muted">Saturday 07:00 AM • UNN Badminton Court</p>
- )}
- </div>
- <Link
- href="/dashboard/schedule"
- onClick={() => audio.play('rally')}
- className="text-xs font-black text-sl-green hover:underline flex items-center gap-1"
- >
- <span>Full Schedule & RSVPs</span>
- <ArrowRight className="w-3.5 h-3.5" />
- </Link>
- </TiltCard>
+        {/* Next Training Session / Upcoming Game Card */}
+        <TiltCard maxTilt={3} className="p-6 bg-sl-panel flex flex-col justify-between space-y-4 border border-sl-border">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="p-2.5 rounded-xl bg-sl-bg w-fit text-sl-green border border-sl-border">
+                <Calendar className="w-5 h-5" />
+              </div>
+              {nextUpcomingGame ? (
+                <span
+                  className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
+                    nextUpcomingGame.event_type === 'competition'
+                      ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                      : nextUpcomingGame.is_recurring
+                      ? 'bg-sl-green/20 text-sl-green border border-sl-green/30'
+                      : 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                  }`}
+                >
+                  {nextUpcomingGame.event_type === 'competition'
+                    ? 'Tournament'
+                    : nextUpcomingGame.is_recurring
+                    ? 'Weekly Routine'
+                    : 'Impromptu'}
+                </span>
+              ) : null}
+            </div>
+
+            <div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="w-2 h-2 rounded-full bg-sl-green animate-pulse" />
+                <h3 className="text-xs font-black text-sl-muted uppercase tracking-wider">
+                  Next Scheduled Game
+                </h3>
+              </div>
+              {nextUpcomingGame ? (
+                <div className="space-y-2 mt-1">
+                  <p className="text-sm font-black text-sl-foreground leading-snug line-clamp-1">
+                    {nextUpcomingGame.title}
+                  </p>
+                  
+                  <div className="space-y-1 text-xs text-sl-muted">
+                    <p className="font-bold text-sl-green flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 shrink-0" />
+                      <span className="line-clamp-1">{formatFullDateTimeRangeWAT(nextUpcomingGame.start_at, nextUpcomingGame.end_at)}</span>
+                    </p>
+                    <p className="flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 shrink-0 text-sl-muted" />
+                      <span className="truncate">{nextUpcomingGame.location || 'UNN Badminton Court'}</span>
+                    </p>
+                  </div>
+
+                  <div className="pt-1 flex items-center gap-2 text-[11px] font-bold text-sl-muted">
+                    <div className="flex items-center gap-1">
+                      <Users className="w-3.5 h-3.5 text-sl-green" />
+                      <span>{attendeeCount} Athlete{attendeeCount === 1 ? '' : 's'} Going</span>
+                    </div>
+                    {isGoing && (
+                      <span className="text-[9px] font-black uppercase text-sl-green bg-sl-green/10 border border-sl-green/30 px-2 py-0.5 rounded-full">
+                        RSVP Confirmed
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : isEventsLoading ? (
+                <p className="text-xs text-sl-muted animate-pulse">Syncing schedule...</p>
+              ) : (
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-sl-foreground">Saturday Morning Open Court</p>
+                  <p className="text-xs text-sl-muted">Saturday 07:00 AM – 12:00 PM WAT • UNN Badminton Court</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <Link
+            href="/dashboard/schedule"
+            onClick={() => audio.play('rally')}
+            className="text-xs font-black text-sl-green hover:underline flex items-center gap-1.5 pt-2 border-t border-sl-border/40"
+          >
+            <span>Full Schedule & RSVPs</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </TiltCard>
 
         {/* Community Chat - Coming Soon */}
         <TiltCard className="p-6 bg-sl-panel/60 border border-sl-border/60 opacity-60 flex flex-col justify-between space-y-4">
