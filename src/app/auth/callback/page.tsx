@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 
 export default function AuthCallbackPage() {
-  const [statusText, setStatusText] = useState('Verifying your athlete credentials...');
+  const [statusText, setStatusText] = useState('Verifying athlete session...');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const redirectedRef = useRef(false);
 
@@ -133,7 +133,7 @@ export default function AuthCallbackPage() {
 
         // Strategy A: Exchange PKCE authorization code
         if (code) {
-          setStatusText('Authenticating authorization code...');
+          setStatusText('Validating athlete login...');
           const { data, error: codeErr } = await supabase.auth.exchangeCodeForSession(code);
           if (!codeErr && data?.session?.user) {
             await Promise.race([
@@ -147,7 +147,7 @@ export default function AuthCallbackPage() {
 
         // Strategy B: Set explicit session tokens from hash fragment
         if (accessToken && refreshToken) {
-          setStatusText('Authenticating with Google credentials...');
+          setStatusText('Establishing athlete session...');
           const { data, error: sessionErr } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
@@ -212,7 +212,7 @@ export default function AuthCallbackPage() {
 
   return (
     <div className="min-h-screen bg-sl-bg flex flex-col items-center justify-center text-sl-foreground p-6">
-      <div className="shuttle-panel p-8 bg-sl-panel max-w-sm w-full text-center space-y-4 border border-sl-border shadow-2xl">
+      <div className="shuttle-panel p-8 bg-sl-panel max-w-sm w-full text-center space-y-5 border border-sl-border shadow-2xl">
         <div className="w-14 h-14 rounded-2xl bg-sl-green text-white font-black text-2xl flex items-center justify-center mx-auto shadow-[0_0_20px_rgba(0,200,83,0.5)] animate-bounce">
           <span className="w-4 h-4 rounded-full bg-white animate-ping" />
         </div>
@@ -243,6 +243,10 @@ export default function AuthCallbackPage() {
             </p>
           </div>
         )}
+
+        <div className="pt-4 border-t border-sl-border/40 text-[10px] text-sl-muted">
+          Official University of Nigeria, Nsukka Badminton Club Portal.
+        </div>
       </div>
     </div>
   );

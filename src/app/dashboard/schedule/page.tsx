@@ -85,41 +85,53 @@ export default function SchedulePage() {
     },
   });
 
-  // RSVP state maps (keyed by `${event_id}_${session_date}`)
-  const [userRsvps, setUserRsvps] = useState<Record<string, boolean>>({});
-  const [attendeeCounts, setAttendeeCounts] = useState<Record<string, number>>({});
-  const [filter, setFilter] = useState<'all' | 'weekly' | 'impromptu' | 'competition'>('all');
+  // 3. Cached RSVPs with Instant LocalStorage Hydration & Background Sync
+  const {
+    data: rsvpData,
+    setData: setRsvpData,
+  } = useCachedQuery<{ userRsvps: Record<string, boolean>; attendeeCounts: Record<string, number> }>({
+    key: `schedule_rsvps_${user?.id || 'guest'}`,
+    initialFallback: { userRsvps: {}, attendeeCounts: {} },
+    fetcher: async () => {
+      const { data: allRsvps } = await supabase
+        .from('event_rsvps')
+        .select('event_id, session_date, profile_id, status')
+        .eq('status', 'going');
 
-  // Load RSVPs from database
-  useEffect(() => {
-    async function loadRsvps() {
-      try {
-        const { data: allRsvps } = await supabase
-          .from('event_rsvps')
-          .select('event_id, session_date, profile_id, status')
-          .eq('status', 'going');
+      const countMap: Record<string, number> = {};
+      const userMap: Record<string, boolean> = {};
 
-        if (allRsvps) {
-          const countMap: Record<string, number> = {};
-          const userMap: Record<string, boolean> = {};
-
-          allRsvps.forEach((r) => {
-            const key = `${r.event_id}_${r.session_date}`;
-            countMap[key] = (countMap[key] || 0) + 1;
-            if (user?.id && r.profile_id === user.id) {
-              userMap[key] = true;
-            }
-          });
-
-          setAttendeeCounts(countMap);
-          setUserRsvps(userMap);
-        }
-      } catch (err) {
-        console.error('Error loading RSVPs:', err);
+      if (allRsvps) {
+        allRsvps.forEach((r) => {
+          const key = `${r.event_id}_${r.session_date}`;
+          countMap[key] = (countMap[key] || 0) + 1;
+          if (user?.id && r.profile_id === user.id) {
+            userMap[key] = true;
+          }
+        });
       }
-    }
-    loadRsvps();
-  }, [user?.id, events]);
+      return { userRsvps: userMap, attendeeCounts: countMap };
+    },
+  });
+
+  const userRsvps = rsvpData.userRsvps;
+  const attendeeCounts = rsvpData.attendeeCounts;
+
+  const setUserRsvps = (updater: (prev: Record<string, boolean>) => Record<string, boolean>) => {
+    setRsvpData((prev) => ({
+      ...prev,
+      userRsvps: updater(prev.userRsvps || {}),
+    }));
+  };
+
+  const setAttendeeCounts = (updater: (prev: Record<string, number>) => Record<string, number>) => {
+    setRsvpData((prev) => ({
+      ...prev,
+      attendeeCounts: updater(prev.attendeeCounts || {}),
+    }));
+  };
+
+  const [filter, setFilter] = useState<'all' | 'weekly' | 'impromptu' | 'competition'>('all');
 
  // Map Location Modal State
  const [activeMapModal, setActiveMapModal] = useState<MapModalData | null>(null);

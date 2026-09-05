@@ -51,7 +51,7 @@ export default function ProfilePage() {
             Digital Lion ID Pass
           </h1>
           <p className="text-xs sm:text-sm text-sl-muted font-medium mt-1">
-            Official verified athlete credential and court access pass for UNN ShuttleLions.
+            Official verified athlete membership pass and court access token for UNN ShuttleLions.
           </p>
         </div>
 
@@ -182,14 +182,14 @@ export default function ProfilePage() {
         </div>
 
         {/* ========================================================================= */}
-        {/* RIGHT: ATHLETE CREDENTIALS & COURT ACCESS PROTOCOLS                      */}
+        {/* RIGHT: ATHLETE PROFILE & COURT ACCESS PROTOCOLS                           */}
         {/* ========================================================================= */}
         <div className="lg:col-span-6 space-y-6">
           {/* Card 1: Official Player Profile Summary */}
           <div className="shuttle-panel p-6 bg-sl-panel space-y-4">
             <div className="flex items-center justify-between border-b border-sl-border/30 pb-3">
               <h3 className="text-sm font-black text-sl-foreground uppercase flex items-center gap-2">
-                <User className="w-4 h-4 text-sl-green" /> Athlete Credentials
+                <User className="w-4 h-4 text-sl-green" /> Athlete Profile Record
               </h3>
               <Link
                 href="/dashboard/settings"

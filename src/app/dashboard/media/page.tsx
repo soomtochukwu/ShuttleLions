@@ -74,52 +74,52 @@ export default function MediaGalleryPage() {
  },
  });
 
- const [likedMediaIds, setLikedMediaIds] = useState<Set<string>>(new Set());
- const [filter, setFilter] = useState<'all' | 'training' | 'highlights' | 'photos'>('all');
- const [isUploadOpen, setIsUploadOpen] = useState(false);
+  // 3. Cached User Media Likes with instant hydration
+  const { data: cachedLikedList, setData: setCachedLikedList } = useCachedQuery<string[]>({
+    key: `user_media_likes_${user?.id || 'guest'}`,
+    initialFallback: [],
+    enabled: Boolean(user?.id),
+    fetcher: async () => {
+      if (!user?.id) return [];
+      const { data: likesData } = await supabase
+        .from('media_likes')
+        .select('media_id')
+        .eq('profile_id', user.id);
+      return likesData ? likesData.map((l: any) => l.media_id) : [];
+    },
+  });
 
- // Selection & Batch Delete State
- const [isSelectionMode, setIsSelectionMode] = useState(false);
- const [selectedMediaIds, setSelectedMediaIds] = useState<Set<string>>(new Set());
- const [isBatchDeleting, setIsBatchDeleting] = useState(false);
+  const likedMediaIds = new Set(cachedLikedList || []);
+  const [filter, setFilter] = useState<'all' | 'training' | 'highlights' | 'photos'>('all');
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
 
- // Upload Form State
- const [uploadMode, setUploadMode] = useState<'file' | 'url'>('file');
- const [stagedFiles, setStagedFiles] = useState<StagedMediaItem[]>([]);
- const [newCategory, setNewCategory] = useState<'training' | 'competition' | 'highlights' | 'social'>('training');
+  // Selection & Batch Delete State
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedMediaIds, setSelectedMediaIds] = useState<Set<string>>(new Set());
+  const [isBatchDeleting, setIsBatchDeleting] = useState(false);
 
- // Single URL Upload State
- const [newUrl, setNewUrl] = useState('');
- const [urlTitle, setUrlTitle] = useState('');
- const [urlDesc, setUrlDesc] = useState('');
+  // Upload Form State
+  const [uploadMode, setUploadMode] = useState<'file' | 'url'>('file');
+  const [stagedFiles, setStagedFiles] = useState<StagedMediaItem[]>([]);
+  const [newCategory, setNewCategory] = useState<'training' | 'competition' | 'highlights' | 'social'>('training');
 
- // Progress Tracking State
- const [isUploading, setIsUploading] = useState(false);
- const [uploadPercent, setUploadPercent] = useState<number>(0);
- const [currentUploadIndex, setCurrentUploadIndex] = useState<number>(0);
- const [currentUploadingName, setCurrentUploadingName] = useState<string>('');
+  // Single URL Upload State
+  const [newUrl, setNewUrl] = useState('');
+  const [urlTitle, setUrlTitle] = useState('');
+  const [urlDesc, setUrlDesc] = useState('');
 
- // Active Lightbox Image
- const [lightboxImage, setLightboxImage] = useState<string | null>(null);
- const [deletingId, setDeletingId] = useState<string | null>(null);
+  // Progress Tracking State
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadPercent, setUploadPercent] = useState<number>(0);
+  const [currentUploadIndex, setCurrentUploadIndex] = useState<number>(0);
+  const [currentUploadingName, setCurrentUploadingName] = useState<string>('');
 
- const fileInputRef = useRef<HTMLInputElement>(null);
- const viewedMediaRef = useRef<Set<string>>(new Set());
+  // Active Lightbox Image
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
- useEffect(() => {
- async function loadLikes() {
- if (user?.id) {
- const { data: likesData } = await supabase
- .from('media_likes')
- .select('media_id')
- .eq('profile_id', user.id);
- if (likesData) {
- setLikedMediaIds(new Set(likesData.map((l: any) => l.media_id)));
- }
- }
- }
- loadLikes();
- }, [user?.id]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const viewedMediaRef = useRef<Set<string>>(new Set());
 
  // Permission Gate: Media Personnel, Admin, Captain, or Custom Role with can_upload_media
  const userCustomRole = customRoles.find((r) => r.id === user?.role);
@@ -296,16 +296,10 @@ export default function MediaGalleryPage() {
  const isCurrentlyLiked = likedMediaIds.has(id);
  audio.play(isCurrentlyLiked ? 'courtSqueak' : 'rally');
 
- // Optimistic state update
- setLikedMediaIds((prev) => {
- const next = new Set(prev);
- if (isCurrentlyLiked) {
- next.delete(id);
- } else {
- next.add(id);
- }
- return next;
- });
+    // Optimistic cache and state update
+    setCachedLikedList((prev) =>
+      isCurrentlyLiked ? (prev || []).filter((mid) => mid !== id) : [...(prev || []), id]
+    );
 
  setMediaList((prev) =>
  prev.map((m) =>

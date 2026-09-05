@@ -564,7 +564,7 @@ export default function AdminCommandRoom() {
               Access Restricted
             </h2>
             <p className="text-xs text-sl-muted leading-relaxed">
-              The Admin Command Room requires verified Administrator credentials. Your account (<span className="text-sl-foreground font-mono">{user?.email || 'Guest'}</span>) with role <span className="text-sl-warning font-black uppercase font-mono">{user?.role || 'None'}</span> is not authorized to access or interact with administrative operations.
+              The Admin Command Room requires verified Administrator role permissions. Your account (<span className="text-sl-foreground font-mono">{user?.email || 'Guest'}</span>) with role <span className="text-sl-warning font-black uppercase font-mono">{user?.role || 'None'}</span> is not authorized to access or interact with administrative operations.
             </p>
           </div>
           <Link

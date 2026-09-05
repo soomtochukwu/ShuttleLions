@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
 
       if (!isAuthorizedAdmin) {
         return NextResponse.json(
-          { error: 'Forbidden: Administrator credentials required to dispatch broadcast notifications.' },
+          { error: 'Forbidden: Administrator authorization required to dispatch broadcast notifications.' },
           { status: 403 }
         );
       }

@@ -100,7 +100,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               SHUTTLE<span className="text-sl-green">LIONS</span>
             </h2>
             <p className="text-xs font-black uppercase text-sl-green tracking-widest font-mono">
-              Verifying ShuttleLions Athlete Credentials...
+              Verifying ShuttleLions Athlete Profile...
             </p>
           </div>
 

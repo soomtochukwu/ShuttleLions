@@ -37,22 +37,24 @@ export default function CommunityMembersPage() {
  },
  });
 
- const [payments, setPayments] = useState<Payment[]>([]);
- const [search, setSearch] = useState('');
- const [roleFilter, setRoleFilter] = useState<'all' | 'executives' | 'members'>('all');
- const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  // 3. Cached User Payments (shares exact same cache key as Overview dashboard)
+  const { data: payments } = useCachedQuery<Payment[]>({
+    key: `user_payments_${user?.id || 'guest'}`,
+    initialFallback: [],
+    enabled: Boolean(user?.id),
+    fetcher: async () => {
+      if (!user?.id) return [];
+      const { data: payData } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('profile_id', user.id);
+      return payData || [];
+    },
+  });
 
- useEffect(() => {
- async function loadPayments() {
- if (!user?.id) return;
- const { data: payData } = await supabase
- .from('payments')
- .select('*')
- .eq('profile_id', user.id);
- setPayments(payData || []);
- }
- loadPayments();
- }, [user]);
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'executives' | 'members'>('all');
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
  // Executive Role Determination (Any role appointment other than plain 'member')
  const isExecutiveRole = (role: string | null | undefined) => {
@@ -85,51 +87,51 @@ export default function CommunityMembersPage() {
  });
 
  const getRoleBadge = (role: string | null | undefined) => {
- if (!role || role === 'member') {
- return {
- label: ' Student Athlete',
- colorClass: 'bg-sl-green/10 text-sl-green border-sl-green/20',
- avatarColor: 'bg-sl-green/20 border-sl-green text-sl-green',
- };
- }
- if (role === 'admin') {
- return {
- label: ' Executive Coach & Admin',
- colorClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
- avatarColor: 'bg-amber-500/20 border-amber-400 text-amber-400',
- };
- }
- if (role === 'captain') {
- return {
- label: ' Team Captain',
- colorClass: 'bg-sl-green/25 text-sl-green-glow border-sl-green/50',
- avatarColor: 'bg-sl-green/20 border-sl-green text-sl-green',
- };
- }
- if (role === 'media_personnel') {
- return {
- label: ' Official Media Personnel',
- colorClass: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
- avatarColor: 'bg-cyan-500/20 border-cyan-400 text-cyan-400',
- };
- }
- if (role === 'treasurer') {
- return {
- label: ' Club Treasurer',
- colorClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
- avatarColor: 'bg-emerald-500/20 border-emerald-400 text-emerald-400',
- };
- }
+  if (!role || role === 'member') {
+    return {
+      label: 'Student Athlete',
+      colorClass: 'bg-sl-green/10 text-sl-green border-sl-green/20',
+      avatarColor: 'bg-sl-green/20 border-sl-green text-sl-green',
+    };
+  }
+  if (role === 'admin') {
+    return {
+      label: 'Executive Coach & Admin',
+      colorClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+      avatarColor: 'bg-amber-500/20 border-amber-400 text-amber-400',
+    };
+  }
+  if (role === 'captain') {
+    return {
+      label: 'Team Captain',
+      colorClass: 'bg-sl-green/25 text-sl-green-glow border-sl-green/50',
+      avatarColor: 'bg-sl-green/20 border-sl-green text-sl-green',
+    };
+  }
+  if (role === 'media_personnel') {
+    return {
+      label: 'Official Media Personnel',
+      colorClass: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
+      avatarColor: 'bg-cyan-500/20 border-cyan-400 text-cyan-400',
+    };
+  }
+  if (role === 'treasurer') {
+    return {
+      label: 'Club Treasurer',
+      colorClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+      avatarColor: 'bg-emerald-500/20 border-emerald-400 text-emerald-400',
+    };
+  }
 
- // Dynamic Custom Role Match (e.g. Logistician)
- const custom = customRoles.find((r) => r.id === role);
- const title = custom ? custom.title : role.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  // Dynamic Custom Role Match (e.g. Logistician)
+  const custom = customRoles.find((r) => r.id === role);
+  const title = custom ? custom.title : role.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
- return {
- label: ` ${title}`,
- colorClass: 'bg-purple-500/20 text-purple-300 border-purple-500/40',
- avatarColor: 'bg-purple-500/20 border-purple-400 text-purple-400',
- };
+  return {
+    label: title,
+    colorClass: 'bg-purple-500/20 text-purple-300 border-purple-500/40',
+    avatarColor: 'bg-purple-500/20 border-purple-400 text-purple-400',
+  };
  };
 
  const handleUnlockPayment = async (reference: string) => {

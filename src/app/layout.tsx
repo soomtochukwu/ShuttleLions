@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
+import { PWARegister } from "@/components/pwa/PWARegister";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -19,10 +20,21 @@ export const metadata: Metadata = {
   title: "ShuttleLions | Official UNN Badminton Community Platform",
   description:
     "Official badminton registration, community leagues, court schedules, and equipment portal for the University of Nigeria, Nsukka (UNN).",
+  manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "ShuttleLions",
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.png", type: "image/png" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
   },
   openGraph: {
     title: "ShuttleLions | UNN Badminton Club",
@@ -37,31 +49,33 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({
- children,
+  children,
 }: Readonly<{
- children: React.ReactNode;
+  children: React.ReactNode;
 }>) {
- return (
- <html lang="en">
- <head>
- <link rel="preconnect" href="https://fonts.googleapis.com" />
- <link
- rel="preconnect"
- href="https://fonts.gstatic.com"
- crossOrigin="anonymous"
- />
- <link
- href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap"
- rel="stylesheet"
- />
- </head>
- <body className={`${inter.variable} antialiased min-h-screen flex flex-col bg-sl-bg text-sl-foreground`}>
- <Providers>
- <main className="flex-grow flex flex-col w-full relative z-10">
- {children}
- </main>
- </Providers>
- </body>
- </html>
- );
+  return (
+    <html lang="en">
+      <head>
+        <meta name="mobile-web-app-capable" content="yes" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className={`${inter.variable} antialiased min-h-screen flex flex-col bg-sl-bg text-sl-foreground`}>
+        <Providers>
+          <PWARegister />
+          <main className="flex-grow flex flex-col w-full relative z-10">
+            {children}
+          </main>
+        </Providers>
+      </body>
+    </html>
+  );
 }

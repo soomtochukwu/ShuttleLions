@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/components/AuthContext';
 import { OnboardingWizard } from '@/components/OnboardingWizard';
 import { PaymentCard } from '@/components/PaymentCard';
@@ -10,6 +10,7 @@ import { ShuttleButton } from '@/components/ui/ShuttleButton';
 import { supabase, type Payment, type EventItem, type Poll } from '@/lib/supabase';
 import { audio } from '@/lib/audio';
 import { useFeedback } from '@/components/ui/FeedbackModal';
+import { useCachedQuery } from '@/lib/client-cache';
 import Link from 'next/link';
 import {
  Calendar,
@@ -27,10 +28,52 @@ export default function DashboardOverviewPage() {
  const { user, refreshProfile } = useAuth();
  const { showAlert } = useFeedback();
 
- const [payments, setPayments] = useState<Payment[]>([]);
- const [upcomingEvents, setUpcomingEvents] = useState<EventItem[]>([]);
- const [activePolls, setActivePolls] = useState<Poll[]>([]);
- const [isLoading, setIsLoading] = useState(true);
+ // 1. Cached Payments with instant hydration (shared across Overview & Community)
+ const {
+  data: payments,
+  setData: setPayments,
+  refetch: refetchPayments,
+ } = useCachedQuery<Payment[]>({
+  key: `user_payments_${user?.id || 'guest'}`,
+  initialFallback: [],
+  enabled: Boolean(user?.id),
+  fetcher: async () => {
+   if (!user?.id) return [];
+   const { data } = await supabase
+    .from('payments')
+    .select('*')
+    .eq('profile_id', user.id);
+   return data || [];
+  },
+ });
+
+ // 2. Cached Upcoming Events
+ const { data: upcomingEvents } = useCachedQuery<EventItem[]>({
+  key: 'dashboard_upcoming_events',
+  initialFallback: [],
+  fetcher: async () => {
+   const { data } = await supabase
+    .from('events')
+    .select('*')
+    .order('start_at', { ascending: true })
+    .limit(3);
+   return data || [];
+  },
+ });
+
+ // 3. Cached Active Polls
+ const { data: activePolls } = useCachedQuery<Poll[]>({
+  key: 'dashboard_active_polls',
+  initialFallback: [],
+  fetcher: async () => {
+   const { data } = await supabase
+    .from('polls')
+    .select('*')
+    .eq('status', 'active')
+    .limit(1);
+   return data || [];
+  },
+ });
 
  // Payment sim state
  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -38,45 +81,6 @@ export default function DashboardOverviewPage() {
  const [checkoutType, setCheckoutType] = useState<'registration' | 'monthly'>('registration');
 
  const isProfileIncomplete =!user?.full_name ||!user?.faculty ||!user?.department;
-
- const fetchData = useCallback(async () => {
- if (!user?.id) return;
- setIsLoading(true);
- try {
- // 1. Payments
- const { data: payData } = await supabase
- .from('payments')
- .select('*')
- .eq('profile_id', user.id);
- setPayments(payData || []);
-
- // 2. Upcoming events
- const { data: eventData } = await supabase
- .from('events')
- .select('*')
- .order('start_at', { ascending: true })
- .limit(3);
- setUpcomingEvents(eventData || []);
-
- // 3. Active Polls
- const { data: pollData } = await supabase
- .from('polls')
- .select('*')
- .eq('status', 'active')
- .limit(1);
- setActivePolls(pollData || []);
- } catch (err) {
- console.error('Failed to fetch dashboard data:', err);
- } finally {
- setIsLoading(false);
- }
- }, [user?.id]);
-
- useEffect(() => {
- if (!isProfileIncomplete && user?.id) {
- fetchData();
- }
- }, [isProfileIncomplete, user?.id, fetchData]);
 
  const isRegPaid = payments.some((p) => p.type === 'registration' && p.status === 'success');
  const currentMonthKey = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
@@ -98,34 +102,50 @@ export default function DashboardOverviewPage() {
  setIsCheckoutOpen(true);
  };
 
- const handlePaymentSuccess = async (reference: string) => {
- if (!user?.id) return;
- try {
- await supabase.from('payments').insert({
- profile_id: user.id,
- type: checkoutType,
- amount_kobo: checkoutAmountKobo,
- status: 'success',
- reference,
- provider: 'simulated',
- metadata: checkoutType === 'monthly' ? { period: currentMonthKey } : null,
- });
+  const handlePaymentSuccess = async (reference: string) => {
+    if (!user?.id) return;
+    try {
+      const newPayment: Payment = {
+        id: 'pay_' + Date.now(),
+        profile_id: user.id,
+        type: checkoutType,
+        amount_kobo: checkoutAmountKobo,
+        status: 'success',
+        reference,
+        provider: 'simulated',
+        metadata: checkoutType === 'monthly' ? { period: currentMonthKey } : null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
 
- showAlert({
- title: 'Payment Confirmed! ',
- message: 'Your athlete dues have been recorded and your dashboard privileges updated.',
- type: 'success',
- });
- fetchData();
- } catch (err: any) {
- console.error(err);
- showAlert({
- title: 'Payment Notice',
- message: 'Could not record payment transaction.',
- type: 'error',
- });
- }
- };
+      // Optimistic instant cache update across all pages
+      setPayments((prev) => [newPayment, ...(prev || [])]);
+
+      await supabase.from('payments').insert({
+        profile_id: user.id,
+        type: checkoutType,
+        amount_kobo: checkoutAmountKobo,
+        status: 'success',
+        reference,
+        provider: 'simulated',
+        metadata: checkoutType === 'monthly' ? { period: currentMonthKey } : null,
+      });
+
+      showAlert({
+        title: 'Payment Confirmed!',
+        message: 'Your athlete dues have been recorded and your dashboard privileges updated.',
+        type: 'success',
+      });
+      refetchPayments();
+    } catch (err: any) {
+      console.error(err);
+      showAlert({
+        title: 'Payment Notice',
+        message: 'Could not record payment transaction.',
+        type: 'error',
+      });
+    }
+  };
 
  if (isProfileIncomplete) {
  return (

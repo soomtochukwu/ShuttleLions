@@ -14,8 +14,9 @@ import {
   isNotificationSupported,
   requestNotificationPermission,
 } from '@/lib/notifications';
-import { usePWAStatus } from '@/components/pwa/PWAInstallPrompt';
+import { usePWAStatus, type SupportedPlatform } from '@/components/pwa/PWAInstallPrompt';
 import { triggerSimulatedNotification } from '@/components/notifications/RealtimeNotificationListener';
+import { LegalModal } from '@/components/legal/LegalModal';
 import {
   User,
   Camera,
@@ -37,19 +38,24 @@ import {
   RefreshCw,
   Trash2,
   ShieldCheck,
+  CheckCircle2,
   Sparkles,
   Share,
   PlusSquare,
   Play,
+  MoreVertical,
+  Monitor,
+  FileText,
+  Lock,
 } from 'lucide-react';
 
 export default function SettingsPage() {
   const { user, refreshProfile } = useAuth();
   const { theme, setTheme } = useTheme();
   const { showAlert } = useFeedback();
-  const { isStandalone, canInstall, isIOS, triggerInstall } = usePWAStatus();
+  const { isStandalone, canInstall, platform, isIOS, isAndroid, isDesktop, triggerInstall } = usePWAStatus();
 
-  // Profile Credentials State
+  // Athlete Profile State
   const [fullName, setFullName] = useState(user?.full_name || '');
   const [faculty, setFaculty] = useState(user?.faculty || Object.keys(FACULTIES_AND_DEPARTMENTS)[0]);
   const [department, setDepartment] = useState(user?.department || '');
@@ -78,7 +84,13 @@ export default function SettingsPage() {
   // UI state
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
-  const [showIOSGuide, setShowIOSGuide] = useState(false);
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
+  const [activeGuideTab, setActiveGuideTab] = useState<SupportedPlatform>(platform);
+  const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
+
+  useEffect(() => {
+    setActiveGuideTab(platform);
+  }, [platform]);
 
   // Load state on mount & sync with user
   useEffect(() => {
@@ -213,7 +225,7 @@ export default function SettingsPage() {
     });
   };
 
-  // Save All Credentials and Preferences
+  // Save All Profile Details and Preferences
   const handleSaveAll = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!user?.id) return;
@@ -250,7 +262,7 @@ export default function SettingsPage() {
         finalAvatarUrl = avatarUrlInput.trim();
       }
 
-      setSaveStatus('Updating database credentials...');
+      setSaveStatus('Saving athlete profile details...');
       const { error: updateErr } = await supabase
         .from('profiles')
         .update({
@@ -326,7 +338,7 @@ export default function SettingsPage() {
 
       <form onSubmit={handleSaveAll} className="space-y-8">
         {/* ========================================================================= */}
-        {/* SECTION 1: ATHLETE CREDENTIALS & PHOTO                                    */}
+        {/* SECTION 1: ATHLETE PROFILE & PHOTO                                        */}
         {/* ========================================================================= */}
         <div className="shuttle-panel p-6 sm:p-7 bg-sl-panel space-y-6">
           <div className="flex items-center justify-between border-b border-sl-border/30 pb-4">
@@ -336,7 +348,7 @@ export default function SettingsPage() {
               </div>
               <div>
                 <h3 className="text-base font-black text-sl-foreground uppercase">
-                  Athlete Credentials & Photo
+                  Athlete Profile & Photo
                 </h3>
                 <p className="text-[11px] text-sl-muted">
                   Information displayed on your Digital Lion ID Pass and tournament roster.
@@ -824,7 +836,7 @@ export default function SettingsPage() {
               </h4>
               <p className="text-[11px] text-sl-muted max-w-md">
                 {isStandalone
-                  ? 'ShuttleLions is currently running in full-screen standalone application mode.'
+                  ? 'ShuttleLions is running in full-screen standalone application mode.'
                   : 'Install the web app to your device for instant launch, offline caching, and native notifications.'}
               </p>
             </div>
@@ -834,37 +846,113 @@ export default function SettingsPage() {
                 type="button"
                 onClick={async () => {
                   audio.haptic('tap');
-                  if (isIOS) {
-                    setShowIOSGuide(!showIOSGuide);
-                  } else if (canInstall) {
+                  if (canInstall) {
                     await triggerInstall();
                   } else {
-                    setShowIOSGuide(true);
+                    setShowInstallGuide(!showInstallGuide);
                   }
                 }}
-                className="px-4 py-2 rounded-xl bg-sl-green hover:bg-sl-green-glow hover:text-black text-white text-xs font-black transition-all flex items-center gap-2 shadow-md shrink-0"
+                className="px-4 py-2 rounded-xl bg-sl-green hover:bg-sl-green-glow hover:text-black text-white text-xs font-black transition-all flex items-center gap-2 shadow-md shrink-0 cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Install to Device</span>
+                <span>{canInstall ? 'Install to Device' : (showInstallGuide ? 'Hide Instructions' : 'Installation Guide')}</span>
               </button>
             )}
           </div>
 
-          {showIOSGuide && (
-            <div className="p-4 rounded-xl bg-sl-bg border border-sl-border space-y-2 text-xs">
-              <h5 className="font-bold text-sl-foreground uppercase text-[11px]">
-                Apple iOS Installation Guide:
-              </h5>
-              <div className="space-y-1.5 text-sl-muted">
-                <div className="flex items-center gap-2">
-                  <Share className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                  <span>1. Tap the <strong>Share</strong> button in Safari toolbar.</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <PlusSquare className="w-3.5 h-3.5 text-sl-green shrink-0" />
-                  <span>2. Select <strong>Add to Home Screen</strong> from the action sheet.</span>
+          {showInstallGuide && !isStandalone && (
+            <div className="p-4 rounded-xl bg-sl-bg border border-sl-border space-y-3 text-xs">
+              <div className="flex items-center justify-between border-b border-sl-border/40 pb-2">
+                <h5 className="font-bold text-sl-foreground uppercase text-[11px] flex items-center gap-1.5">
+                  <Smartphone className="w-3.5 h-3.5 text-sl-green" /> Select Your Operating System:
+                </h5>
+
+                <div className="flex items-center gap-1 bg-sl-panel p-1 rounded-lg border border-sl-border text-[10px] font-bold">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      audio.haptic('tap');
+                      setActiveGuideTab('android');
+                    }}
+                    className={`px-2 py-0.5 rounded transition-colors cursor-pointer ${
+                      activeGuideTab === 'android' ? 'bg-sl-green text-white' : 'text-sl-muted hover:text-sl-foreground'
+                    }`}
+                  >
+                    Android
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      audio.haptic('tap');
+                      setActiveGuideTab('ios');
+                    }}
+                    className={`px-2 py-0.5 rounded transition-colors cursor-pointer ${
+                      activeGuideTab === 'ios' ? 'bg-sl-green text-white' : 'text-sl-muted hover:text-sl-foreground'
+                    }`}
+                  >
+                    Apple iOS
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      audio.haptic('tap');
+                      setActiveGuideTab('desktop');
+                    }}
+                    className={`px-2 py-0.5 rounded transition-colors cursor-pointer ${
+                      activeGuideTab === 'desktop' ? 'bg-sl-green text-white' : 'text-sl-muted hover:text-sl-foreground'
+                    }`}
+                  >
+                    Desktop
+                  </button>
                 </div>
               </div>
+
+              {activeGuideTab === 'android' && (
+                <div className="space-y-2 text-sl-muted">
+                  <div className="flex items-center gap-2">
+                    <MoreVertical className="w-4 h-4 text-sl-green shrink-0" />
+                    <span>1. Tap Chrome&apos;s menu icon (three vertical dots in top-right).</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Download className="w-4 h-4 text-sl-green shrink-0" />
+                    <span>2. Tap <strong>Install app</strong> or <strong>Add to Home screen</strong>.</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-sl-green shrink-0" />
+                    <span>3. Confirm the install dialog; the app icon will appear on your device launcher.</span>
+                  </div>
+                </div>
+              )}
+
+              {activeGuideTab === 'ios' && (
+                <div className="space-y-2 text-sl-muted">
+                  <div className="flex items-center gap-2">
+                    <Share className="w-4 h-4 text-blue-400 shrink-0" />
+                    <span>1. Tap the <strong>Share</strong> button in the Safari bottom toolbar.</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <PlusSquare className="w-4 h-4 text-sl-green shrink-0" />
+                    <span>2. Scroll down and select <strong>Add to Home Screen</strong>.</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-sl-green shrink-0" />
+                    <span>3. Tap <strong>Add</strong> in the top-right corner to complete installation.</span>
+                  </div>
+                </div>
+              )}
+
+              {activeGuideTab === 'desktop' && (
+                <div className="space-y-2 text-sl-muted">
+                  <div className="flex items-center gap-2">
+                    <Monitor className="w-4 h-4 text-sl-green shrink-0" />
+                    <span>1. Click the <strong>Install</strong> icon in the address bar (next to the bookmark star).</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MoreVertical className="w-4 h-4 text-sl-green shrink-0" />
+                    <span>2. Or open the browser menu &rarr; <strong>Save and share</strong> &rarr; <strong>Install ShuttleLions</strong>.</span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -891,7 +979,7 @@ export default function SettingsPage() {
             <button
               type="button"
               onClick={handlePurgeCache}
-              className="px-3 py-1.5 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+              className="px-3 py-1.5 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>Purge Cache & Resync</span>
@@ -899,7 +987,60 @@ export default function SettingsPage() {
           </div>
 
           <div className="p-3.5 rounded-xl bg-sl-bg border border-sl-border text-xs text-sl-muted leading-relaxed">
-            Your credentials and database records are cached locally in secure browser storage. If you ever experience desynchronized data or want a hard refresh from Supabase servers, click &quot;Purge Cache & Resync&quot;.
+            Your athlete profile and preferences are cached locally in secure browser storage. If you ever experience desynchronized data or want a hard refresh from Supabase servers, click &quot;Purge Cache & Resync&quot;.
+          </div>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* SECTION 7: CLUB GOVERNANCE & PRIVACY COMPLIANCE                           */}
+        {/* ========================================================================= */}
+        <div className="shuttle-panel p-6 sm:p-7 bg-sl-panel space-y-5">
+          <div className="flex items-center justify-between border-b border-sl-border/30 pb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-sl-green/15 text-sl-green flex items-center justify-center font-bold">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-sl-foreground uppercase">
+                  Club Governance & Privacy
+                </h3>
+                <p className="text-[11px] text-sl-muted">
+                  Official data protection statements and varsity terms of service for UNN athletes.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                audio.haptic('tap');
+                setIsLegalModalOpen(true);
+              }}
+              className="px-3 py-1.5 rounded-lg border border-sl-border bg-sl-bg hover:bg-sl-green hover:text-white text-sl-foreground text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>View Legal Documents</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="p-3.5 rounded-xl bg-sl-bg border border-sl-border space-y-1">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-sl-foreground uppercase">
+                <Lock className="w-3.5 h-3.5 text-sl-green" /> Privacy Guarantee
+              </div>
+              <p className="text-[11px] text-sl-muted">
+                Zero password harvesting. OAuth2 token security via Supabase and student profile confidentiality.
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-sl-bg border border-sl-border space-y-1">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-sl-foreground uppercase">
+                <FileText className="w-3.5 h-3.5 text-sl-green" /> Student Club Charter
+              </div>
+              <p className="text-[11px] text-sl-muted">
+                Non-commercial varsity sports society operated for University of Nigeria badminton players.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -908,7 +1049,7 @@ export default function SettingsPage() {
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-sl-green shrink-0" />
             <span className="text-xs text-sl-muted">
-              {saveStatus || 'All credentials and preferences are validated before saving.'}
+              {saveStatus || 'All profile preferences are validated before saving.'}
             </span>
           </div>
 
@@ -922,6 +1063,12 @@ export default function SettingsPage() {
           </ShuttleButton>
         </div>
       </form>
+
+      {/* Privacy Policy & Terms of Service Modal */}
+      <LegalModal
+        isOpen={isLegalModalOpen}
+        onClose={() => setIsLegalModalOpen(false)}
+      />
     </div>
   );
 }
