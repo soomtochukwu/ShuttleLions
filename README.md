@@ -1,75 +1,111 @@
-# 💘 Rizz-14th: The Valentine's Digital Wingman for Nerds
+# 🏸 ShuttleLions: UNN Badminton Varsity & Athlete Platform
 
-**Finally, a way to confess your feelings without actually talking to anyone.**
+**ShuttleLions** is the official digital platform and athlete management portal for the University of Nigeria, Nsukka (UNN) Badminton Club. It powers student athlete registration, digital barcode membership passes, court training schedules, interactive match RSVPs, pre-game notifications, and club executive governance.
 
-Rizz-14th is a **Neo-Pop, AI-powered "Digital Wingman"** built for developers, degens, and chronically online nerds. It scrapes your crush's X (Twitter) profile to generate scientifically calibrated, hyper-specific pickup lines ("Rizz") that slide into their DMs with surgical precision.
+---
 
-![Neo-Pop UI](./public/screenshot-demo.png)
+## 🌟 Key Features
 
-## 🧠 How It Works (The "Stealth Mode" Algorithm)
+### 1. 3D Parallax Landing Arena & Motion Physics
+* **Scroll-Driven Court Experience:** Immersive 3D court entrance, serving sequence, and perspective floor markings powered by Framer Motion and modern CSS View Transitions.
+* **Synthesized Court Soundscape:** Custom Web Audio API sound effects (rallies, smashes, net drops, whistles, and court squeaks) with zero external MP3 latency.
+* **Dual Theme Engine:** High-contrast Neo-Green and Dark mode design systems with halftone dot patterns and crisp borders.
 
-Stop sending generic "Happy Valentine's Day" texts. Rizz-14th uses a sophisticated 3-step process:
+### 2. Digital Lion ID & Athlete Directory
+* **Digital Pass Verification:** Scannable athlete passes with unique registration barcodes for gymnasium entry.
+* **UNN Faculty & Department Taxonomy:** Complete directory coverage across all 15 UNN faculties and academic departments.
+* **Membership Directory:** Searchable athlete registry with role badges (*Executive Council*, *Committee Leads*, *Athletes*).
 
-1.  **Reconnaissance (Exa.ai)**: We scan their last **365 days of tweets** to find their deep-seated obsessions (e.g., hating Java, loving Formula 1, or buying high at the top).
-2.  **Psychological Profiling (Gemini 2.5)**: Our "Telepathic Resonance" engine identifies their "main character energy" without being creepy.
-3.  **The Strike**: It generates a 10/10 pickup line that references their niche interest _stealthily_.
-    - _Bad:_ "I saw you like Rust."
-    - _Rizz-14th:_ "i can't promise memory safety but i can promise a date on feb 14. be my valentine? 🦀🔥"
+### 3. Court Schedules, Activities & GPS Navigation
+* **Official Weekly Badminton Schedule:** Pinned core training routines (Tuesdays, Saturdays, and Sundays) with an interactive mobile collapsible fold.
+* **Impromptu Matches & Tournaments:** Dynamic match coordination with custom categories (*Tournaments*, *Next Routine*, *Impromptu*, *Socials*).
+* **WAT Time Standardization & GPS Map Modals:** Accurate West Africa Time (WAT) scheduling with embedded Google Maps directions and coordinate links.
 
-## 🚀 Key Features
+### 4. Interactive Match RSVPs & Realtime Notifications
+* **Pre-Game Reminders:** Automated reminders dispatched **1 hour** and **30 minutes** before court sessions.
+* **Multi-Channel Delivery:** In-app heads-up notification banners, Supabase Realtime WebSocket broadcasts, and Nodemailer SMTP email dispatches.
+* **Notification Preferences:** Customizable athlete alert settings with device haptic vibration feedback.
 
-- **Neo-Pop Aesthetic**: Halftone dots, brutalist borders, and comic book vibes.
-- **Telepathic Rizz**: AI that knows they hate slow walkers before you even meet them.
-- **Runaway "NO" Button**: The "No" button physically runs away from their cursor. Rejection is literally impossible.* (*Terms apply\*)
-- **Crypto Paywall (Optional)**: If they try to reject you 5 times, they have to pay $2 USDT to escape.
-- **Social Proof**: Live counter of how many people have "confessed" today.
+### 5. Match Media Gallery & Vlogs
+* **Curated Footage:** Match highlights, training drill videos, and high-resolution court stills.
+* **Role-Protected Publishing:** Content creation permissions restricted to the appointed **Media Personnel** and Club Executives.
+* **Batch Operations:** Multi-file selection, batch deletion, and direct image/video preview players.
 
-## 🛠️ Tech Stack (For the Nerds)
+### 6. Executive Council & Governance
+* **Role Permissions Matrix:** Role-Based Access Control (RBAC) governing schedule management, media publishing, and financial auditing.
+* **Custom Executive Roles:** Dynamic appointment tools for administrative leads (*Logistics*, *Media Personnel*, *Captains*).
 
-- **Framework**: Next.js 16 (App Router)
-- **Styling**: Tailwind CSS + Framer Motion (for the smooth button physics)
-- **AI**: Google Gemini 2.5 Flash + Exa.ai (Twitter Scraping)
-- **Database**: Supabase
-- **Web3**: wagmi + viem (Polygon USDT integration)
+### 7. Progressive Web App (PWA) & Offline Caching
+* **Instant Hydration:** Client memory caching with local storage persistence for near-zero loading times.
+* **Service Worker Caching:** PWA manifest with background asset pre-caching and home screen installation support.
+
+---
+
+## 🛠️ Technology Stack
+
+* **Framework:** Next.js 16 (App Router, Turbopack)
+* **Language:** TypeScript
+* **Styling:** Tailwind CSS, CSS Custom Properties, Lucide React (Zero UI emojis)
+* **Animation & Audio:** Framer Motion, Web Audio API Synthesizer
+* **Backend & Database:** Supabase (PostgreSQL, Row Level Security, Realtime, Storage, Auth)
+* **Email & Notifications:** Nodemailer SMTP, Web Notifications API
+* **PWA:** Service Worker Cache, Web App Manifest
+
+---
 
 ## 📦 Getting Started
 
-1.  **Clone the repo**
+### 1. Clone the Repository
+```bash
+git clone https://github.com/yourusername/ShuttleLions.git
+cd ShuttleLions
+```
 
-    ```bash
-    git clone https://github.com/yourusername/rizz-14.git
-    cd rizz-14
-    ```
+### 2. Install Dependencies
+```bash
+npm install
+```
 
-2.  **Install dependencies**
+### 3. Configure Environment Variables
+Copy the template configuration:
+```bash
+cp .env.local.example .env.local
+```
 
-    ```bash
-    npm install
-    ```
+Fill in your Supabase credentials and Nodemailer SMTP details:
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 
-3.  **Set up environment variables**
-    Create a `.env.local` file:
+# Nodemailer SMTP Configuration
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-16-character-app-password
+SMTP_FROM="ShuttleLions UNN" <your-email@gmail.com>
+```
 
-    ```env
-    NEXT_PUBLIC_SUPABASE_URL=...
-    NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-    GEMINI_API_KEY=...
-    EXA_API_KEY=...
-    NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=...
-    TWITTER_CLIENT_ID=...
-    TWITTER_CLIENT_SECRET=...
-    NEXT_PUBLIC_BASE_URL=http://localhost:3000
-    ```
+### 4. Apply Database Migrations
+Apply the PostgreSQL migrations located in [`supabase/migrations/`](./supabase/migrations/) to your Supabase project:
+```bash
+npx supabase db push
+```
 
-4.  **Run the wingman**
-    ```bash
-    npm run dev
-    ```
+### 5. Run the Development Server
+```bash
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## 🤝 Contributing
+### 6. Verify Production Build
+```bash
+npm run build
+```
 
-Got better Rizz? Submit a PR. We need more "Telepathic" prompts for specific niches (e.g., Vim users, Gym rats, DeFi degens).
+---
 
 ## 📜 License
 
-MIT. Use this to find love, not to stalk. BE NORMAL.
+This project is licensed under the MIT License.
