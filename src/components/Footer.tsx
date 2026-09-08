@@ -1,23 +1,12 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { audio } from '@/lib/audio';
-import { LegalModal } from './legal/LegalModal';
-import { ShieldCheck, FileText, Lock } from 'lucide-react';
+import { FileText, Lock } from 'lucide-react';
 
 export function Footer() {
-  const [legalModalOpen, setLegalModalOpen] = useState(false);
-  const [legalTab, setLegalTab] = useState<'privacy' | 'terms'>('privacy');
-
   const handleLinkClick = () => {
     audio.play('rally');
-  };
-
-  const openLegal = (tab: 'privacy' | 'terms') => {
-    audio.haptic('tap');
-    setLegalTab(tab);
-    setLegalModalOpen(true);
   };
 
   return (
@@ -61,32 +50,26 @@ export function Footer() {
           &copy; {new Date().getFullYear()} ShuttleLions UNN. University student sports society.
         </p>
 
-        <div className="flex items-center gap-4 text-[11px] text-sl-muted font-medium">
-          <button
-            type="button"
-            onClick={() => openLegal('privacy')}
-            className="hover:text-sl-green transition-colors cursor-pointer flex items-center gap-1"
+        <div className="flex items-center gap-4 text-[11px] sm:text-xs text-sl-muted font-medium">
+          <Link
+            href="/privacy"
+            onClick={handleLinkClick}
+            className="hover:text-sl-green transition-colors cursor-pointer flex items-center gap-1.5"
           >
-            <Lock className="w-3 h-3 text-sl-green" />
+            <Lock className="w-3.5 h-3.5 text-sl-green" />
             <span>Privacy Policy</span>
-          </button>
+          </Link>
           <span>•</span>
-          <button
-            type="button"
-            onClick={() => openLegal('terms')}
-            className="hover:text-sl-green transition-colors cursor-pointer flex items-center gap-1"
+          <Link
+            href="/terms"
+            onClick={handleLinkClick}
+            className="hover:text-sl-green transition-colors cursor-pointer flex items-center gap-1.5"
           >
-            <FileText className="w-3 h-3 text-sl-green" />
-            <span>Terms of Service</span>
-          </button>
+            <FileText className="w-3.5 h-3.5 text-sl-green" />
+            <span>Terms &amp; Conditions</span>
+          </Link>
         </div>
       </div>
-
-      <LegalModal
-        isOpen={legalModalOpen}
-        onClose={() => setLegalModalOpen(false)}
-        defaultTab={legalTab}
-      />
     </footer>
   );
 }
