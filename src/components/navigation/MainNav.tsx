@@ -100,8 +100,8 @@ export function MainNav({ onOpenAuth }: MainNavProps) {
  onClick={() => audio.play('rally')}
  className="flex items-center gap-2.5 group"
  >
- <div className="w-9 h-9 rounded-xl bg-sl-green flex items-center justify-center text-white font-black text-xl shadow-[0_0_15px_rgba(0,200,83,0.4)] group-hover:scale-105 transition-transform">
- 
+ <div className="w-9 h-9 rounded-xl bg-sl-green/20 border border-sl-green/40 flex items-center justify-center p-1 shadow-[0_0_15px_rgba(0,200,83,0.3)] group-hover:scale-105 transition-transform overflow-hidden">
+ <img src="/icons/icon-192.png" alt="ShuttleLions" className="w-full h-full object-contain" />
  </div>
  <div className="flex flex-col">
  <span

@@ -178,13 +178,40 @@ export default function AdminCommandRoom() {
       return;
     }
     audio.play('serve');
-    await supabase.from('profiles').update({ role }).eq('id', profId);
-    setProfiles((prev) => prev.map((p) => (p.id === profId ? { ...p, role } : p)));
-    showAlert({
-      title: 'Role Updated',
-      message: `Member role has been successfully changed to "${role}".`,
-      type: 'success',
-    });
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/roles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({
+          member_id: profId,
+          role,
+        }),
+      });
+
+      const resData = await res.json();
+      if (!res.ok || resData.error) {
+        throw new Error(resData.error || 'Failed to update role');
+      }
+
+      setProfiles((prev) => prev.map((p) => (p.id === profId ? { ...p, role } : p)));
+      showAlert({
+        title: 'Role Updated',
+        message: `Member role has been successfully changed to "${role}".`,
+        type: 'success',
+      });
+    } catch (err: any) {
+      console.error('Failed to update role:', err);
+      showAlert({
+        title: 'Role Update Failed',
+        message: err.message || 'Could not update role. Please verify your administrative clearance.',
+        type: 'error',
+      });
+    }
   };
 
   const handleUseCurrentLocationAdmin = () => {
@@ -632,100 +659,169 @@ export default function AdminCommandRoom() {
         })}
       </div>
 
- {/* Tab 1: Members Roster */}
- {activeTab === 'members' && (
- <div className="shuttle-panel p-6 bg-sl-panel space-y-4">
- <h3 className="text-base font-black text-sl-foreground uppercase">Registered Athletes ({profiles.length})</h3>
- <div className="overflow-x-auto">
- <table className="w-full text-left text-xs">
- <thead className="border-b border-sl-border/40 text-sl-muted uppercase font-black">
- <tr>
- <th className="pb-3">Athlete</th>
- <th className="pb-3">Faculty / Dept</th>
- <th className="pb-3">Level</th>
- <th className="pb-3">Role</th>
- <th className="pb-3">Action</th>
- </tr>
- </thead>
- <tbody className="divide-y divide-sl-border/20 font-medium text-sl-foreground">
- {profiles.map((p) => (
- <tr key={p.id} className="hover:bg-sl-bg/50">
- <td className="py-3 font-bold">{p.full_name}</td>
- <td className="py-3 text-sl-muted">{p.department}</td>
- <td className="py-3 font-mono">{p.level}L</td>
- <td className="py-3">
- <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-sl-green/10 text-sl-green">
- {p.role}
- </span>
- </td>
- <td className="py-3">
- <select
- value={p.role}
- onChange={(e) => handleRoleChange(p.id, e.target.value)}
- className="bg-sl-bg border border-sl-border text-xs rounded p-1"
- >
- <option value="member">Member (Student Athlete)</option>
- <option value="captain"> Team Captain</option>
- <option value="media_personnel"> Media Personnel</option>
- <option value="treasurer"> Club Treasurer</option>
- <option value="admin"> Executive Admin</option>
- {customRoles
- .filter(
- (r) =>
-!['member', 'captain', 'media_personnel', 'treasurer', 'admin'].includes(r.id)
- )
- .map((r) => (
- <option key={r.id} value={r.id}>
- {r.title}
- </option>
- ))}
- </select>
- </td>
- </tr>
- ))}
- </tbody>
- </table>
- </div>
- </div>
- )}
+      {/* Tab 1: Members Roster */}
+      {activeTab === 'members' && (
+        <div className="shuttle-panel p-4 sm:p-6 bg-sl-panel space-y-4">
+          <h3 className="text-base font-black text-sl-foreground uppercase">Registered Athletes ({profiles.length})</h3>
 
- {/* Tab 2: Payments Ledger */}
- {activeTab === 'payments' && (
- <div className="shuttle-panel p-6 bg-sl-panel space-y-4">
- <h3 className="text-base font-black text-sl-foreground uppercase">Financial Ledger & Receipts ({payments.length})</h3>
- <div className="overflow-x-auto">
- <table className="w-full text-left text-xs">
- <thead className="border-b border-sl-border/40 text-sl-muted uppercase font-black">
- <tr>
- <th className="pb-3">Reference</th>
- <th className="pb-3">Type</th>
- <th className="pb-3">Amount</th>
- <th className="pb-3">Status</th>
- <th className="pb-3">Date</th>
- </tr>
- </thead>
- <tbody className="divide-y divide-sl-border/20 font-medium">
- {payments.map((pay) => (
- <tr key={pay.id} className="hover:bg-sl-bg/50">
- <td className="py-3 font-mono font-bold">{pay.reference}</td>
- <td className="py-3 uppercase text-sl-muted font-bold">{pay.type}</td>
- <td className="py-3 font-mono text-sl-green font-black">{formatKobo(pay.amount_kobo)}</td>
- <td className="py-3">
- <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-sl-green/20 text-sl-green">
- {pay.status}
- </span>
- </td>
- <td className="py-3 text-sl-muted">{new Date(pay.created_at).toLocaleDateString()}</td>
- </tr>
- ))}
- </tbody>
- </table>
- </div>
- </div>
- )}
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b border-sl-border/40 text-sl-muted uppercase font-black">
+                <tr>
+                  <th className="pb-3">Athlete</th>
+                  <th className="pb-3">Faculty / Dept</th>
+                  <th className="pb-3">Level</th>
+                  <th className="pb-3">Role</th>
+                  <th className="pb-3">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-sl-border/20 font-medium text-sl-foreground">
+                {profiles.map((p) => (
+                  <tr key={p.id} className="hover:bg-sl-bg/50">
+                    <td className="py-3 font-bold">{p.full_name}</td>
+                    <td className="py-3 text-sl-muted">{p.department}</td>
+                    <td className="py-3 font-mono">{p.level}L</td>
+                    <td className="py-3">
+                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-sl-green/10 text-sl-green">
+                        {p.role}
+                      </span>
+                    </td>
+                    <td className="py-3">
+                      <select
+                        value={p.role}
+                        onChange={(e) => handleRoleChange(p.id, e.target.value)}
+                        className="bg-sl-bg border border-sl-border text-xs rounded p-1"
+                      >
+                        <option value="member">Member (Student Athlete)</option>
+                        <option value="captain">Team Captain</option>
+                        <option value="media_personnel">Media Personnel</option>
+                        <option value="treasurer">Club Treasurer</option>
+                        <option value="admin">Executive Admin</option>
+                        {customRoles
+                          .filter(
+                            (r) =>
+                              !['member', 'captain', 'media_personnel', 'treasurer', 'admin'].includes(r.id)
+                          )
+                          .map((r) => (
+                            <option key={r.id} value={r.id}>
+                              {r.title}
+                            </option>
+                          ))}
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
- {/* Tab 3: Gear Orders */}
- {activeTab === 'orders' && (
+          {/* Mobile Cards View */}
+          <div className="md:hidden space-y-3">
+            {profiles.map((p) => (
+              <div key={p.id} className="p-3.5 bg-sl-bg rounded-xl border border-sl-border space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-sl-green text-white font-bold text-xs flex items-center justify-center shrink-0">
+                      {p.full_name?.charAt(0) || 'L'}
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-black text-sl-foreground truncate">{p.full_name}</h4>
+                      <p className="text-[10px] text-sl-muted truncate">{p.department || 'UNN'} &bull; {p.level}L</p>
+                    </div>
+                  </div>
+                  <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-sl-green/15 text-sl-green shrink-0">
+                    {p.role}
+                  </span>
+                </div>
+                <div className="pt-2 border-t border-sl-border/30 flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-bold text-sl-muted uppercase">Role:</span>
+                  <select
+                    value={p.role}
+                    onChange={(e) => handleRoleChange(p.id, e.target.value)}
+                    className="bg-sl-panel border border-sl-border text-xs rounded-lg px-2 py-1 text-sl-foreground font-bold"
+                  >
+                    <option value="member">Member (Athlete)</option>
+                    <option value="captain">Team Captain</option>
+                    <option value="media_personnel">Media Personnel</option>
+                    <option value="treasurer">Club Treasurer</option>
+                    <option value="admin">Executive Admin</option>
+                    {customRoles
+                      .filter(
+                        (r) =>
+                          !['member', 'captain', 'media_personnel', 'treasurer', 'admin'].includes(r.id)
+                      )
+                      .map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.title}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Tab 2: Payments Ledger */}
+      {activeTab === 'payments' && (
+        <div className="shuttle-panel p-4 sm:p-6 bg-sl-panel space-y-4">
+          <h3 className="text-base font-black text-sl-foreground uppercase">Financial Ledger & Receipts ({payments.length})</h3>
+
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b border-sl-border/40 text-sl-muted uppercase font-black">
+                <tr>
+                  <th className="pb-3">Reference</th>
+                  <th className="pb-3">Type</th>
+                  <th className="pb-3">Amount</th>
+                  <th className="pb-3">Status</th>
+                  <th className="pb-3">Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-sl-border/20 font-medium">
+                {payments.map((pay) => (
+                  <tr key={pay.id} className="hover:bg-sl-bg/50">
+                    <td className="py-3 font-mono font-bold">{pay.reference}</td>
+                    <td className="py-3 uppercase text-sl-muted font-bold">{pay.type}</td>
+                    <td className="py-3 font-mono text-sl-green font-black">{formatKobo(pay.amount_kobo)}</td>
+                    <td className="py-3">
+                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-sl-green/20 text-sl-green">
+                        {pay.status}
+                      </span>
+                    </td>
+                    <td className="py-3 text-sl-muted">{new Date(pay.created_at).toLocaleDateString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Payment Cards */}
+          <div className="md:hidden space-y-3">
+            {payments.map((pay) => (
+              <div key={pay.id} className="p-3.5 bg-sl-bg rounded-xl border border-sl-border space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs font-black text-sl-foreground">{pay.reference}</span>
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-sl-green/20 text-sl-green">
+                    {pay.status}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="uppercase text-sl-muted font-bold text-[10px]">{pay.type}</span>
+                  <span className="font-mono text-sl-green font-black">{formatKobo(pay.amount_kobo)}</span>
+                </div>
+                <p className="text-[10px] text-sl-muted font-mono">{new Date(pay.created_at).toLocaleDateString()}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Tab 3: Gear Orders */}
+      {activeTab === 'orders' && (
  <div className="shuttle-panel p-6 bg-sl-panel space-y-4">
  <h3 className="text-base font-black text-sl-foreground uppercase">Equipment Procurement Orders ({orders.length})</h3>
  {orders.length === 0 ? (

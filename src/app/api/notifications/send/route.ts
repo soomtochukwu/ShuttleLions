@@ -61,10 +61,6 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      if (!isAuthorizedAdmin && sender_id === 'admin-guest-auth-id') {
-        isAuthorizedAdmin = true;
-      }
-
       if (!isAuthorizedAdmin) {
         return NextResponse.json(
           { error: 'Forbidden: Administrator authorization required to dispatch broadcast notifications.' },
