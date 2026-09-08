@@ -206,7 +206,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         {/* Right Header Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Admin Command Room Quick Pill (Visible on all screen sizes, especially mobile) */}
+          {isAuthenticated && user?.role === 'admin' && (
+            <Link
+              href="/dashboard/admin"
+              onClick={() => audio.play('serve')}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-black transition-all ${
+                pathname === '/dashboard/admin'
+                  ? 'bg-sl-warning text-black border-sl-warning shadow-[0_2px_8px_rgba(255,179,0,0.3)]'
+                  : 'bg-sl-warning/10 text-sl-warning border-sl-warning/30 hover:bg-sl-warning/20'
+              }`}
+              title="Admin Command Room"
+            >
+              <Shield className="w-3.5 h-3.5 text-current" />
+              <span className="hidden xs:inline sm:inline">Admin Room</span>
+            </Link>
+          )}
+
           {/* Back to Public Arena Link */}
           <Link
             href="/"
@@ -442,6 +459,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       </Link>
                     );
                   })}
+
+                  {/* Admin Command Room for Mobile Drawer */}
+                  {isAuthenticated && user?.role === 'admin' && (
+                    <div className="pt-2 border-t border-sl-border/40">
+                      <Link
+                        href="/dashboard/admin"
+                        onClick={() => {
+                          audio.play('serve');
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className={`flex items-center justify-between px-3 py-2.5 rounded-xl font-black text-xs transition-all ${
+                          pathname === '/dashboard/admin'
+                            ? 'bg-sl-warning text-black shadow-md'
+                            : 'text-sl-warning bg-sl-warning/10 border border-sl-warning/30 hover:bg-sl-warning/20'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Shield className="w-4 h-4 text-sl-warning" />
+                          <span>Admin Command Room</span>
+                        </div>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+                  )}
                 </nav>
               </div>
 

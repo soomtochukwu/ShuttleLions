@@ -71,9 +71,12 @@ export function MobileDrawer({ isOpen, onClose, onOpenAuth }: MobileDrawerProps)
  <div className="space-y-6">
  {/* Header */}
  <div className="flex items-center justify-between border-b border-sl-border/40 pb-4">
- <span className="text-xl font-extrabold text-sl-green tracking-wider">
- SHUTTLELIONS 
- </span>
+            <div className="flex items-center gap-2">
+              <img src="/icons/icon-192.png" alt="ShuttleLions" className="w-6 h-6 object-contain" />
+              <span className="text-xl font-extrabold text-sl-green tracking-wider">
+                SHUTTLELIONS
+              </span>
+            </div>
  <button
  onClick={() => {
  audio.play('netDrop');

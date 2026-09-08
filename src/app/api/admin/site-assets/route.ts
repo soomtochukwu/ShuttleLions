@@ -36,12 +36,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { updates, auth_user_id } = body as { updates: AssetUpdate[]; auth_user_id?: string };
-
-    // Support simulated guest admin in development / demo mode
-    if (!isAuthorizedAdmin && auth_user_id === 'admin-guest-auth-id') {
-      isAuthorizedAdmin = true;
-    }
+    const { updates } = body as { updates: AssetUpdate[] };
 
     if (!isAuthorizedAdmin) {
       return NextResponse.json(

@@ -169,8 +169,8 @@ export function PWAInstallPrompt() {
           </button>
 
           <div className="flex items-start gap-3.5 pr-6">
-            <div className="w-10 h-10 rounded-xl bg-sl-green/20 border border-sl-green/40 flex items-center justify-center shrink-0 text-sl-green-glow">
-              <Smartphone className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-sl-green/20 border border-sl-green/40 flex items-center justify-center shrink-0 p-1">
+              <img src="/icons/icon-192.png" alt="ShuttleLions" className="w-full h-full object-contain" />
             </div>
 
             <div className="flex-1 space-y-2">

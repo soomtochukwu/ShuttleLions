@@ -96,67 +96,93 @@ export default function ExecutivesBoardPage() {
     await Promise.all([refetchProfiles(), refetchRoles()]);
   };
 
- const handleAppointRole = async (e: React.FormEvent) => {
- e.preventDefault();
- if (!selectedMemberId ||!targetRoleId) return;
+  const handleAppointRole = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedMemberId || !targetRoleId) return;
 
- audio.play('serve');
- try {
- await supabase
- .from('profiles')
- .update({ role: targetRoleId })
- .eq('id', selectedMemberId);
+    audio.play('serve');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/roles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({
+          member_id: selectedMemberId,
+          role: targetRoleId,
+        }),
+      });
 
- audio.play('whistle');
- setIsAppointModalOpen(false);
- loadData();
- showAlert({
- title: 'Appointment Confirmed! ',
- message: `Member has been officially appointed to executive role "${ROLE_LABELS[targetRoleId] || targetRoleId}".`,
- type: 'success',
- });
- } catch (err) {
- console.error('Failed to update role:', err);
- showAlert({
- title: 'Appointment Failed',
- message: 'Failed to assign role. Please try again.',
- type: 'error',
- });
- }
- };
+      const resData = await res.json();
+      if (!res.ok || resData.error) {
+        throw new Error(resData.error || 'Failed to assign role');
+      }
 
- const handleRevokeRole = (memberId: string, memberName: string) => {
- showConfirm({
- title: 'Revoke Executive Appointment',
- message: `Are you sure you want to revoke executive privileges for ${memberName} back to Student Athlete?`,
- type: 'warning',
- confirmText: 'Revoke Appointment',
- onConfirm: async () => {
- audio.play('courtSqueak');
- try {
- await supabase
- .from('profiles')
- .update({ role: 'member' })
- .eq('id', memberId);
+      audio.play('whistle');
+      setIsAppointModalOpen(false);
+      loadData();
+      showAlert({
+        title: 'Appointment Confirmed! 🦁',
+        message: `Member has been officially appointed to executive role "${ROLE_LABELS[targetRoleId] || targetRoleId}".`,
+        type: 'success',
+      });
+    } catch (err: any) {
+      console.error('Failed to update role:', err);
+      showAlert({
+        title: 'Appointment Failed',
+        message: err.message || 'Failed to assign role. Please try again.',
+        type: 'error',
+      });
+    }
+  };
 
- audio.play('whistle');
- loadData();
- showAlert({
- title: 'Role Revoked',
- message: `${memberName} has been returned to Student Athlete status.`,
- type: 'info',
- });
- } catch (err) {
- console.error('Failed to revoke role:', err);
- showAlert({
- title: 'Action Failed',
- message: 'Failed to revoke role.',
- type: 'error',
- });
- }
- },
- });
- };
+  const handleRevokeRole = (memberId: string, memberName: string) => {
+    showConfirm({
+      title: 'Revoke Executive Appointment',
+      message: `Are you sure you want to revoke executive privileges for ${memberName} back to Student Athlete?`,
+      type: 'warning',
+      confirmText: 'Revoke Appointment',
+      onConfirm: async () => {
+        audio.play('courtSqueak');
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          const res = await fetch('/api/admin/roles', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+            },
+            body: JSON.stringify({
+              member_id: memberId,
+              role: 'member',
+            }),
+          });
+
+          const resData = await res.json();
+          if (!res.ok || resData.error) {
+            throw new Error(resData.error || 'Failed to revoke role');
+          }
+
+          audio.play('whistle');
+          loadData();
+          showAlert({
+            title: 'Role Revoked',
+            message: `${memberName} has been returned to Student Athlete status.`,
+            type: 'info',
+          });
+        } catch (err: any) {
+          console.error('Failed to revoke role:', err);
+          showAlert({
+            title: 'Action Failed',
+            message: err.message || 'Failed to revoke role.',
+            type: 'error',
+          });
+        }
+      },
+    });
+  };
 
  const handleCreateCustomRole = async (e: React.FormEvent) => {
  e.preventDefault();
