@@ -3,13 +3,14 @@
  * Manages transactional SMTP email dispatching for pre-game reminders, RSVP confirmations, and announcements
  */
 
-import nodemailer from 'nodemailer';
+import nodemailer from "nodemailer";
 
 export interface SendEmailOptions {
   to: string;
   subject: string;
   html: string;
   text?: string;
+  bccSelf?: boolean;
 }
 
 export interface EmailResult {
@@ -24,9 +25,7 @@ export interface EmailResult {
  */
 export function isSmtpConfigured(): boolean {
   return Boolean(
-    process.env.SMTP_HOST &&
-    process.env.SMTP_USER &&
-    process.env.SMTP_PASS
+    process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS,
   );
 }
 
@@ -39,11 +38,13 @@ let cachedTransporter: TransporterInstance | null = null;
 function getTransporter() {
   if (cachedTransporter) return cachedTransporter;
 
-  const host = process.env.SMTP_HOST || 'smtp.hostinger.com';
-  const port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 465;
-  const secure = process.env.SMTP_SECURE === 'true' || port === 465;
-  const user = process.env.SMTP_USER || 'info@shuttlelionsunn.site';
-  const pass = process.env.SMTP_PASS || '';
+  const host = process.env.SMTP_HOST || "smtp.hostinger.com";
+  const port = process.env.SMTP_PORT
+    ? parseInt(process.env.SMTP_PORT, 10)
+    : 465;
+  const secure = process.env.SMTP_SECURE === "true" || port === 465;
+  const user = process.env.SMTP_USER || "info@shuttlelionsunn.site";
+  const pass = process.env.SMTP_PASS || "";
 
   cachedTransporter = nodemailer.createTransport({
     host,
@@ -66,34 +67,63 @@ function getTransporter() {
 /**
  * Verifies the SMTP transporter connection to the mail server
  */
-export async function verifySmtpConnection(): Promise<{ success: boolean; message: string }> {
+export async function verifySmtpConnection(): Promise<{
+  success: boolean;
+  message: string;
+}> {
   if (!isSmtpConfigured()) {
-    return { success: false, message: 'SMTP credentials (SMTP_HOST, SMTP_USER, SMTP_PASS) not configured.' };
+    return {
+      success: false,
+      message:
+        "SMTP credentials (SMTP_HOST, SMTP_USER, SMTP_PASS) not configured.",
+    };
   }
 
   try {
     const transporter = getTransporter();
     await transporter.verify();
-    return { success: true, message: 'SMTP connection successfully verified with mail server.' };
+    return {
+      success: true,
+      message: "SMTP connection successfully verified with mail server.",
+    };
   } catch (err: any) {
-    return { success: false, message: err.message || 'Failed to verify SMTP connection.' };
+    return {
+      success: false,
+      message: err.message || "Failed to verify SMTP connection.",
+    };
   }
 }
 
 /**
  * Sends an email using Nodemailer or logs to console if SMTP is unconfigured in development
  */
-export async function sendEmail({ to, subject, html, text }: SendEmailOptions): Promise<EmailResult> {
-  const from = process.env.SMTP_FROM || '"ShuttleLions UNN" <info@shuttlelionsunn.site>';
+export async function sendEmail({
+  to,
+  subject,
+  html,
+  text,
+  bccSelf = true,
+}: SendEmailOptions): Promise<EmailResult> {
+  const from =
+    process.env.SMTP_FROM || '"ShuttleLions UNN" <info@shuttlelionsunn.site>';
+  const bccAddress =
+    process.env.SMTP_BCC ||
+    process.env.SMTP_USER ||
+    "info@shuttlelionsunn.site";
+  const shouldBcc =
+    bccSelf &&
+    Boolean(bccAddress) &&
+    to.toLowerCase() !== bccAddress.toLowerCase();
 
   if (!isSmtpConfigured()) {
     console.info(
       `\n================ [NODEMAILER LOCAL PREVIEW] ================\n` +
-      `To: ${to}\n` +
-      `From: ${from}\n` +
-      `Subject: ${subject}\n` +
-      `Notice: SMTP credentials not set in .env.local. Email preview logged.\n` +
-      `============================================================\n`
+        `To: ${to}\n` +
+        `From: ${from}\n` +
+        (shouldBcc ? `BCC: ${bccAddress}\n` : "") +
+        `Subject: ${subject}\n` +
+        `Notice: SMTP credentials not set in .env.local. Email preview logged.\n` +
+        `============================================================\n`,
     );
     return { success: true, simulated: true, messageId: `mock-${Date.now()}` };
   }
@@ -103,6 +133,7 @@ export async function sendEmail({ to, subject, html, text }: SendEmailOptions): 
     const info = await transporter.sendMail({
       from,
       to,
+      ...(shouldBcc ? { bcc: bccAddress } : {}),
       subject,
       text: text || subject,
       html,
@@ -114,14 +145,13 @@ export async function sendEmail({ to, subject, html, text }: SendEmailOptions): 
       simulated: false,
     };
   } catch (err: any) {
-    console.error('Nodemailer transmission error:', err);
+    console.error("Nodemailer transmission error:", err);
     return {
       success: false,
-      error: err.message || 'Failed to dispatch email via SMTP',
+      error: err.message || "Failed to dispatch email via SMTP",
     };
   }
 }
-
 
 /**
  * Generates branded HTML template for Game Reminders (1 hour / 30 minutes)
@@ -139,7 +169,7 @@ export function buildGameReminderEmail({
   location: string;
   timeString: string;
   sessionDate: string;
-  countdownLabel: '1 Hour' | '30 Minutes';
+  countdownLabel: "1 Hour" | "30 Minutes";
 }): { subject: string; html: string } {
   const subject = `[Reminder] "${eventTitle}" starts in ${countdownLabel}`;
 
@@ -241,7 +271,7 @@ export function buildAdminBroadcastEmail({
   title: string;
   message: string;
 }): { subject: string; html: string } {
-  const subject = `[ShuttleLions Alert] ${title}`;
+  const subject = `${title}`;
 
   const html = `
 <!DOCTYPE html>
