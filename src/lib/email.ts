@@ -30,17 +30,22 @@ export function isSmtpConfigured(): boolean {
   );
 }
 
+type TransporterInstance = ReturnType<typeof nodemailer.createTransport>;
+let cachedTransporter: TransporterInstance | null = null;
+
 /**
  * Creates and returns a reusable Nodemailer transporter instance
  */
 function getTransporter() {
-  const host = process.env.SMTP_HOST || 'smtp.gmail.com';
+  if (cachedTransporter) return cachedTransporter;
+
+  const host = process.env.SMTP_HOST || 'smtp.hostinger.com';
   const port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 465;
   const secure = process.env.SMTP_SECURE === 'true' || port === 465;
-  const user = process.env.SMTP_USER || '';
+  const user = process.env.SMTP_USER || 'info@shuttlelionsunn.site';
   const pass = process.env.SMTP_PASS || '';
 
-  return nodemailer.createTransport({
+  cachedTransporter = nodemailer.createTransport({
     host,
     port,
     secure,
@@ -48,14 +53,38 @@ function getTransporter() {
       user,
       pass,
     },
+    pool: true,
+    maxConnections: 3,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
   });
+
+  return cachedTransporter;
+}
+
+/**
+ * Verifies the SMTP transporter connection to the mail server
+ */
+export async function verifySmtpConnection(): Promise<{ success: boolean; message: string }> {
+  if (!isSmtpConfigured()) {
+    return { success: false, message: 'SMTP credentials (SMTP_HOST, SMTP_USER, SMTP_PASS) not configured.' };
+  }
+
+  try {
+    const transporter = getTransporter();
+    await transporter.verify();
+    return { success: true, message: 'SMTP connection successfully verified with mail server.' };
+  } catch (err: any) {
+    return { success: false, message: err.message || 'Failed to verify SMTP connection.' };
+  }
 }
 
 /**
  * Sends an email using Nodemailer or logs to console if SMTP is unconfigured in development
  */
 export async function sendEmail({ to, subject, html, text }: SendEmailOptions): Promise<EmailResult> {
-  const from = process.env.SMTP_FROM || '"ShuttleLions UNN" <notifications@shuttlelions.unn>';
+  const from = process.env.SMTP_FROM || '"ShuttleLions UNN" <info@shuttlelionsunn.site>';
 
   if (!isSmtpConfigured()) {
     console.info(
@@ -92,6 +121,7 @@ export async function sendEmail({ to, subject, html, text }: SendEmailOptions): 
     };
   }
 }
+
 
 /**
  * Generates branded HTML template for Game Reminders (1 hour / 30 minutes)
