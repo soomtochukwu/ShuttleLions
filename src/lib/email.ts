@@ -10,6 +10,7 @@ export interface SendEmailOptions {
   subject: string;
   html: string;
   text?: string;
+  bccSelf?: boolean;
 }
 
 export interface EmailResult {
@@ -83,14 +84,23 @@ export async function verifySmtpConnection(): Promise<{ success: boolean; messag
 /**
  * Sends an email using Nodemailer or logs to console if SMTP is unconfigured in development
  */
-export async function sendEmail({ to, subject, html, text }: SendEmailOptions): Promise<EmailResult> {
+export async function sendEmail({
+  to,
+  subject,
+  html,
+  text,
+  bccSelf = true,
+}: SendEmailOptions): Promise<EmailResult> {
   const from = process.env.SMTP_FROM || '"ShuttleLions UNN" <info@shuttlelionsunn.site>';
+  const bccAddress = process.env.SMTP_BCC || (process.env.SMTP_USER || 'info@shuttlelionsunn.site');
+  const shouldBcc = bccSelf && Boolean(bccAddress) && to.toLowerCase() !== bccAddress.toLowerCase();
 
   if (!isSmtpConfigured()) {
     console.info(
       `\n================ [NODEMAILER LOCAL PREVIEW] ================\n` +
       `To: ${to}\n` +
       `From: ${from}\n` +
+      (shouldBcc ? `BCC: ${bccAddress}\n` : '') +
       `Subject: ${subject}\n` +
       `Notice: SMTP credentials not set in .env.local. Email preview logged.\n` +
       `============================================================\n`
@@ -103,6 +113,7 @@ export async function sendEmail({ to, subject, html, text }: SendEmailOptions): 
     const info = await transporter.sendMail({
       from,
       to,
+      ...(shouldBcc ? { bcc: bccAddress } : {}),
       subject,
       text: text || subject,
       html,
